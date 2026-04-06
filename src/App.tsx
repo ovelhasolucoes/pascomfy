@@ -33,6 +33,8 @@ import AccountBlocked from "./pages/AccountBlocked";
 import PricingPage from "./pages/PricingPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import MySubscriptionPage from "./pages/MySubscriptionPage";
+import Signup from "./pages/Signup";
+import AdminReferrals from "./pages/admin/AdminReferrals";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
