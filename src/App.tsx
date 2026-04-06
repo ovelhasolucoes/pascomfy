@@ -49,6 +49,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/invite/:token" element={<InviteAccept />} />
             <Route path="/bio/:slug" element={<BioPublicPage />} />
             <Route path="/pricing" element={<PricingPage />} />
