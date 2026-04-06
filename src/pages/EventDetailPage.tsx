@@ -246,11 +246,20 @@ const EventDetailPage = () => {
 
         {/* Checklist */}
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <ClipboardList className="h-5 w-5 text-primary" />
-            Checklist
-          </h2>
-          <ChecklistSection eventId={id!} />
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <ClipboardList className="h-5 w-5 text-primary" />
+              Checklist
+            </h2>
+            {canEditScale && (
+              <Button onClick={() => setAddChecklistOpen(true)} size="sm">
+                <Plus className="h-4 w-4 mr-1" /> Checklist
+              </Button>
+            )}
+          </div>
+          <ChecklistSection eventId={id!} canEdit={canEditScale} onDeleteChecklist={(clId) => {
+            deleteChecklist.mutateAsync(clId).then(() => toast.success("Checklist removido")).catch((e: any) => toast.error(e.message));
+          }} />
         </div>
 
         {/* Focus Mode */}
