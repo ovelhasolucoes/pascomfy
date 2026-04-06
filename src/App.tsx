@@ -21,6 +21,7 @@ import SuperAdminSubscriptions from "./pages/superadmin/SuperAdminSubscriptions"
 import SuperAdminAffiliates from "./pages/superadmin/SuperAdminAffiliates";
 import SuperAdminTickets from "./pages/superadmin/SuperAdminTickets";
 import SuperAdminLogs from "./pages/superadmin/SuperAdminLogs";
+import AdminNotifications from "./pages/admin/AdminNotifications";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
