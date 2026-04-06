@@ -38,6 +38,8 @@ import Signup from "./pages/Signup";
 import AdminReferrals from "./pages/admin/AdminReferrals";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import DashboardPage from "./pages/DashboardPage";
+import ProfilePage from "./pages/ProfilePage";
 
 const queryClient = new QueryClient();
 
