@@ -1,19 +1,40 @@
+import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
+import { BottomNav } from "./BottomNav";
+import { MoreSheet } from "./MoreSheet";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { useProfile } from "@/hooks/useProfile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Separator } from "@/components/ui/separator";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { profile } = useProfile();
+  const isMobile = useIsMobile();
+  const [moreOpen, setMoreOpen] = useState(false);
 
-  const getGreeting = () => {
-    const h = new Date().getHours();
-    if (h < 12) return "Bom dia";
-    if (h < 18) return "Boa tarde";
-    return "Boa noite";
-  };
+  if (isMobile) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        {/* Mobile header */}
+        <header className="h-12 flex items-center justify-between px-4 shrink-0 bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 sticky top-0 z-40 pt-[env(safe-area-inset-top)]">
+          <div className="flex items-center gap-2" />
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <NotificationBell />
+          </div>
+        </header>
+
+        {/* Content */}
+        <main className="flex-1 overflow-auto px-4 pb-20 animate-fade-in">
+          {children}
+        </main>
+
+        {/* Bottom Navigation */}
+        <BottomNav onMorePress={() => setMoreOpen(true)} />
+        <MoreSheet open={moreOpen} onOpenChange={setMoreOpen} />
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider>
@@ -24,9 +45,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-2">
               <SidebarTrigger className="-ml-1" />
               <Separator orientation="vertical" className="h-4" />
-              <span className="text-sm text-muted-foreground hidden sm:inline">
-                {profile?.name ? `${getGreeting()}, ${profile.name.split(" ")[0]}` : ""}
-              </span>
             </div>
             <div className="flex items-center gap-1">
               <ThemeToggle />
