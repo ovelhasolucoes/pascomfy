@@ -149,7 +149,7 @@ const DashboardPage = () => {
               ) : (
                 pendingChecklists.slice(0, 5).map((item: any) => (
                   <div key={item.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50">
-                    <div className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                    <div className="w-2 h-2 rounded-full bg-destructive/60 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-foreground truncate">{item.event_checklist_items?.title}</p>
                       <p className="text-xs text-muted-foreground truncate">
