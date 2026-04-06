@@ -1,196 +1,122 @@
 
 
-# Pascomfy — Módulo Social Post (Meta Integration)
+# Pascomfy — Módulo Biolink
 
 ## Resumo
 
-Cada company configura seu proprio Meta App (App ID + App Secret), conecta suas Pages/Instagram via OAuth, e publica conteúdo diretamente pelo Pascomfy. Agendamento via `scheduled_publish_time` da API da Meta. UI como nova seção "Social" no sidebar.
+Sistema de biolink (link-in-bio) por company, com página pública SSR via Edge Function, painel admin no sidebar, e analytics de cliques. Cada paróquia terá sua página pública acessível sem login.
 
 ## Arquitetura
 
 ```text
 ┌─────────────────────────────────────────────────┐
-│  Frontend (React)                               │
-│  /social/posts — criar/listar posts             │
-│  /social/calendar — calendário visual           │
-│  /social/accounts — conectar contas Meta        │
-├─────────────────────────────────────────────────┤
-│  Edge Functions                                 │
-│  meta-oauth      — OAuth callback, troca code   │
-│  social-publish  — publica/agenda na Meta API   │
-├─────────────────────────────────────────────────┤
+│  Admin (SPA React)                              │
+│  /admin/biolink → editar links, cores, logo     │
+│  AdminRoute protegido                           │
+└────────────┬────────────────────────────────────┘
+             │ supabase client
+┌────────────▼────────────────────────────────────┐
 │  Supabase DB                                    │
-│  social_accounts — tokens + page_id + ig_id     │
-│  social_posts    — posts + status + scheduling  │
-│  social_media    — mídia temporária (ref only)   │
+│  biolinks + biolink_items + biolink_clicks      │
+│  RLS: admin write, anon read (ativo=true)       │
+└────────────┬────────────────────────────────────┘
+             │ service_role
+┌────────────▼────────────────────────────────────┐
+│  Edge Function: biolink-page                    │
+│  GET /?slug=paroquia-sao-jose                   │
+│  Retorna HTML completo (SSR)                    │
+│  Registra clique via query param ?click=item_id │
 └─────────────────────────────────────────────────┘
 ```
 
-## Fase 1 — Database (Migration)
+A página pública será acessada via URL do Edge Function. Internamente, o slug resolve para a company correta.
 
-### Tabela `social_accounts`
-| Coluna | Tipo | Notas |
-|--------|------|-------|
-| id | uuid PK | |
-| company_id | uuid NOT NULL | FK companies |
-| provider | text DEFAULT 'meta' | Extensível para futuro |
-| app_id | text NOT NULL | Meta App ID da company |
-| app_secret_encrypted | text NOT NULL | Armazenado encriptado |
-| access_token | text | Long-lived token |
-| token_expires_at | timestamptz | Expiração do token |
-| page_id | text | Facebook Page ID |
-| page_name | text | Nome da Page |
-| instagram_id | text | IG Business Account ID |
-| instagram_username | text | |
-| status | text DEFAULT 'ativo' | ativo/desconectado/erro |
-| created_at | timestamptz DEFAULT now() | |
+## Etapa 1 — Migração SQL
 
-RLS: admin da company gerencia, membros leem (sem tokens).
+Três tabelas:
 
-### Tabela `social_posts`
-| Coluna | Tipo | Notas |
-|--------|------|-------|
-| id | uuid PK | |
-| company_id | uuid NOT NULL | |
-| social_account_id | uuid NOT NULL | FK social_accounts |
-| caption | text | Legenda do post |
-| media_type | text | imagem/video/carousel |
-| media_urls | jsonb DEFAULT '[]' | URLs temporárias para envio |
-| platform | text NOT NULL | facebook/instagram/ambos |
-| status | text DEFAULT 'rascunho' | rascunho/agendado/publicando/publicado/erro |
-| error_message | text | Detalhes do erro |
-| scheduled_at | timestamptz | Quando publicar |
-| published_at | timestamptz | Quando foi publicado |
-| meta_post_id | text | ID do post na Meta |
-| meta_ig_post_id | text | ID do post no Instagram |
-| created_by | uuid NOT NULL | |
-| created_at | timestamptz DEFAULT now() | |
+**biolinks**
+- `id`, `company_id` (FK companies), `slug` (unique), `titulo`, `descricao`, `logo_url`, `cor_primaria` (#6366f1), `cor_secundaria` (#8b5cf6), `ativo` (default true), `created_at`
 
-RLS: admin/permission cria, membros da company leem.
+**biolink_items**
+- `id`, `biolink_id` (FK biolinks CASCADE), `titulo`, `url`, `tipo` (enum: link, whatsapp, youtube, instagram, facebook, doacao), `icone`, `ordem` (int), `ativo` (default true), `created_at`
 
-### Índices
-- `social_accounts(company_id)`
-- `social_posts(company_id, status)`
-- `social_posts(company_id, scheduled_at)` WHERE status = 'agendado'
+**biolink_clicks**
+- `id`, `biolink_item_id` (FK biolink_items CASCADE), `clicked_at` (default now()), `user_agent`, `referer`
+- Sem company_id necessário (join via biolink_items → biolinks)
 
-### View segura para membros
-View `social_accounts_safe` que exclui `access_token`, `app_secret_encrypted` — membros consultam apenas essa view.
+**RLS Policies:**
+- `biolinks`: admin da company faz ALL; anon SELECT onde `ativo = true`; members SELECT da company
+- `biolink_items`: admin da company faz ALL; anon SELECT onde `ativo = true` e biolink ativo; members SELECT da company
+- `biolink_clicks`: service_role INSERT; admin da company SELECT (via join)
 
-## Fase 2 — Edge Functions
+**Índices:**
+- `UNIQUE` em `biolinks.slug`
+- Index em `biolink_items.biolink_id` + `ordem`
+- Index em `biolink_clicks.biolink_item_id` + `clicked_at`
 
-### `meta-oauth` (nova)
-1. Recebe `company_id` + `code` do callback OAuth
-2. Busca `app_id` e `app_secret` de `social_accounts` (via service_role)
-3. Troca code por short-lived token, depois converte em long-lived token (60 dias)
-4. Busca Pages do usuário via `/me/accounts`
-5. Busca Instagram Business Account vinculado à Page
-6. Salva tudo em `social_accounts`
+## Etapa 2 — Edge Function `biolink-page`
 
-### `social-publish` (nova)
-1. Recebe `post_id`
-2. Busca post + social_account (com tokens, via service_role)
-3. Verifica token válido (se expirado, tenta refresh)
-4. Para Facebook:
-   - Upload foto via `/{page_id}/photos` ou post via `/{page_id}/feed`
-   - Se agendado: usa `scheduled_publish_time`
-5. Para Instagram:
-   - Cria container via `/{ig_id}/media` com `image_url` + `caption`
-   - Publica via `/{ig_id}/media_publish`
-   - Se agendado: usa `scheduled_publish_time` (IG não suporta nativo, então armazena como agendado e pg_cron dispara)
-6. Atualiza `social_posts` com `meta_post_id` e status
-7. Registra em `notification_logs` se houver erro
+**Arquivo:** `supabase/functions/biolink-page/index.ts`
 
-### Nota sobre Instagram agendado
-Instagram Graph API não suporta `scheduled_publish_time`. Para posts agendados no IG, o sistema armazena com status `agendado` e um pg_cron job (reutilizando padrão existente) verifica a cada minuto e publica quando `scheduled_at <= now()`.
+Lógica:
+1. Recebe `slug` via query param (`?slug=xxx`)
+2. Se receber `?click=item_id`, registra clique em `biolink_clicks` e redireciona para a URL do item (302)
+3. Caso contrário, busca biolink + items (ativo=true, ordenados por `ordem`)
+4. Retorna HTML completo com:
+   - Meta tags (title, description, og:image)
+   - CSS inline com cores personalizadas
+   - Logo, título, descrição
+   - Lista de links estilizados por tipo (ícones diferentes para WhatsApp, YouTube, etc.)
+   - Links apontam para o próprio Edge Function com `?slug=xxx&click=item_id` (para tracking)
+5. Design responsivo, mobile-first, leve (sem JS framework)
 
-## Fase 3 — Frontend
+## Etapa 3 — Admin UI
 
-### Nova seção "Social" no sidebar
-Visível para admin. 3 itens:
-- Posts (`/social/posts`) — lista + criação
-- Calendário (`/social/calendar`) — visualização mensal
-- Contas (`/social/accounts`) — conexão Meta
+**Nova rota:** `/admin/biolink` (protegida com AdminRoute)
 
-### Página Contas (`/social/accounts`)
-- Admin insere App ID + App Secret da company
-- Botão "Conectar com Facebook" inicia OAuth
-- Após callback, mostra Page + IG vinculados
-- Status da conexão (token válido/expirado)
-- Botão reconectar se token expirado
+**Sidebar:** Novo item "Biolink" com ícone `Link2` na seção admin
 
-### Página Posts (`/social/posts`)
-- Lista de posts com filtros por status
-- Botão "Novo Post" abre formulário:
-  - Upload de mídia (temporário, não persiste)
-  - Legenda
-  - Plataforma (Facebook, Instagram, Ambos)
-  - Publicar agora ou Agendar (date picker)
-- Preview do post
-- Status badges coloridos
+**Página:** `src/pages/admin/AdminBiolink.tsx`
+- Se não existe biolink para a company, mostra formulário de criação (slug, título, etc.)
+- Se existe, mostra:
+  - Preview miniatura do biolink
+  - Formulário de personalização (cores, logo, título, descrição, slug)
+  - Toggle ativo/desativo
+  - Lista de items com drag-to-reorder (ou setas ↑↓)
+  - Botão adicionar item (dialog com: título, url, tipo, ícone)
+  - Toggle ativo por item
+  - Link para abrir a página pública
 
-### Página Calendário (`/social/calendar`)
-- Reutiliza padrão do `EventCalendar` existente
-- Mostra posts agendados/publicados por data
-- Click em dia mostra posts daquele dia
+**Componentes:**
+- `src/components/biolink/BiolinkEditor.tsx` — formulário principal
+- `src/components/biolink/BiolinkItemList.tsx` — lista de items ordenável
+- `src/components/biolink/BiolinkItemDialog.tsx` — dialog add/edit item
+- `src/components/biolink/BiolinkPreview.tsx` — preview inline
 
-## Fase 4 — Segurança
+**Hook:** `src/hooks/useBiolink.ts` — CRUD de biolinks e items via React Query
 
-- `app_secret_encrypted`: encriptado via `pgcrypto` com chave em secret do Supabase
-- `access_token`: acessível apenas via service_role (Edge Functions)
-- RLS isola tudo por company_id
-- View `social_accounts_safe` para frontend (sem tokens)
-- OAuth state parameter para prevenir CSRF
-- Validação de input com Zod nas Edge Functions
+**Analytics simples:** Seção no editor mostrando total de cliques por item (query count agrupada)
 
-## Fase 5 — Tratamento de Erros
+## Etapa 4 — Sidebar e Rotas
 
-- Token expirado: Edge Function tenta refresh automático, se falhar marca conta como `erro` e notifica admin
-- API da Meta retorna erro: salva `error_message` no post, status `erro`, notifica admin
-- Rate limiting da Meta: retry com backoff exponencial
-- Conta desconectada: marca status e alerta via notificação in-app
-
-## Fluxo de Publicação
-
-```text
-1. Admin cria post (legenda + mídia + plataforma)
-2. Upload temporário da mídia para URL pública (Supabase Storage temp bucket, TTL 1h)
-3. Se "publicar agora":
-   → chama social-publish imediatamente
-   → Edge Function envia para Meta API
-   → Atualiza status para "publicado" ou "erro"
-4. Se "agendar":
-   → Para Facebook: usa scheduled_publish_time nativo
-   → Para Instagram: salva como "agendado", pg_cron publica no horário
-5. Após publicação bem-sucedida:
-   → Remove mídia temporária
-   → Salva meta_post_id
-```
-
-## Arquivos a criar/editar
-
-| Arquivo | Ação |
-|---------|------|
-| Migration SQL | Criar tabelas, view, índices, RLS |
-| `supabase/functions/meta-oauth/index.ts` | Criar |
-| `supabase/functions/social-publish/index.ts` | Criar |
-| `src/pages/social/SocialPosts.tsx` | Criar |
-| `src/pages/social/SocialCalendar.tsx` | Criar |
-| `src/pages/social/SocialAccounts.tsx` | Criar |
-| `src/hooks/useSocialAccounts.ts` | Criar |
-| `src/hooks/useSocialPosts.ts` | Criar |
-| `src/components/social/PostForm.tsx` | Criar |
-| `src/components/social/PostCard.tsx` | Criar |
-| `src/components/social/PostCalendarView.tsx` | Criar |
-| `src/components/social/MetaConnectButton.tsx` | Criar |
-| `src/components/layout/AppSidebar.tsx` | Adicionar seção Social |
-| `src/App.tsx` | Adicionar rotas /social/* |
+- Adicionar item "Biolink" no sidebar (seção admin, ícone Link2)
+- Adicionar rota `/admin/biolink` com AdminRoute no App.tsx
 
 ## Detalhes Técnicos
 
-- OAuth redirect URI: `https://cchovdurprjtefisautg.supabase.co/functions/v1/meta-oauth`
-- Meta Graph API v21.0
-- Permissões OAuth necessárias: `pages_manage_posts`, `pages_read_engagement`, `instagram_basic`, `instagram_content_publish`
-- Long-lived tokens duram ~60 dias, depois precisam de re-auth
-- Mídia temporária: bucket `social-temp` com lifecycle policy ou cleanup via Edge Function
-- pg_cron para IG scheduled: `*/1 * * * *` verifica posts com `status = 'agendado'` e `scheduled_at <= now()`
+- Edge Function usa `service_role` para ler dados (anon read via RLS) e inserir cliques
+- HTML gerado é ~5KB, sem dependências externas, carregamento ultra-rápido
+- Tipo enum para `biolink_item_type` garante consistência
+- Slug validado no frontend (lowercase, hifens, sem espaços)
+- CORS não necessário (Edge Function retorna HTML, não JSON)
+- URL pública: `https://cchovdurprjtefisautg.supabase.co/functions/v1/biolink-page?slug=xxx`
+
+## Evoluções Futuras
+
+- Temas pré-definidos (dark, colorful, minimal)
+- QR Code gerado automaticamente para o biolink
+- Custom domain por company (pascomfy.app/slug → dominio-proprio.com)
+- Integração com analytics externo (GA, Pixel)
+- Formulário de contato embutido no biolink
 
