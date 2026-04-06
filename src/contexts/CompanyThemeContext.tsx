@@ -70,7 +70,7 @@ export function CompanyThemeProvider({ children }: { children: ReactNode }) {
     queryFn: async () => {
       const { data } = await supabase
         .from("companies")
-        .select("*, subscriptions(plan_id, plans(allows_whitelabel, allows_custom_domain))")
+        .select("*, subscriptions!companies_subscription_id_fkey(plan_id, plans(allows_whitelabel, allows_custom_domain))")
         .eq("id", companyId!)
         .single();
       return data;
