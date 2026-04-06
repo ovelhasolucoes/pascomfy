@@ -37,7 +37,10 @@ const EventDetailPage = () => {
 
   const { teams, loading: teamsLoading, createTeam, deleteTeam } = useEventTeams(id);
   const { addMember, updateMember, removeMember } = useEventMembers(id);
+  const { addChecklistFromTemplate, addAdHocChecklist, deleteChecklist } = useEventChecklistManage(id);
   useRealtimeChecklist(id);
+
+  const [addChecklistOpen, setAddChecklistOpen] = useState(false);
 
   const scaledUserIds = teams.flatMap((t) =>
     t.event_team_members?.map((m: any) => m.user_id) ?? []
