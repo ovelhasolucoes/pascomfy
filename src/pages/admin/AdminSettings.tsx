@@ -1,12 +1,13 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, MessageSquare, FileText, Calendar, Palette, Globe } from "lucide-react";
+import { Building2, MessageSquare, FileText, Calendar, Palette, Globe, Trophy } from "lucide-react";
 import { CompanySettings } from "@/components/admin/CompanySettings";
 import { WhatsAppConfig } from "@/components/notifications/WhatsAppConfig";
 import { NotificationTemplates } from "@/components/admin/NotificationTemplates";
 import { EventSettingsContent } from "@/components/admin/EventSettingsContent";
 import { WhiteLabelSettings } from "@/components/admin/WhiteLabelSettings";
 import { CustomDomainSettings } from "@/components/admin/CustomDomainSettings";
+import { GamificationSettings } from "@/components/admin/GamificationSettings";
 import { useCompanyTheme } from "@/contexts/CompanyThemeContext";
 
 const AdminSettings = () => {
@@ -29,6 +30,10 @@ const AdminSettings = () => {
             <TabsTrigger value="events" className="flex items-center gap-1.5">
               <Calendar className="h-3.5 w-3.5" />
               Eventos
+            </TabsTrigger>
+            <TabsTrigger value="gamification" className="flex items-center gap-1.5">
+              <Trophy className="h-3.5 w-3.5" />
+              Gamificação
             </TabsTrigger>
             {isWhitelabel && (
               <TabsTrigger value="whitelabel" className="flex items-center gap-1.5">
@@ -56,6 +61,10 @@ const AdminSettings = () => {
 
           <TabsContent value="events">
             <EventSettingsContent />
+          </TabsContent>
+
+          <TabsContent value="gamification">
+            <GamificationSettings />
           </TabsContent>
 
           {isWhitelabel && (
