@@ -141,6 +141,37 @@ export function PostCard({ post, onPublish, onDelete, isPublishing, metrics, onR
           </DropdownMenu>
         </div>
 
+        {/* Engagement metrics for published posts */}
+        {post.status === "publicado" && (
+          <div className="flex items-center justify-between pt-1 border-t">
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Heart className="h-3 w-3 text-red-500" />
+                {metrics?.likes ?? "—"}
+              </span>
+              <span className="flex items-center gap-1">
+                <MessageCircle className="h-3 w-3 text-blue-500" />
+                {metrics?.comments ?? "—"}
+              </span>
+              <span className="flex items-center gap-1">
+                <Share2 className="h-3 w-3 text-emerald-500" />
+                {metrics?.shares ?? "—"}
+              </span>
+            </div>
+            {onRefreshMetrics && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => onRefreshMetrics(post.id)}
+                disabled={isRefreshing}
+              >
+                <RefreshCw className={`h-3 w-3 ${isRefreshing ? "animate-spin" : ""}`} />
+              </Button>
+            )}
+          </div>
+        )}
+
         {post.error_message && (
           <p className="text-xs text-destructive bg-destructive/10 p-2 rounded">{post.error_message}</p>
         )}
