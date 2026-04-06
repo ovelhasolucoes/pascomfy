@@ -830,6 +830,130 @@ export type Database = {
           },
         ]
       }
+      notification_logs: {
+        Row: {
+          channel: Database["public"]["Enums"]["notification_channel"]
+          created_at: string
+          gateway_response: string | null
+          id: string
+          notification_id: string
+          status: Database["public"]["Enums"]["notification_send_status"]
+        }
+        Insert: {
+          channel: Database["public"]["Enums"]["notification_channel"]
+          created_at?: string
+          gateway_response?: string | null
+          id?: string
+          notification_id: string
+          status?: Database["public"]["Enums"]["notification_send_status"]
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["notification_channel"]
+          created_at?: string
+          gateway_response?: string | null
+          id?: string
+          notification_id?: string
+          status?: Database["public"]["Enums"]["notification_send_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_logs_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_templates: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          id: string
+          message_template: string
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          message_template: string
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          message_template?: string
+          title?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_templates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          message: string
+          metadata: Json
+          read: boolean
+          sent_at: string
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          message: string
+          metadata?: Json
+          read?: boolean
+          sent_at?: string
+          title: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          metadata?: Json
+          read?: boolean
+          sent_at?: string
+          title?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permissions: {
         Row: {
           created_at: string
@@ -945,6 +1069,38 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_subscriptions: {
+        Row: {
+          created_at: string
+          endpoint: string
+          id: string
+          keys: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          id?: string
+          keys?: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          id?: string
+          keys?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1151,6 +1307,51 @@ export type Database = {
           },
         ]
       }
+      user_notification_settings: {
+        Row: {
+          company_id: string
+          created_at: string
+          email_enabled: boolean
+          id: string
+          push_enabled: boolean
+          user_id: string
+          whatsapp_enabled: boolean
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          email_enabled?: boolean
+          id?: string
+          push_enabled?: boolean
+          user_id: string
+          whatsapp_enabled?: boolean
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          email_enabled?: boolean
+          id?: string
+          push_enabled?: boolean
+          user_id?: string
+          whatsapp_enabled?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_notification_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_notification_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_permissions: {
         Row: {
           allowed: boolean
@@ -1214,6 +1415,41 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_configs: {
+        Row: {
+          active: boolean
+          company_id: string
+          config_json: Json
+          created_at: string
+          id: string
+          provider: Database["public"]["Enums"]["whatsapp_provider"]
+        }
+        Insert: {
+          active?: boolean
+          company_id: string
+          config_json?: Json
+          created_at?: string
+          id?: string
+          provider?: Database["public"]["Enums"]["whatsapp_provider"]
+        }
+        Update: {
+          active?: boolean
+          company_id?: string
+          config_json?: Json
+          created_at?: string
+          id?: string
+          provider?: Database["public"]["Enums"]["whatsapp_provider"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_configs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1242,11 +1478,15 @@ export type Database = {
       event_status: "ativo" | "cancelado"
       invite_status: "pendente" | "aceito" | "expirado"
       member_status: "pendente" | "confirmado" | "ausente" | "substituido"
+      notification_channel: "push" | "whatsapp" | "in_app"
+      notification_send_status: "enviado" | "erro"
+      notification_type: "escala" | "evento" | "aviso" | "sistema"
       permission_level: "basico" | "avancado"
       referral_status: "pendente" | "convertido"
       subscription_status: "ativo" | "cancelado" | "trial" | "atrasado"
       ticket_status: "aberto" | "respondido" | "fechado"
       user_status: "ativo" | "inativo" | "bloqueado"
+      whatsapp_provider: "meta" | "evo"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1381,11 +1621,15 @@ export const Constants = {
       event_status: ["ativo", "cancelado"],
       invite_status: ["pendente", "aceito", "expirado"],
       member_status: ["pendente", "confirmado", "ausente", "substituido"],
+      notification_channel: ["push", "whatsapp", "in_app"],
+      notification_send_status: ["enviado", "erro"],
+      notification_type: ["escala", "evento", "aviso", "sistema"],
       permission_level: ["basico", "avancado"],
       referral_status: ["pendente", "convertido"],
       subscription_status: ["ativo", "cancelado", "trial", "atrasado"],
       ticket_status: ["aberto", "respondido", "fechado"],
       user_status: ["ativo", "inativo", "bloqueado"],
+      whatsapp_provider: ["meta", "evo"],
     },
   },
 } as const
