@@ -15,6 +15,7 @@ const Signup = () => {
 
   const [companyName, setCompanyName] = useState("");
   const [name, setName] = useState("");
+  const [city, setCity] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [referralCode, setReferralCode] = useState(refCode);
@@ -39,6 +40,7 @@ const Signup = () => {
         options: {
           data: {
             name,
+            city: city || undefined,
             company_name: companyName,
             referral_code: referralCode || undefined,
           },
@@ -75,6 +77,10 @@ const Signup = () => {
             <div className="space-y-2">
               <Label htmlFor="name">Seu Nome *</Label>
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome completo" required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="city">Cidade</Label>
+              <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Ex: São Paulo" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">E-mail *</Label>
