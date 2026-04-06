@@ -27,6 +27,7 @@ import AdminBiolink from "./pages/admin/AdminBiolink";
 import SocialPosts from "./pages/social/SocialPosts";
 import SocialCalendar from "./pages/social/SocialCalendar";
 import SocialAccounts from "./pages/social/SocialAccounts";
+import BioPublicPage from "./pages/BioPublicPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
