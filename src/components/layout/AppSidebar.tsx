@@ -29,13 +29,13 @@ export function AppSidebar() {
   const mainItems = [
     { title: "Eventos", url: "/events", icon: Calendar },
     { title: "Minha Agenda", url: "/my-schedule", icon: CalendarDays },
-    { title: "Minha Assinatura", url: "/my-subscription", icon: CreditCard },
   ];
 
   const adminItems = [
     { title: "Usuários", url: "/admin/users", icon: Users },
     { title: "Notificações", url: "/admin/notifications", icon: Bell },
     { title: "Biolink", url: "/admin/biolink", icon: Link2 },
+    { title: "Assinatura", url: "/admin/my-subscription", icon: CreditCard },
     { title: "Configurações", url: "/admin/settings", icon: Settings },
   ];
 

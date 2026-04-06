@@ -56,7 +56,7 @@ const App = () => (
             <Route path="/events/:id/live" element={<ProtectedRoute><EventLivePage /></ProtectedRoute>} />
             <Route path="/my-schedule" element={<ProtectedRoute><MySchedulePage /></ProtectedRoute>} />
             <Route path="/checkout/:planId" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
-            <Route path="/my-subscription" element={<ProtectedRoute><MySubscriptionPage /></ProtectedRoute>} />
+            <Route path="/admin/my-subscription" element={<AdminRoute><MySubscriptionPage /></AdminRoute>} />
             <Route path="/admin/users" element={<AdminRoute><Users /></AdminRoute>} />
             <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
             <Route path="/admin/event-settings" element={<Navigate to="/admin/settings" replace />} />
