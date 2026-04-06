@@ -1,205 +1,173 @@
 
 
-# Pascomfy — Storage Abstrato com Thumbnails e Limites por Plano
+# Pascomfy — Sistema de Notificações Multi-Canal
 
 ## Resumo
 
-Criar tabela `files` com metadata, bucket Supabase Storage com RLS, Edge Function para upload híbrido (signed URL + thumbnail generation), e um StorageService abstrato no frontend com provider pattern preparado para R2.
+Criar sistema completo de notificações com suporte a In-App (realtime), Push (Web Push) e WhatsApp (Meta/Evo configurável por company). Inclui disparo automático via triggers + edge functions, disparo manual por admin, e UI completa com sino/badge no header.
 
 ## Arquitetura
 
 ```text
-┌─────────────────────────────────────────────┐
-│  Frontend                                    │
-│  FileUpload component → StorageService       │
-│                          ├─ SupabaseProvider │
-│                          └─ R2Provider (fut) │
-└──────────┬──────────────────────────────────┘
-           │ 1. Request signed URL
-           ▼
-┌──────────────────────────┐
-│  Edge Function            │
-│  generate-upload-url      │
-│  - valida company limits  │
-│  - gera signed URL        │
-│  - cria thumbnail (img)   │
-│  - insere registro files  │
-└──────────────────────────┘
+┌───────────────────────────────────────────────────┐
+│  Frontend                                          │
+│  NotificationBell (header) ← Supabase Realtime     │
+│  NotificationPanel (dropdown com lista)             │
+│  AdminNotificationSend (disparo manual)             │
+│  NotificationSettings (preferências do usuário)     │
+└──────────┬────────────────────────────────────────┘
            │
+     ┌─────┴─────┐
+     │            │
+  Triggers     Edge Functions
+  (INSERT em    (send-notification)
+  event_team    (scheduled: 24h reminder)
+  _members)
+     │            │
+     └─────┬──────┘
            ▼
 ┌──────────────────────────┐
-│  Supabase Storage         │
-│  bucket: company-files    │
-│  path: /{company_id}/...  │
+│  Edge Function:           │
+│  send-notification        │
+│  - insere notifications   │
+│  - envia push (web-push)  │
+│  - envia whatsapp         │
+│  - registra logs          │
 └──────────────────────────┘
 ```
 
 ## 1. Migração SQL
 
-### Tabela `files`
+### Tabelas
 
-```sql
-CREATE TABLE public.files (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id uuid NOT NULL,
-  name text NOT NULL,
-  path text NOT NULL,
-  provider text NOT NULL DEFAULT 'supabase',
-  file_type text NOT NULL DEFAULT 'documento',
-  size_bytes bigint NOT NULL DEFAULT 0,
-  mime_type text NOT NULL,
-  thumbnail_path text,
-  uploaded_by uuid NOT NULL,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-```
+**notifications** — notificações in-app
+- `id`, `company_id`, `user_id`, `title`, `message`, `type` (escala/evento/aviso/sistema), `read` (boolean), `sent_at`, `created_at`, `metadata` (jsonb — event_id, etc.)
 
-- `provider`: 'supabase' | 'r2' (text, sem enum para flexibilidade)
-- `file_type`: 'imagem' | 'video' | 'documento'
-- `thumbnail_path`: path da thumbnail gerada (null se não aplicável)
+**notification_logs** — log de envio por canal
+- `id`, `notification_id`, `channel` (push/whatsapp/in_app), `status` (enviado/erro), `gateway_response` (text), `created_at`
+
+**user_notification_settings** — preferências por usuário
+- `id`, `user_id`, `company_id`, `push_enabled` (default true), `whatsapp_enabled` (default false), `email_enabled` (default false), `created_at`
+
+**push_subscriptions** — tokens de dispositivo Web Push
+- `id`, `user_id`, `endpoint` (text unique), `keys` (jsonb — p256dh, auth), `created_at`
+
+**whatsapp_configs** — config WhatsApp por company
+- `id`, `company_id`, `provider` (meta/evo), `config_json` (jsonb — token, phone_id, base_url), `active` (boolean), `created_at`
+
+**notification_templates** — templates reutilizáveis
+- `id`, `company_id` (nullable para globais), `type`, `title`, `message_template`, `created_at`
 
 ### Índices
-- `company_id`
-- `uploaded_by`
-- `(company_id, file_type)` para filtrar por tipo
+- `notifications(user_id, read)` — listar não-lidas
+- `notifications(company_id, type)`
+- `notification_logs(notification_id)`
+- `push_subscriptions(user_id)`
+- `whatsapp_configs(company_id, active)`
 
 ### RLS
-- Members SELECT own company files
-- User INSERT own files (uploaded_by = auth.uid())
-- User DELETE own files
-- Admin DELETE company files
-- Super admin ALL
+- **notifications**: user vê as suas; admin insere na company; super_admin ALL
+- **notification_logs**: mesmo que notifications (via join)
+- **user_notification_settings**: user gerencia as suas; admin vê da company
+- **push_subscriptions**: user gerencia as suas
+- **whatsapp_configs**: admin gerencia da company; super_admin ALL
+- **notification_templates**: admin gerencia da company; super_admin ALL
 
-### Storage Bucket
+### Trigger automático
+- `AFTER INSERT ON event_team_members` → chama `pg_net.http_post` para edge function `send-notification` com payload `{ type: 'escala', userId, eventId }`
+- Mesmo padrão para `AFTER UPDATE ON events` (status changed)
 
-```sql
-INSERT INTO storage.buckets (id, name, public, file_size_limit)
-VALUES ('company-files', 'company-files', false, 104857600);
-```
+## 2. Edge Function: `send-notification`
 
-- Bucket privado (URLs assinadas)
-- Limite padrão 100MB (controle real via Edge Function baseado no plano)
-- RLS no `storage.objects`: isolamento por company_id no path
+Responsabilidades:
+1. Recebe `{ type, userId, companyId, title, message, metadata }`
+2. Insere na tabela `notifications` (in-app)
+3. Consulta `user_notification_settings` do destinatário
+4. Se `push_enabled`: busca `push_subscriptions`, envia via web-push
+5. Se `whatsapp_enabled`: busca `whatsapp_configs` da company, envia via provider ativo (Meta ou Evo)
+6. Registra tudo em `notification_logs`
+7. Suporta `bulk: true` para enviar para lista de userIds
 
-## 2. Edge Function: `generate-upload-url`
+### Secrets necessários
+- `VAPID_PUBLIC_KEY` e `VAPID_PRIVATE_KEY` (para Web Push)
+- WhatsApp: config_json na tabela, sem secrets globais
 
-### Responsabilidades
-1. Valida JWT do usuário
-2. Consulta `get_company_limits()` para verificar storage disponível
-3. Valida tipo e tamanho do arquivo contra o plano
-4. Gera signed upload URL via Supabase Storage API
-5. Insere registro na tabela `files`
-6. Retorna signed URL + file ID
+## 3. Edge Function: `schedule-reminders`
 
-### Endpoint
-- POST: `{ fileName, mimeType, sizeBytes, companyId, fileType }`
-- Response: `{ fileId, signedUrl, path }`
+- Chamada via pg_cron a cada hora
+- Busca eventos nas próximas 24h com membros escalados
+- Envia notificação de lembrete para cada membro
+- Evita duplicidade com campo `metadata.reminder_sent`
 
-## 3. Edge Function: `process-upload` (webhook/trigger)
+## 4. Frontend — Componentes
 
-### Para thumbnails
-- Recebe notificação após upload completo
-- Se imagem: redimensiona para 200x200 usando sharp/canvas
-- Salva thumbnail em `/{company_id}/thumbnails/...`
-- Atualiza `files.thumbnail_path`
+### NotificationBell (no AppLayout header)
+- Ícone de sino com badge de contagem de não-lidas
+- Realtime subscription em `notifications` filtrado por `user_id`
+- Click abre dropdown/panel
 
-**Nota**: Thumbnails serão gerados via Edge Function invocada após o upload, não inline. Simplifica o fluxo e não bloqueia o upload.
+### NotificationPanel
+- Lista de notificações com scroll
+- Cada item: título, mensagem, tempo relativo, badge de tipo
+- Click marca como lida
+- Botão "marcar todas como lidas"
 
-## 4. StorageService (Frontend)
+### NotificationSettings (página ou dialog)
+- Toggles: push_enabled, whatsapp_enabled
+- Registro de Push Subscription (botão "Ativar notificações push")
 
-### Interface
+### AdminNotificationSend (página admin)
+- Formulário: título, mensagem, tipo
+- Destinatários: todos da company, equipe específica, usuários selecionados
+- Preview antes de enviar
 
-```typescript
-// src/services/storage/types.ts
-interface StorageProvider {
-  getUploadUrl(params: UploadParams): Promise<UploadUrlResult>;
-  getFileUrl(path: string): Promise<string>;
-  deleteFile(fileId: string): Promise<void>;
-}
+### WhatsAppConfig (página admin)
+- Formulário: provider (meta/evo), config_json fields, toggle ativo
+- Apenas 1 config ativa por company
 
-interface UploadParams {
-  fileName: string;
-  mimeType: string;
-  sizeBytes: number;
-  companyId: string;
-  fileType: 'imagem' | 'video' | 'documento';
-}
-```
+## 5. Web Push — Service Worker
 
-### Providers
+Seguindo as regras de PWA:
+- **Sem service worker no preview** — guard contra iframe e hosts lovable
+- `navigateFallbackDenylist: [/^\/~oauth/]`
+- Registro condicional apenas em produção
+- Edge function usa biblioteca `web-push` (Deno) para enviar
 
-```text
-src/services/storage/
-  types.ts              — interfaces
-  StorageService.ts     — factory que escolhe provider
-  providers/
-    supabase.ts         — SupabaseStorageProvider
-    r2.ts               — R2StorageProvider (stub)
-```
+### Fluxo de registro
+1. Usuário clica "Ativar Push" nas configurações
+2. Frontend pede permissão do browser
+3. `PushManager.subscribe()` com VAPID public key
+4. Salva subscription em `push_subscriptions`
 
-### Factory
+## 6. Hooks
 
-```typescript
-// StorageService.ts
-const provider = import.meta.env.VITE_STORAGE_PROVIDER || 'supabase';
+- `useNotifications()` — lista com realtime, marcar lida, contagem
+- `useNotificationSettings()` — CRUD preferências do usuário
+- `usePushSubscription()` — registro/remoção de push
+- `useAdminNotifications()` — envio manual (admin)
 
-export const storageService: StorageProvider =
-  provider === 'r2'
-    ? new R2StorageProvider()
-    : new SupabaseStorageProvider();
-```
+## 7. Rotas novas
 
-### SupabaseStorageProvider
-- `getUploadUrl()`: chama Edge Function `generate-upload-url`, faz upload direto via fetch para signed URL
-- `getFileUrl()`: gera URL assinada via `supabase.storage.createSignedUrl()`
-- `deleteFile()`: remove do storage + deleta registro `files`
-
-### R2StorageProvider (stub)
-- Métodos retornam `throw new Error('R2 not implemented yet')`
-- Estrutura pronta para implementar com S3-compatible SDK
-
-## 5. Componente FileUpload
-
-```text
-src/components/storage/
-  FileUpload.tsx        — drag-and-drop + click upload
-  FilePreview.tsx       — preview com thumbnail
-```
-
-### FileUpload.tsx
-- Aceita `companyId`, `fileType`, `onUploadComplete` como props
-- Drag-and-drop zone com feedback visual
-- Progress bar durante upload
-- Validação client-side de tipo e tamanho antes de enviar
-- Mobile-first: botões grandes (min 44px)
-- Usa `storageService.getUploadUrl()` + fetch PUT para signed URL
-
-### Hook: `useFileUpload`
-- Estado: uploading, progress, error
-- Lógica de upload com retry
-- Invalidação de cache React Query após sucesso
-
-## 6. Variáveis de Ambiente
-
-Adicionar ao `.env`:
-```
-VITE_STORAGE_PROVIDER=supabase
-```
-
-## Segurança
-
-- Bucket privado: sem acesso público, sempre via signed URLs
-- RLS na tabela `files`: isolamento por company_id
-- RLS no `storage.objects`: path deve conter company_id do usuário
-- Edge Function valida limites do plano antes de permitir upload
-- Signed URLs com expiração curta (1h upload, 1h download)
+- Nenhuma rota nova necessária — NotificationBell fica no header global
+- Admin: adicionar aba "Notificações" nas configurações existentes ou nova rota `/admin/notifications`
 
 ## Ordem de Execução
 
-1. Migração SQL (tabela files + bucket + RLS)
-2. Edge Function `generate-upload-url`
-3. StorageService + providers (frontend)
-4. Hook `useFileUpload`
-5. Componente FileUpload
-6. Atualizar memória do projeto
+1. Migração SQL (6 tabelas + índices + RLS + trigger)
+2. Edge Function `send-notification`
+3. Hook `useNotifications` + componentes NotificationBell/Panel
+4. Hook `useNotificationSettings` + UI de preferências
+5. Web Push (service worker + registro + VAPID keys)
+6. Admin: envio manual + config WhatsApp
+7. Edge Function `schedule-reminders` + pg_cron
+8. Atualizar memória do projeto
+
+## Detalhes Técnicos
+
+- Realtime via `supabase.channel('notifications').on('postgres_changes', ...)` filtrado por user_id
+- Web Push: VAPID keys geradas e armazenadas como secrets no Supabase
+- WhatsApp Meta: POST para `graph.facebook.com/v18.0/{phone_id}/messages`
+- WhatsApp Evo: POST para `{base_url}/message/sendText/{instance}`
+- pg_cron para lembretes de 24h (INSERT via supabase--read_query, não migração)
+- Trigger usa `pg_net` extension para HTTP POST assíncrono à edge function
 
