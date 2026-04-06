@@ -1,114 +1,124 @@
 
 
-# Pascomfy — Evolução do Sistema de Usuários e Permissões
+# Pascomfy — Sistema de Eventos e Escalas
 
 ## Resumo
 
-Expansão do banco de dados com novos campos em profiles, sistema híbrido de permissões (role + granular), convites, logs de atividade, e UI de gestão de usuários para admins. Dividido em 3 migrações e ajustes no frontend.
+Criação do núcleo operacional do sistema: eventos, equipes, escalas e funções individuais. Inclui tabela dinâmica de tipos de evento, templates reutilizáveis de equipe e visibilidade híbrida (calendário geral + agenda pessoal).
 
-## Migração 1: Esquema expandido
+## Estrutura de Tabelas
 
-### ALTER profiles — novos campos
-- `phone` text nullable
-- `avatar_url` text nullable
-- `status` enum `user_status` (ativo, inativo, bloqueado) default 'ativo'
-- `last_access_at` timestamptz nullable
-- `created_by` uuid nullable (ref auth.users)
-- `permission_level` enum `permission_level` (basico, avancado) default 'basico'
-- `reliability_score` float default 0
-- `availability` jsonb default '{}'
-- `settings` jsonb default '{}'
+### `event_types` — Tipos dinâmicos por company
+- `id` uuid PK, `company_id` FK→companies, `name` text, `color` text nullable, `icon` text nullable, `created_at`
+- unique(company_id, name)
+- RLS: SELECT para membros da company; INSERT/UPDATE/DELETE para admin da company; ALL para super_admin
 
-### Tabela `permissions`
-- `id` uuid PK, `name` text unique, `description` text, `created_at`
-- RLS: authenticated SELECT; super_admin ALL
+### `team_templates` — Templates de equipe reutilizáveis
+- `id` uuid PK, `company_id` FK→companies, `name` text, `description` text nullable, `color` text nullable, `display_order` int default 0, `created_at`
+- unique(company_id, name)
+- RLS: SELECT para membros da company; INSERT/UPDATE/DELETE para admin; ALL para super_admin
 
-### Tabela `role_permissions`
-- `id` uuid PK, `role` app_role, `permission_id` FK→permissions, unique(role, permission_id)
-- RLS: authenticated SELECT; super_admin ALL
+### `events` — Eventos
+- `id` uuid PK, `company_id` FK→companies, `title` text, `description` text nullable, `event_type_id` FK→event_types nullable, `start_date` timestamptz, `end_date` timestamptz nullable, `location` text nullable, `status` enum `event_status` (ativo, cancelado) default 'ativo', `created_by` uuid FK→auth.users, `created_at`
+- Indexes: (company_id, start_date), (company_id, status)
+- RLS: SELECT para membros ativos da company; INSERT/UPDATE/DELETE com permissão `criar_evento`; ALL para super_admin
 
-### Tabela `user_permissions`
-- `id` uuid PK, `user_id` FK→auth.users, `permission_id` FK→permissions, `allowed` boolean default true, `company_id` uuid FK→companies
-- unique(user_id, permission_id)
-- RLS: isolamento por company_id + super_admin
+### `event_teams` — Equipes do evento
+- `id` uuid PK, `company_id` FK→companies, `event_id` FK→events ON DELETE CASCADE, `template_id` FK→team_templates nullable, `name` text, `description` text nullable, `color` text nullable, `display_order` int default 0, `created_at`
+- Index: (event_id)
+- RLS: SELECT para membros da company; INSERT/UPDATE/DELETE com permissão `editar_escala`; ALL para super_admin
 
-### Tabela `invites`
-- `id` uuid PK, `email` text, `company_id` FK→companies, `role` app_role default 'colaborador', `token` uuid unique default gen_random_uuid(), `status` enum `invite_status` (pendente, aceito, expirado) default 'pendente', `created_by` FK→auth.users, `expires_at` timestamptz, `created_at`
-- RLS: admin da company ou super_admin
+### `event_team_members` — Escala (membros + funções)
+- `id` uuid PK, `company_id` FK→companies, `event_team_id` FK→event_teams ON DELETE CASCADE, `user_id` FK→profiles(id), `status` enum `member_status` (pendente, confirmado, ausente, substituido) default 'pendente', `role_name` text nullable (nome da função: "foto do altar"), `role_description` text nullable, `confirmed_at` timestamptz nullable, `created_at`
+- unique(event_team_id, user_id)
+- Indexes: (user_id, company_id), (event_team_id)
+- RLS: SELECT para membros da company; UPDATE próprio registro (para confirmar presença); INSERT/DELETE com permissão `editar_escala`; ALL para super_admin
 
-### Tabela `activity_logs`
-- `id` uuid PK, `user_id` FK→auth.users, `company_id` FK→companies, `action` text, `entity` text, `entity_id` uuid nullable, `metadata` jsonb default '{}', `created_at`
-- RLS: admin da company (SELECT) + super_admin (ALL)
-- Index em (company_id, created_at)
+## Enums
+- `event_status`: ativo, cancelado
+- `member_status`: pendente, confirmado, ausente, substituido
 
-## Migração 2: Funções e RLS avançado
+## Migração SQL (uma única migração)
+Criação de enums, tabelas, índices, foreign keys e RLS policies. Seed de event_types padrão (missa, procissão, reunião, celebração, retiro) e team_templates padrão (Foto, Vídeo, Stories, Transmissão, Som) — via insert tool após a migração.
 
-### Função `check_user_permission(user_id, permission_name)`
-- SECURITY DEFINER
-- Lógica: super_admin → true; verifica override em user_permissions; fallback para role_permissions
-- Retorna boolean
+## Policies RLS — Resumo
 
-### Função `is_active_user(user_id)`
-- SECURITY DEFINER
-- Retorna true se profiles.status = 'ativo'
+```text
+event_types / team_templates:
+  SELECT  → is_active_user + company_id match
+  ALL     → admin da company OU super_admin
 
-### Atualização de RLS em todas as tabelas
-- Adicionar verificação `is_active_user(auth.uid())` nas policies existentes de companies, profiles, user_roles
-- Bloquear usuários inativos/bloqueados automaticamente
+events:
+  SELECT  → is_active_user + company_id match (visão geral)
+  INSERT  → check_user_permission('criar_evento')
+  UPDATE  → check_user_permission('criar_evento') + company_id match
+  DELETE  → admin da company OU super_admin
 
-### Atualizar trigger `handle_new_user`
-- Verificar se existe convite para o email → usar company_id e role do convite
-- Marcar convite como 'aceito'
-- Fallback: usar metadata como hoje
+event_teams:
+  SELECT  → is_active_user + company_id match
+  INSERT/UPDATE/DELETE → check_user_permission('editar_escala') + company_id match
 
-## Frontend — Páginas e componentes
+event_team_members:
+  SELECT  → is_active_user + company_id match
+  UPDATE  → user_id = auth.uid() (auto-confirmação) OU check_user_permission('editar_escala')
+  INSERT/DELETE → check_user_permission('editar_escala') + company_id match
+```
 
-### Hook `usePermissions`
-- Busca roles e permissões do usuário logado
-- Expõe `hasPermission(name)`, `hasRole(role)`, `isAdmin`, `isSuperAdmin`
+## Queries Preparadas (exemplos no frontend)
 
-### Página de Gestão de Usuários (`/admin/users`)
-- Lista usuários da company (profiles + roles)
-- Ações: ativar/desativar, alterar role, editar permissões
-- Criar convite (email + role)
-- Protegida por role admin
+1. **Agenda pessoal** — eventos onde o usuário está escalado:
+```sql
+SELECT e.* FROM events e
+JOIN event_teams et ON et.event_id = e.id
+JOIN event_team_members etm ON etm.event_team_id = et.id
+WHERE etm.user_id = auth.uid()
+AND e.start_date >= now()
+ORDER BY e.start_date;
+```
 
-### Página de Aceitar Convite (`/invite/:token`)
-- Valida token, mostra info da company
-- Formulário de signup vinculado ao convite
+2. **Calendário da company** — todos os eventos ativos:
+```sql
+SELECT * FROM events
+WHERE status = 'ativo' AND start_date >= now()
+ORDER BY start_date;
+```
 
-### Atualizar AuthContext
-- Incluir profile, role e permissões no contexto
-- Atualizar `last_access_at` no login
+3. **Escala de um evento** — equipes + membros + funções:
+```sql
+SELECT et.name as team, p.name as member, etm.role_name, etm.status
+FROM event_teams et
+JOIN event_team_members etm ON etm.event_team_id = et.id
+JOIN profiles p ON p.id = etm.user_id
+WHERE et.event_id = :event_id
+ORDER BY et.display_order, p.name;
+```
 
-### Seed de permissões iniciais
-- Inserir permissões padrão: `criar_evento`, `editar_escala`, `aprovar_video`, `gerenciar_usuarios`, `ver_relatorios`, `editar_company`
-- Vincular permissões às roles via role_permissions
+## Frontend (páginas a criar)
+
+Nesta fase, foco apenas na migração e seed. Páginas de UI serão implementadas em uma fase seguinte:
+- Calendário de eventos
+- Criação/edição de evento com seleção de equipes via templates
+- Tela de escala com drag-and-drop de membros
+- Agenda pessoal do usuário com confirmação de presença
+
+## Ordem de Execução
+
+1. Migração SQL (enums, tabelas, índices, RLS)
+2. Seed de event_types e team_templates padrão via insert tool
+3. Atualizar memória do projeto
 
 ## Detalhes Técnicos
 
 ```text
-Fluxo de permissão:
-  Request → is_active_user? → has_role(super_admin)? → bypass
-                                    ↓ não
-                            user_permissions override?
-                                    ↓ não encontrado
-                            role_permissions default
-```
+Fluxo de criação de evento:
+  Admin → Cria evento (tipo, data, local)
+       → Seleciona templates de equipe → copia para event_teams
+       → Escala membros em cada equipe com função específica
+       → Membros recebem status "pendente"
+       → Membros confirmam presença → status "confirmado" + confirmed_at
 
-Estrutura do availability JSON:
-```json
-{
-  "segunda": ["manha", "noite"],
-  "quarta": ["noite"],
-  "domingo": ["manha", "tarde"]
-}
+Visibilidade híbrida:
+  Calendário geral: todos os eventos da company (SELECT via RLS company_id)
+  Agenda pessoal: filtro no frontend via JOIN com event_team_members.user_id
 ```
-
-### Ordem de execução
-1. Migração SQL (enums, tabelas, funções, RLS, trigger atualizado)
-2. Seed de permissões via insert tool
-3. Hook `usePermissions` + atualização do AuthContext
-4. Páginas admin e convite
-5. Atualizar memória do projeto
 
