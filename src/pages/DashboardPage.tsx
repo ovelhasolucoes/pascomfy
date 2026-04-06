@@ -120,12 +120,12 @@ const DashboardPage = () => {
                       const event = item.event_teams?.events;
                       if (!event) return null;
                       return (
-                        <div key={item.id} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/50 transition-colors">
+                        <div key={item.id} className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-muted/50 transition-colors">
                           {event.event_types?.color && (
-                            <div className="w-1 h-10 rounded-full shrink-0" style={{ backgroundColor: event.event_types.color }} />
+                            <div className="w-1 h-10 rounded-full shrink-0 mt-0.5" style={{ backgroundColor: event.event_types.color }} />
                           )}
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">{event.title}</p>
+                            <p className="text-sm font-medium text-foreground break-words line-clamp-2">{event.title}</p>
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                               <Clock className="h-3 w-3" />
                               {format(new Date(event.start_date), "dd/MM · HH:mm", { locale: ptBR })}
