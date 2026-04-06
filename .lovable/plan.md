@@ -1,138 +1,138 @@
 
 
-# Pascomfy — Sistema de Billing & Assinaturas com Asaas
+# Pascomfy — Sistema de Afiliados Completo
 
 ## Resumo
 
-Sistema completo de billing SaaS: tabela `payments`, edge functions para integração real com Asaas (criar cliente, cobrança, webhook), trial híbrido com alertas + automação, bloqueio configurável por company, e UI no super admin.
+Reestruturar as tabelas de afiliados existentes, criar tela de signup público com código de indicação, painel do admin para ver/compartilhar seu código, recompensas configuráveis, e conversão automática no webhook de pagamento.
 
 ## Arquitetura
 
 ```text
-┌─────────────────────────────────────────────────┐
-│  Super Admin UI                                 │
-│  /superadmin/subscriptions (expandida)          │
-│  /superadmin/companies (bloqueio config)        │
-└────────────┬────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│  Signup Público (/signup?ref=CODIGO)         │
+│  Cria company + profile + vincula referral   │
+└────────────┬─────────────────────────────────┘
              │
-┌────────────▼────────────────────────────────────┐
-│  Supabase DB                                    │
-│  payments (novo) + subscriptions (expandir)     │
-│  companies.block_mode (novo campo)              │
-└────────────┬──────────────┬─────────────────────┘
+┌────────────▼─────────────────────────────────┐
+│  DB: affiliate_program, affiliate_referrals, │
+│      affiliate_rewards                       │
+└────────────┬──────────────┬──────────────────┘
              │              │
-┌────────────▼──────┐  ┌────▼────────────────────┐
-│  Edge: asaas-     │  │  Edge: asaas-webhook    │
-│  billing          │  │  POST (público)         │
-│  (criar cliente,  │  │  Valida token, atualiza │
-│  gerar cobrança)  │  │  payment + subscription │
-└───────────────────┘  └─────────────────────────┘
-                       ┌─────────────────────────┐
-                       │  Edge: check-trials     │
-                       │  CRON (diário)           │
-                       │  Alerta + muda status   │
-                       └─────────────────────────┘
+┌────────────▼──────┐  ┌────▼─────────────────┐
+│  Webhook (Asaas/  │  │  Admin: /admin/      │
+│  MercadoPago)     │  │  referrals           │
+│  Converte + aplica│  │  Ver código, indicar │
+│  recompensa       │  └──────────────────────┘
+└───────────────────┘
 ```
 
 ## Etapa 1 — Migração SQL
 
-**Nova tabela `payments`:**
-- `id`, `company_id`, `subscription_id`, `amount` (numeric), `status` (enum: `pago`, `pendente`, `falhou`, `estornado`), `gateway` (text), `external_id` (text), `paid_at` (timestamptz nullable), `created_at`
+**Reestruturar `affiliate_program`** (já existe, ajustar):
+- Renomear `commission_pct` para `reward_type` (enum: `dias_gratis`, `desconto`, `upgrade`)
+- Adicionar `reward_value` (numeric, default 30 — ex: 30 dias ou 10% desconto)
+- Manter: `id`, `company_id`, `code` (unique), `active`, `created_at`
 
-**Expandir `subscriptions`:**
-- Adicionar `trial_until` (timestamptz nullable)
-- Adicionar `asaas_customer_id` (text nullable)
-- Adicionar `asaas_subscription_id` (text nullable)
+**Reestruturar `affiliate_referrals`** (já existe, ajustar):
+- Renomear `affiliate_id` → manter como FK para `affiliate_program.id`
+- Manter: `referred_company_id`, `status` (pendente/convertido/cancelado), `created_at`
 
-**Expandir `companies`:**
-- Adicionar `block_mode` (text, default `'soft'`, valores: `'soft'`, `'hard'`, `'none'`)
+**Nova tabela `affiliate_rewards`:**
+- `id`, `affiliate_company_id`, `referral_id` (FK affiliate_referrals), `reward_type` (enum), `reward_value` (numeric), `applied` (boolean, default false), `applied_at` (timestamptz nullable), `created_at`
 
-**RLS para `payments`:**
-- Super admin: ALL
-- Company admin: SELECT onde `company_id = get_user_company_id(auth.uid())`
-- Service role: INSERT/UPDATE (webhooks)
+**RLS:**
+- `affiliate_rewards`: Company admin SELECT own (via company_id match), super_admin ALL, service_role ALL
+- Ajustar políticas existentes de `affiliate_program` e `affiliate_referrals`
 
-**Enum:** `payment_status` (`pago`, `pendente`, `falhou`, `estornado`)
+**Validações:**
+- Trigger ou constraint: impedir auto-indicação (affiliate company_id != referred_company_id)
+- Unique constraint em `affiliate_referrals(referred_company_id)` — cada company só pode ser indicada uma vez
 
-## Etapa 2 — Edge Function `asaas-billing`
+**Índices:**
+- `affiliate_referrals(status)`
+- `affiliate_rewards(affiliate_company_id, applied)`
 
-**Arquivo:** `supabase/functions/asaas-billing/index.ts`
+## Etapa 2 — Tela de Signup Público
 
-Endpoints (via body action):
-1. **`create_customer`** — Cria cliente no Asaas com dados da company (name, email do admin). Salva `asaas_customer_id` na subscription.
-2. **`create_charge`** — Gera cobrança (boleto/PIX) no Asaas para a subscription. Insere registro em `payments` com status `pendente`.
-3. **`create_subscription`** — Cria assinatura recorrente no Asaas (boleto ou PIX). Salva `asaas_subscription_id`.
+**Nova página:** `src/pages/Signup.tsx` — rota `/signup`
 
-Requer secret: `ASAAS_API_KEY` (sandbox ou produção).
-Autenticação: valida JWT, verifica `super_admin` role.
+- Campos: nome da company, nome do admin, email, senha
+- Campo opcional "Código de indicação" (pré-preenchido se `?ref=CODIGO` na URL)
+- Ao submeter:
+  1. `supabase.auth.signUp()` com metadata `{ name, company_name, referral_code }`
+  2. Trigger `handle_new_user` expandido para:
+     - Criar company automaticamente (se não tem invite)
+     - Criar subscription trial
+     - Se `referral_code` presente: buscar `affiliate_program` pelo code, inserir `affiliate_referrals` com status `pendente`
 
-## Etapa 3 — Edge Function `asaas-webhook`
+**Migração adicional:** Atualizar função `handle_new_user()` para tratar signup com criação de company e vinculação de referral.
 
-**Arquivo:** `supabase/functions/asaas-webhook/index.ts`
+## Etapa 3 — Painel Admin de Indicações
 
-- Endpoint público (sem JWT)
-- Valida token de webhook do Asaas via header ou query param
-- Eventos tratados:
-  - `PAYMENT_CONFIRMED` / `PAYMENT_RECEIVED` → atualiza `payments.status = 'pago'`, `subscription.status = 'ativo'`, `company.status = 'ativa'`
-  - `PAYMENT_OVERDUE` → `payments.status = 'falhou'`, `subscription.status = 'atrasado'`
-  - `PAYMENT_REFUNDED` → `payments.status = 'estornado'`
-- Requer secret: `ASAAS_WEBHOOK_TOKEN`
+**Nova página:** `src/pages/admin/AdminReferrals.tsx` — rota `/admin/referrals`
 
-## Etapa 4 — Edge Function `check-trials`
+- Mostra o código de indicação da company (ou cria automaticamente se não existe)
+- Link compartilhável: `{origin}/signup?ref=CODIGO`
+- Botão copiar link
+- Tabela com indicações: company indicada, status, data, recompensa
+- Tipo e valor da recompensa configurável (se super admin permitir)
 
-**Arquivo:** `supabase/functions/check-trials/index.ts`
+**Hook:** `src/hooks/useAffiliateProgram.ts`
+- Query do programa da company
+- Auto-criação do programa se não existe (gerar código aleatório)
+- Query de referrals + rewards
 
-- Executada via CRON (pg_cron diário)
-- Busca subscriptions com `status = 'trial'` e `trial_until < now()`
-- Ação: muda `subscription.status = 'atrasado'` e insere notificação para o admin da company
-- Não bloqueia diretamente (super admin decide) — comportamento híbrido
+**Sidebar:** Adicionar "Indicações" na seção admin com ícone `Users`
 
-## Etapa 5 — Bloqueio Configurável
+## Etapa 4 — Conversão Automática no Webhook
 
-**No `ProtectedRoute.tsx`:**
-- Verificar `company.status` e `company.block_mode`:
-  - `hard` + status `suspensa`/`cancelada` → redireciona para tela "Conta Suspensa" com link de pagamento
-  - `soft` + status `suspensa` → banner de aviso no topo, bloqueia criação de eventos/posts
-  - `none` → sem bloqueio (super admin decide não bloquear)
+**Expandir `asaas-webhook/index.ts` e `mercadopago-webhook/index.ts`:**
 
-**Nova página:** `src/pages/AccountBlocked.tsx` — tela para hard block com informações de contato/pagamento
+Quando `PAYMENT_CONFIRMED`:
+1. Checar se a `company_id` do pagamento tem uma entrada em `affiliate_referrals` com status `pendente`
+2. Se sim: atualizar para `convertido`
+3. Buscar programa do afiliado para saber `reward_type` e `reward_value`
+4. Inserir em `affiliate_rewards` com `applied = false`
+5. Aplicar recompensa:
+   - `dias_gratis`: adicionar dias ao `ends_at` da subscription do afiliado
+   - `desconto`: salvar para uso na próxima cobrança (metadata na subscription)
+   - `upgrade`: sinalizar para super admin (notificação)
+6. Marcar `applied = true`
 
-## Etapa 6 — UI Super Admin
+## Etapa 5 — Super Admin Expandido
 
-**Expandir `SuperAdminSubscriptions.tsx`:**
-- Adicionar colunas: Trial até, Gateway, Asaas ID
-- Botão "Gerar Cobrança" que chama `asaas-billing` (create_charge)
-- Botão "Criar no Asaas" para vincular company ao gateway
+**Expandir `SuperAdminAffiliates.tsx`:**
+- Mostrar reward_type e reward_value em vez de commission_pct
+- Adicionar coluna de recompensas aplicadas
+- Botão para ativar/desativar programa
+- Editar tipo e valor de recompensa
 
-**Expandir `SuperAdminCompanies.tsx` (CompanyDetailSheet):**
-- Campo para selecionar `block_mode` (soft/hard/none)
-- Seção mostrando histórico de pagamentos da company
+## Etapa 6 — Prevenção de Fraude
 
-**Nova página:** `src/pages/superadmin/SuperAdminPayments.tsx`
-- Tabela com todos payments (company, valor, status, gateway, data)
-- Filtros por status e company
-- Rota: `/superadmin/payments`
+- No signup: validar que `referral_code` não pertence à mesma company sendo criada (impossível por natureza, mas validar no trigger)
+- Unique em `referred_company_id` na tabela referrals
+- Rate limit no signup (Supabase auth já tem)
 
-**Sidebar:** Adicionar item "Pagamentos" na seção super admin com ícone `Receipt`
+## Arquivos Modificados/Criados
 
-## Etapa 7 — Hook e Queries
-
-**`src/hooks/usePayments.ts`:**
-- Query de payments por company ou global (super admin)
-- Mutation para chamar edge function `asaas-billing`
-
-**Expandir `useSubscriptions.ts`:**
-- Incluir campos novos (trial_until, asaas_customer_id)
+| Arquivo | Ação |
+|---------|------|
+| Migração SQL | Reestruturar affiliate_program, referrals, criar rewards |
+| `handle_new_user()` | Expandir para criar company + vincular referral |
+| `src/pages/Signup.tsx` | Criar (signup público) |
+| `src/pages/admin/AdminReferrals.tsx` | Criar (painel indicações) |
+| `src/hooks/useAffiliateProgram.ts` | Criar |
+| `src/App.tsx` | Adicionar rotas /signup e /admin/referrals |
+| `src/components/layout/AppSidebar.tsx` | Item "Indicações" |
+| `supabase/functions/asaas-webhook/index.ts` | Lógica de conversão |
+| `supabase/functions/mercadopago-webhook/index.ts` | Lógica de conversão |
+| `src/pages/superadmin/SuperAdminAffiliates.tsx` | Expandir com rewards |
 
 ## Segurança
 
-- Asaas API key e webhook token como secrets do Supabase (nunca no frontend)
-- Webhook valida token antes de processar
-- Dados financeiros acessíveis apenas por super admin e admin da company (via RLS)
-- Edge functions validam JWT e role antes de ações financeiras
-
-## Secrets Necessários
-
-- `ASAAS_API_KEY` — chave da API Asaas (sandbox inicialmente)
-- `ASAAS_WEBHOOK_TOKEN` — token para validar webhooks
+- RLS em todas as tabelas novas
+- Trigger valida anti-fraude (auto-indicação)
+- Webhooks usam service_role para inserir rewards
+- Admin só vê dados da própria company
 
