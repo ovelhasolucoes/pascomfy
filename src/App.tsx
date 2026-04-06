@@ -13,7 +13,7 @@ import EventDetailPage from "./pages/EventDetailPage";
 import EventLivePage from "./pages/EventLivePage";
 import MySchedulePage from "./pages/MySchedulePage";
 import Users from "./pages/admin/Users";
-import EventSettings from "./pages/admin/EventSettings";
+import AdminSettings from "./pages/admin/AdminSettings";
 import SuperAdminDashboard from "./pages/superadmin/SuperAdminDashboard";
 import SuperAdminCompanies from "./pages/superadmin/SuperAdminCompanies";
 import SuperAdminPlans from "./pages/superadmin/SuperAdminPlans";
