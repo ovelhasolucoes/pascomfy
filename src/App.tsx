@@ -32,6 +32,7 @@ const App = () => (
             <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
             <Route path="/events/new" element={<ProtectedRoute><EventCreate /></ProtectedRoute>} />
             <Route path="/events/:id" element={<ProtectedRoute><EventDetailPage /></ProtectedRoute>} />
+            <Route path="/events/:id/live" element={<ProtectedRoute><EventLivePage /></ProtectedRoute>} />
             <Route path="/my-schedule" element={<ProtectedRoute><MySchedulePage /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
             <Route path="/admin/event-settings" element={<ProtectedRoute><EventSettings /></ProtectedRoute>} />
