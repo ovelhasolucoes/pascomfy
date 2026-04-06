@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useSuperAdminCompanies } from "@/hooks/useSuperAdminStats";
 import { CompanyDetailSheet } from "@/components/superadmin/CompanyDetailSheet";
+import { CreateCompanyDialog } from "@/components/superadmin/CreateCompanyDialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,10 @@ const SuperAdminCompanies = () => {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-foreground">Companies</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-foreground">Companies</h1>
+          <CreateCompanyDialog />
+        </div>
         {isLoading ? (
           <p className="text-muted-foreground text-center py-8">Carregando...</p>
         ) : (
