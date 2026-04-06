@@ -13,7 +13,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus, Pencil } from "lucide-react";
 
-const emptyPlan = { name: "", price_monthly: 0, max_users: 10, max_storage_mb: 500, max_uploads: 100, allows_whitelabel: false, allows_custom_domain: false, description: "" };
+const emptyPlan = { name: "", price_monthly: 0, max_users: 10, max_storage_mb: 500, max_uploads: 100, allows_whitelabel: false, allows_custom_domain: false, description: "", trial_days: 14 };
 
 const SuperAdminPlans = () => {
   const { data: plans, isLoading } = useSuperAdminPlans();
