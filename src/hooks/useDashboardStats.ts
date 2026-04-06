@@ -38,7 +38,6 @@ export const useDashboardStats = () => {
     enabled: !!profile?.id,
   });
 
-  // Admin stats
   const totalUsers = useQuery({
     queryKey: ["dashboard_total_users", companyId],
     queryFn: async () => {
@@ -85,12 +84,105 @@ export const useDashboardStats = () => {
     enabled: !!companyId,
   });
 
+  // Attendance chart data — last 6 months
+  const attendanceChart = useQuery({
+    queryKey: ["dashboard_attendance_chart", companyId],
+    queryFn: async () => {
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+      sixMonthsAgo.setDate(1);
+      sixMonthsAgo.setHours(0, 0, 0, 0);
+
+      const { data, error } = await supabase
+        .from("event_attendance")
+        .select("checkin_at, status")
+        .eq("company_id", companyId!)
+        .gte("checkin_at", sixMonthsAgo.toISOString());
+      if (error) throw error;
+
+      const months: Record<string, { presente: number; ausente: number }> = {};
+      const now = new Date();
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        months[key] = { presente: 0, ausente: 0 };
+      }
+
+      (data ?? []).forEach((r) => {
+        if (!r.checkin_at) return;
+        const d = new Date(r.checkin_at);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        if (months[key]) {
+          if (r.status === "presente") months[key].presente++;
+          else months[key].ausente++;
+        }
+      });
+
+      const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+      return Object.entries(months).map(([key, val]) => ({
+        month: monthNames[parseInt(key.split("-")[1]) - 1],
+        presente: val.presente,
+        ausente: val.ausente,
+      }));
+    },
+    enabled: !!companyId,
+  });
+
+  // Top performers
+  const topPerformers = useQuery({
+    queryKey: ["dashboard_top_performers", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("event_attendance")
+        .select("user_id, profiles!event_attendance_user_id_fkey(name, avatar_url)")
+        .eq("company_id", companyId!)
+        .eq("status", "presente");
+      if (error) throw error;
+
+      const map = new Map<string, { name: string; avatar_url: string | null; count: number }>();
+      (data ?? []).forEach((r: any) => {
+        const e = map.get(r.user_id);
+        if (e) e.count++;
+        else map.set(r.user_id, { name: r.profiles?.name ?? "?", avatar_url: r.profiles?.avatar_url, count: 1 });
+      });
+
+      return Array.from(map.values()).sort((a, b) => b.count - a.count).slice(0, 5);
+    },
+    enabled: !!companyId,
+  });
+
+  // Top absences
+  const topAbsences = useQuery({
+    queryKey: ["dashboard_top_absences", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("event_team_members")
+        .select("user_id, profiles!event_team_members_user_id_fkey(name, avatar_url)")
+        .eq("company_id", companyId!)
+        .eq("status", "ausente");
+      if (error) throw error;
+
+      const map = new Map<string, { name: string; avatar_url: string | null; count: number }>();
+      (data ?? []).forEach((r: any) => {
+        const e = map.get(r.user_id);
+        if (e) e.count++;
+        else map.set(r.user_id, { name: r.profiles?.name ?? "?", avatar_url: r.profiles?.avatar_url, count: 1 });
+      });
+
+      return Array.from(map.values()).sort((a, b) => b.count - a.count).slice(0, 5);
+    },
+    enabled: !!companyId,
+  });
+
   return {
     upcomingEvents: upcomingEvents.data ?? [],
     pendingChecklists: pendingChecklists.data ?? [],
     totalUsers: totalUsers.data ?? 0,
     eventsThisMonth: eventsThisMonth.data ?? 0,
     pendingSubstitutions: pendingSubstitutions.data ?? 0,
+    attendanceChart: attendanceChart.data ?? [],
+    topPerformers: topPerformers.data ?? [],
+    topAbsences: topAbsences.data ?? [],
     loading: upcomingEvents.isLoading,
   };
 };
