@@ -395,6 +395,8 @@ export type Database = {
           block_mode: string
           created_at: string
           custom_domain: string | null
+          domain_verified: boolean
+          favicon_url: string | null
           id: string
           logo_url: string | null
           name: string
@@ -405,6 +407,7 @@ export type Database = {
           status: Database["public"]["Enums"]["company_status"]
           storage_used_mb: number
           subscription_id: string | null
+          theme: string
           trial_until: string | null
         }
         Insert: {
@@ -412,6 +415,8 @@ export type Database = {
           block_mode?: string
           created_at?: string
           custom_domain?: string | null
+          domain_verified?: boolean
+          favicon_url?: string | null
           id?: string
           logo_url?: string | null
           name: string
@@ -422,6 +427,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["company_status"]
           storage_used_mb?: number
           subscription_id?: string | null
+          theme?: string
           trial_until?: string | null
         }
         Update: {
@@ -429,6 +435,8 @@ export type Database = {
           block_mode?: string
           created_at?: string
           custom_domain?: string | null
+          domain_verified?: boolean
+          favicon_url?: string | null
           id?: string
           logo_url?: string | null
           name?: string
@@ -439,6 +447,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["company_status"]
           storage_used_mb?: number
           subscription_id?: string | null
+          theme?: string
           trial_until?: string | null
         }
         Relationships: [
