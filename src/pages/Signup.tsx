@@ -79,6 +79,10 @@ const Signup = () => {
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome completo" required />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="city">Cidade</Label>
+              <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Ex: São Paulo" />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="email">E-mail *</Label>
               <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" required />
             </div>
