@@ -20,10 +20,9 @@ export default function SocialPosts() {
   const { posts, isLoading, createPost, publishPost, deletePost } = useSocialPosts(statusFilter);
   const { accounts } = useSocialAccounts();
 
-  // Count by status for badges
-  const { data: allPosts = [] } = useSocialPosts();
+  const { posts: allPostsList } = useSocialPosts();
   const counts: Record<string, number> = {};
-  allPosts.posts?.forEach((p: any) => {
+  allPostsList.forEach((p) => {
     counts[p.status] = (counts[p.status] || 0) + 1;
   });
 
