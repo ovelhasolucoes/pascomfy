@@ -55,6 +55,83 @@ export type Database = {
           },
         ]
       }
+      affiliate_program: {
+        Row: {
+          active: boolean
+          code: string
+          commission_pct: number
+          company_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          commission_pct?: number
+          company_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          commission_pct?: number
+          company_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_program_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliate_referrals: {
+        Row: {
+          affiliate_id: string
+          created_at: string
+          id: string
+          referred_company_id: string
+          reward_applied: boolean
+          status: Database["public"]["Enums"]["referral_status"]
+        }
+        Insert: {
+          affiliate_id: string
+          created_at?: string
+          id?: string
+          referred_company_id: string
+          reward_applied?: boolean
+          status?: Database["public"]["Enums"]["referral_status"]
+        }
+        Update: {
+          affiliate_id?: string
+          created_at?: string
+          id?: string
+          referred_company_id?: string
+          reward_applied?: boolean
+          status?: Database["public"]["Enums"]["referral_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_referrals_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_program"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_referrals_referred_company_id_fkey"
+            columns: ["referred_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checklist_template_items: {
         Row: {
           company_id: string
@@ -140,31 +217,52 @@ export type Database = {
       }
       companies: {
         Row: {
+          active_users_count: number
           created_at: string
+          custom_domain: string | null
           id: string
           logo_url: string | null
           name: string
           plan_id: string | null
           primary_color: string | null
           secondary_color: string | null
+          settings: Json
+          status: Database["public"]["Enums"]["company_status"]
+          storage_used_mb: number
+          subscription_id: string | null
+          trial_until: string | null
         }
         Insert: {
+          active_users_count?: number
           created_at?: string
+          custom_domain?: string | null
           id?: string
           logo_url?: string | null
           name: string
           plan_id?: string | null
           primary_color?: string | null
           secondary_color?: string | null
+          settings?: Json
+          status?: Database["public"]["Enums"]["company_status"]
+          storage_used_mb?: number
+          subscription_id?: string | null
+          trial_until?: string | null
         }
         Update: {
+          active_users_count?: number
           created_at?: string
+          custom_domain?: string | null
           id?: string
           logo_url?: string | null
           name?: string
           plan_id?: string | null
           primary_color?: string | null
           secondary_color?: string | null
+          settings?: Json
+          status?: Database["public"]["Enums"]["company_status"]
+          storage_used_mb?: number
+          subscription_id?: string | null
+          trial_until?: string | null
         }
         Relationships: [
           {
@@ -172,6 +270,13 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companies_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
             referencedColumns: ["id"]
           },
         ]
@@ -598,6 +703,39 @@ export type Database = {
           },
         ]
       }
+      global_logs: {
+        Row: {
+          action: string
+          created_at: string
+          entity: string
+          entity_id: string | null
+          id: string
+          ip_address: string | null
+          metadata: Json
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          entity: string
+          entity_id?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          entity?: string
+          entity_id?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       invites: {
         Row: {
           company_id: string
@@ -665,25 +803,40 @@ export type Database = {
       }
       plans: {
         Row: {
+          allows_custom_domain: boolean
+          allows_whitelabel: boolean
           created_at: string
+          description: string | null
           id: string
           max_storage_mb: number
+          max_uploads: number
           max_users: number
           name: string
+          price_monthly: number
         }
         Insert: {
+          allows_custom_domain?: boolean
+          allows_whitelabel?: boolean
           created_at?: string
+          description?: string | null
           id?: string
           max_storage_mb?: number
+          max_uploads?: number
           max_users?: number
           name: string
+          price_monthly?: number
         }
         Update: {
+          allows_custom_domain?: boolean
+          allows_whitelabel?: boolean
           created_at?: string
+          description?: string | null
           id?: string
           max_storage_mb?: number
+          max_uploads?: number
           max_users?: number
           name?: string
+          price_monthly?: number
         }
         Relationships: []
       }
@@ -771,6 +924,141 @@ export type Database = {
             columns: ["permission_id"]
             isOneToOne: false
             referencedRelation: "permissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          company_id: string
+          created_at: string
+          ends_at: string | null
+          external_id: string | null
+          gateway: string | null
+          id: string
+          plan_id: string
+          started_at: string
+          status: Database["public"]["Enums"]["subscription_status"]
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          ends_at?: string | null
+          external_id?: string | null
+          gateway?: string | null
+          id?: string
+          plan_id: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          ends_at?: string | null
+          external_id?: string | null
+          gateway?: string | null
+          id?: string
+          plan_id?: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_messages: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          ticket_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          ticket_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          ticket_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          company_id: string
+          created_at: string
+          description: string
+          id: string
+          status: Database["public"]["Enums"]["ticket_status"]
+          title: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          description?: string
+          id?: string
+          status?: Database["public"]["Enums"]["ticket_status"]
+          title: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          description?: string
+          id?: string
+          status?: Database["public"]["Enums"]["ticket_status"]
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -885,6 +1173,7 @@ export type Database = {
         Args: { _permission_name: string; _user_id: string }
         Returns: boolean
       }
+      get_company_limits: { Args: { _company_id: string }; Returns: Json }
       get_user_company_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
@@ -899,10 +1188,14 @@ export type Database = {
       app_role: "colaborador" | "admin" | "super_admin"
       attendance_status: "presente" | "ausente"
       checklist_status: "pendente" | "concluido"
+      company_status: "ativa" | "suspensa" | "cancelada"
       event_status: "ativo" | "cancelado"
       invite_status: "pendente" | "aceito" | "expirado"
       member_status: "pendente" | "confirmado" | "ausente" | "substituido"
       permission_level: "basico" | "avancado"
+      referral_status: "pendente" | "convertido"
+      subscription_status: "ativo" | "cancelado" | "trial" | "atrasado"
+      ticket_status: "aberto" | "respondido" | "fechado"
       user_status: "ativo" | "inativo" | "bloqueado"
     }
     CompositeTypes: {
@@ -1034,10 +1327,14 @@ export const Constants = {
       app_role: ["colaborador", "admin", "super_admin"],
       attendance_status: ["presente", "ausente"],
       checklist_status: ["pendente", "concluido"],
+      company_status: ["ativa", "suspensa", "cancelada"],
       event_status: ["ativo", "cancelado"],
       invite_status: ["pendente", "aceito", "expirado"],
       member_status: ["pendente", "confirmado", "ausente", "substituido"],
       permission_level: ["basico", "avancado"],
+      referral_status: ["pendente", "convertido"],
+      subscription_status: ["ativo", "cancelado", "trial", "atrasado"],
+      ticket_status: ["aberto", "respondido", "fechado"],
       user_status: ["ativo", "inativo", "bloqueado"],
     },
   },
