@@ -20,7 +20,32 @@ const SuperAdminPayments = () => {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-foreground">Pagamentos</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-foreground">Pagamentos</h1>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.open("https://supabase.com/dashboard/project/cchovdurprjtefisautg/settings/functions", "_blank")}
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Configurar Chaves Asaas
+            <ExternalLink className="h-3 w-3 ml-1" />
+          </Button>
+        </div>
+
+        <Card className="border-dashed">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Configuração do Gateway</CardTitle>
+            <CardDescription>
+              Para usar a integração com o Asaas, configure os secrets no painel do Supabase:
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground space-y-1">
+            <p>• <code className="bg-muted px-1 rounded">ASAAS_API_KEY</code> — Chave da API do Asaas (sandbox ou produção)</p>
+            <p>• <code className="bg-muted px-1 rounded">ASAAS_WEBHOOK_TOKEN</code> — Token para validação dos webhooks</p>
+          </CardContent>
+        </Card>
+
         {isLoading ? (
           <p className="text-muted-foreground text-center py-8">Carregando...</p>
         ) : (
