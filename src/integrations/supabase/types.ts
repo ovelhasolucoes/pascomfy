@@ -1134,6 +1134,145 @@ export type Database = {
           },
         ]
       }
+      social_accounts: {
+        Row: {
+          access_token: string | null
+          app_id: string
+          app_secret_encrypted: string
+          company_id: string
+          created_at: string
+          id: string
+          instagram_id: string | null
+          instagram_username: string | null
+          page_id: string | null
+          page_name: string | null
+          provider: string
+          status: string
+          token_expires_at: string | null
+        }
+        Insert: {
+          access_token?: string | null
+          app_id: string
+          app_secret_encrypted: string
+          company_id: string
+          created_at?: string
+          id?: string
+          instagram_id?: string | null
+          instagram_username?: string | null
+          page_id?: string | null
+          page_name?: string | null
+          provider?: string
+          status?: string
+          token_expires_at?: string | null
+        }
+        Update: {
+          access_token?: string | null
+          app_id?: string
+          app_secret_encrypted?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          instagram_id?: string | null
+          instagram_username?: string | null
+          page_id?: string | null
+          page_name?: string | null
+          provider?: string
+          status?: string
+          token_expires_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_accounts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_posts: {
+        Row: {
+          caption: string | null
+          company_id: string
+          created_at: string
+          created_by: string
+          error_message: string | null
+          id: string
+          media_type: string | null
+          media_urls: Json
+          meta_ig_post_id: string | null
+          meta_post_id: string | null
+          platform: string
+          published_at: string | null
+          scheduled_at: string | null
+          social_account_id: string
+          status: string
+        }
+        Insert: {
+          caption?: string | null
+          company_id: string
+          created_at?: string
+          created_by: string
+          error_message?: string | null
+          id?: string
+          media_type?: string | null
+          media_urls?: Json
+          meta_ig_post_id?: string | null
+          meta_post_id?: string | null
+          platform?: string
+          published_at?: string | null
+          scheduled_at?: string | null
+          social_account_id: string
+          status?: string
+        }
+        Update: {
+          caption?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          error_message?: string | null
+          id?: string
+          media_type?: string | null
+          media_urls?: Json
+          meta_ig_post_id?: string | null
+          meta_post_id?: string | null
+          platform?: string
+          published_at?: string | null
+          scheduled_at?: string | null
+          social_account_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_posts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_posts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_posts_social_account_id_fkey"
+            columns: ["social_account_id"]
+            isOneToOne: false
+            referencedRelation: "social_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_posts_social_account_id_fkey"
+            columns: ["social_account_id"]
+            isOneToOne: false
+            referencedRelation: "social_accounts_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           company_id: string
@@ -1452,7 +1591,56 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      social_accounts_safe: {
+        Row: {
+          app_id: string | null
+          company_id: string | null
+          created_at: string | null
+          id: string | null
+          instagram_id: string | null
+          instagram_username: string | null
+          page_id: string | null
+          page_name: string | null
+          provider: string | null
+          status: string | null
+          token_expires_at: string | null
+        }
+        Insert: {
+          app_id?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          instagram_id?: string | null
+          instagram_username?: string | null
+          page_id?: string | null
+          page_name?: string | null
+          provider?: string | null
+          status?: string | null
+          token_expires_at?: string | null
+        }
+        Update: {
+          app_id?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          instagram_id?: string | null
+          instagram_username?: string | null
+          page_id?: string | null
+          page_name?: string | null
+          provider?: string | null
+          status?: string | null
+          token_expires_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_accounts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       check_user_permission: {
