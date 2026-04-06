@@ -55,6 +55,89 @@ export type Database = {
           },
         ]
       }
+      checklist_template_items: {
+        Row: {
+          company_id: string
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          is_required: boolean
+          template_id: string
+          title: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_required?: boolean
+          template_id: string
+          title: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_required?: boolean
+          template_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_template_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_template_items_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checklist_templates: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_templates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           created_at: string
@@ -89,6 +172,217 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_attendance: {
+        Row: {
+          checkin_at: string | null
+          company_id: string
+          created_at: string
+          event_id: string
+          id: string
+          status: Database["public"]["Enums"]["attendance_status"]
+          user_id: string
+        }
+        Insert: {
+          checkin_at?: string | null
+          company_id: string
+          created_at?: string
+          event_id: string
+          id?: string
+          status?: Database["public"]["Enums"]["attendance_status"]
+          user_id: string
+        }
+        Update: {
+          checkin_at?: string | null
+          company_id?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          status?: Database["public"]["Enums"]["attendance_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_attendance_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_attendance_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_attendance_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_checklist_items: {
+        Row: {
+          company_id: string
+          created_at: string
+          description: string | null
+          display_order: number
+          event_checklist_id: string
+          id: string
+          is_required: boolean
+          title: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          event_checklist_id: string
+          id?: string
+          is_required?: boolean
+          title: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          event_checklist_id?: string
+          id?: string
+          is_required?: boolean
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_checklist_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_checklist_items_event_checklist_id_fkey"
+            columns: ["event_checklist_id"]
+            isOneToOne: false
+            referencedRelation: "event_checklists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_checklist_progress: {
+        Row: {
+          company_id: string
+          completed_at: string | null
+          created_at: string
+          event_checklist_item_id: string
+          id: string
+          status: Database["public"]["Enums"]["checklist_status"]
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          completed_at?: string | null
+          created_at?: string
+          event_checklist_item_id: string
+          id?: string
+          status?: Database["public"]["Enums"]["checklist_status"]
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          completed_at?: string | null
+          created_at?: string
+          event_checklist_item_id?: string
+          id?: string
+          status?: Database["public"]["Enums"]["checklist_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_checklist_progress_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_checklist_progress_event_checklist_item_id_fkey"
+            columns: ["event_checklist_item_id"]
+            isOneToOne: false
+            referencedRelation: "event_checklist_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_checklist_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_checklists: {
+        Row: {
+          company_id: string
+          created_at: string
+          event_id: string
+          event_team_id: string | null
+          id: string
+          name: string
+          template_id: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          event_id: string
+          event_team_id?: string | null
+          id?: string
+          name: string
+          template_id?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          event_id?: string
+          event_team_id?: string | null
+          id?: string
+          name?: string
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_checklists_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_checklists_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_checklists_event_team_id_fkey"
+            columns: ["event_team_id"]
+            isOneToOne: false
+            referencedRelation: "event_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_checklists_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -600,6 +894,8 @@ export type Database = {
     }
     Enums: {
       app_role: "colaborador" | "admin" | "super_admin"
+      attendance_status: "presente" | "ausente"
+      checklist_status: "pendente" | "concluido"
       event_status: "ativo" | "cancelado"
       invite_status: "pendente" | "aceito" | "expirado"
       member_status: "pendente" | "confirmado" | "ausente" | "substituido"
@@ -733,6 +1029,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["colaborador", "admin", "super_admin"],
+      attendance_status: ["presente", "ausente"],
+      checklist_status: ["pendente", "concluido"],
       event_status: ["ativo", "cancelado"],
       invite_status: ["pendente", "aceito", "expirado"],
       member_status: ["pendente", "confirmado", "ausente", "substituido"],
