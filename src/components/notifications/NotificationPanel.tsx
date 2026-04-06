@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { useNotifications, Notification } from "@/hooks/useNotifications";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -13,16 +14,29 @@ const typeConfig: Record<string, { label: string; icon: typeof Calendar; color: 
   sistema: { label: "Sistema", icon: Info, color: "bg-muted text-muted-foreground" },
 };
 
-function NotificationItem({ notification, onRead }: { notification: Notification; onRead: (id: string) => void }) {
+function getNotificationEventId(notification: Notification): string | null {
+  const meta = notification.metadata as Record<string, unknown> | null;
+  if (!meta) return null;
+  return (meta.event_id as string) || null;
+}
+
+function NotificationItem({
+  notification,
+  onNavigate,
+}: {
+  notification: Notification;
+  onNavigate: (notification: Notification) => void;
+}) {
   const config = typeConfig[notification.type] || typeConfig.sistema;
   const Icon = config.icon;
+  const eventId = getNotificationEventId(notification);
 
   return (
     <button
-      onClick={() => !notification.read && onRead(notification.id)}
+      onClick={() => onNavigate(notification)}
       className={`w-full text-left px-4 py-3 border-b border-border hover:bg-accent/50 transition-colors ${
         !notification.read ? "bg-accent/20" : ""
-      }`}
+      } ${eventId ? "cursor-pointer" : ""}`}
     >
       <div className="flex items-start gap-3">
         <Icon className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
@@ -46,8 +60,27 @@ function NotificationItem({ notification, onRead }: { notification: Notification
   );
 }
 
-export function NotificationPanel() {
+interface NotificationPanelProps {
+  onClose?: () => void;
+}
+
+export function NotificationPanel({ onClose }: NotificationPanelProps) {
   const { notifications, isLoading, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const navigate = useNavigate();
+
+  const handleNavigate = (notification: Notification) => {
+    // Mark as read
+    if (!notification.read) {
+      markAsRead(notification.id);
+    }
+
+    // Navigate to event if event_id exists
+    const eventId = getNotificationEventId(notification);
+    if (eventId) {
+      onClose?.();
+      navigate(`/events/${eventId}`);
+    }
+  };
 
   return (
     <div className="flex flex-col">
@@ -69,7 +102,7 @@ export function NotificationPanel() {
           </div>
         ) : (
           notifications.map((n) => (
-            <NotificationItem key={n.id} notification={n} onRead={markAsRead} />
+            <NotificationItem key={n.id} notification={n} onNavigate={handleNavigate} />
           ))
         )}
       </ScrollArea>
