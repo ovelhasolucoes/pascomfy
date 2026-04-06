@@ -58,6 +58,7 @@ const SuperAdminPlans = () => {
                   <TableHead>Preço/mês</TableHead>
                   <TableHead>Usuários</TableHead>
                   <TableHead>Storage</TableHead>
+                  <TableHead>Trial</TableHead>
                   <TableHead>Whitelabel</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
