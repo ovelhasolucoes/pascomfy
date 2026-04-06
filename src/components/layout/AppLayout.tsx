@@ -25,7 +25,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-auto px-4 pb-20 animate-fade-in">
+        <main className="flex-1 overflow-auto px-4 pb-20 page-transition">
           {children}
         </main>
 
