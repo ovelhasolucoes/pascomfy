@@ -22,7 +22,7 @@ const SuperAdminPlans = () => {
   const [form, setForm] = useState(emptyPlan);
 
   const openNew = () => { setForm(emptyPlan); setEditing("new"); };
-  const openEdit = (p: any) => { setForm({ name: p.name, price_monthly: p.price_monthly, max_users: p.max_users, max_storage_mb: p.max_storage_mb, max_uploads: p.max_uploads, allows_whitelabel: p.allows_whitelabel, allows_custom_domain: p.allows_custom_domain, description: p.description || "" }); setEditing(p.id); };
+  const openEdit = (p: any) => { setForm({ name: p.name, price_monthly: p.price_monthly, max_users: p.max_users, max_storage_mb: p.max_storage_mb, max_uploads: p.max_uploads, allows_whitelabel: p.allows_whitelabel, allows_custom_domain: p.allows_custom_domain, description: p.description || "", trial_days: p.trial_days ?? 14 }); setEditing(p.id); };
 
   const save = async () => {
     try {
