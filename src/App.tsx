@@ -66,6 +66,8 @@ const App = () => (
             <Route path="/superadmin/affiliates" element={<ProtectedRoute><SuperAdminAffiliates /></ProtectedRoute>} />
             <Route path="/superadmin/tickets" element={<ProtectedRoute><SuperAdminTickets /></ProtectedRoute>} />
             <Route path="/superadmin/logs" element={<ProtectedRoute><SuperAdminLogs /></ProtectedRoute>} />
+            <Route path="/superadmin/payments" element={<ProtectedRoute><SuperAdminPayments /></ProtectedRoute>} />
+            <Route path="/account-blocked" element={<AccountBlocked />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
