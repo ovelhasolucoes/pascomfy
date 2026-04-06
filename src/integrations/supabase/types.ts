@@ -844,7 +844,7 @@ export type Database = {
         Row: {
           availability: Json
           avatar_url: string | null
-          company_id: string
+          company_id: string | null
           created_at: string
           created_by: string | null
           email: string
@@ -860,7 +860,7 @@ export type Database = {
         Insert: {
           availability?: Json
           avatar_url?: string | null
-          company_id: string
+          company_id?: string | null
           created_at?: string
           created_by?: string | null
           email: string
@@ -876,7 +876,7 @@ export type Database = {
         Update: {
           availability?: Json
           avatar_url?: string | null
-          company_id?: string
+          company_id?: string | null
           created_at?: string
           created_by?: string | null
           email?: string
