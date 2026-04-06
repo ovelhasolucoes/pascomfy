@@ -23,6 +23,7 @@ import SuperAdminAffiliates from "./pages/superadmin/SuperAdminAffiliates";
 import SuperAdminTickets from "./pages/superadmin/SuperAdminTickets";
 import SuperAdminLogs from "./pages/superadmin/SuperAdminLogs";
 import AdminNotifications from "./pages/admin/AdminNotifications";
+import AdminBiolink from "./pages/admin/AdminBiolink";
 import SocialPosts from "./pages/social/SocialPosts";
 import SocialCalendar from "./pages/social/SocialCalendar";
 import SocialAccounts from "./pages/social/SocialAccounts";
