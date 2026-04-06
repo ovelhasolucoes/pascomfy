@@ -2,10 +2,15 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowLeft, MapPin, Clock, Plus, Zap } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Plus, Zap, Users, ClipboardList, UserCheck } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SkeletonCard } from "@/components/ui/skeleton-card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { EventTeamCard } from "@/components/events/EventTeamCard";
 import { AddTeamDialog } from "@/components/events/AddTeamDialog";
 import { AddMemberDialog } from "@/components/events/AddMemberDialog";
@@ -32,7 +37,6 @@ const EventDetailPage = () => {
   const { addMember, updateMember, removeMember } = useEventMembers(id);
   useRealtimeChecklist(id);
 
-  // Collect scaled user info for admin attendance view
   const scaledUserIds = teams.flatMap((t) =>
     t.event_team_members?.map((m: any) => m.user_id) ?? []
   );
@@ -50,11 +54,23 @@ const EventDetailPage = () => {
   const existingMemberIds = selectedTeam?.event_team_members.map((m) => m.user_id) ?? [];
 
   if (eventsLoading || teamsLoading) {
-    return <AppLayout><p className="text-muted-foreground py-12 text-center">Carregando...</p></AppLayout>;
+    return (
+      <AppLayout>
+        <div className="space-y-6">
+          <SkeletonCard hasHeader={false} lines={3} />
+          <SkeletonCard lines={5} />
+          <SkeletonCard lines={4} />
+        </div>
+      </AppLayout>
+    );
   }
 
   if (!event) {
-    return <AppLayout><p className="text-muted-foreground py-12 text-center">Evento não encontrado</p></AppLayout>;
+    return (
+      <AppLayout>
+        <EmptyState title="Evento não encontrado" description="Este evento pode ter sido removido." />
+      </AppLayout>
+    );
   }
 
   const handleAddTeam = async (team: { name: string; description?: string; color?: string; templateId?: string }) => {
@@ -113,55 +129,79 @@ const EventDetailPage = () => {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/events")}>
+      <div className="space-y-6 animate-fade-in">
+        {/* Header Banner */}
+        <div className="flex items-start gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/events")} className="mt-0.5 shrink-0">
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-2xl font-bold text-foreground">{event.title}</h1>
               <Badge variant={event.status === "ativo" ? "default" : "destructive"}>{event.status}</Badge>
             </div>
             {event.event_types && (
               <div className="flex items-center gap-2 mt-1">
-                {event.event_types.color && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: event.event_types.color }} />}
+                {event.event_types.color && <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: event.event_types.color }} />}
                 <span className="text-sm text-muted-foreground">{event.event_types.name}</span>
               </div>
             )}
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <Clock className="h-4 w-4" />
-            {format(new Date(event.start_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-            {event.end_date && ` — ${format(new Date(event.end_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`}
-          </div>
-          {event.location && (
-            <div className="flex items-center gap-1">
-              <MapPin className="h-4 w-4" />
-              {event.location}
+        {/* Info Cards */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <Clock className="h-4 w-4 text-primary" />
+                {format(new Date(event.start_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                {event.end_date && ` — ${format(new Date(event.end_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`}
+              </div>
+              {event.location && (
+                <div className="flex items-center gap-1.5">
+                  <MapPin className="h-4 w-4 text-primary" />
+                  {event.location}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+            {event.description && (
+              <>
+                <Separator className="my-3" />
+                <p className="text-foreground text-sm">{event.description}</p>
+              </>
+            )}
+          </CardContent>
+        </Card>
 
-        {event.description && <p className="text-foreground">{event.description}</p>}
-
+        {/* Teams & Scale */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">Equipes & Escala</h2>
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              Equipes & Escala
+            </h2>
             {canEditScale && (
-              <Button onClick={() => setAddTeamOpen(true)}>
+              <Button onClick={() => setAddTeamOpen(true)} size="sm">
                 <Plus className="h-4 w-4 mr-1" /> Equipe
               </Button>
             )}
           </div>
 
           {teams.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">Nenhuma equipe criada. Adicione equipes para montar a escala.</p>
+            <EmptyState
+              icon={Users}
+              title="Nenhuma equipe criada"
+              description="Adicione equipes para montar a escala do evento."
+            >
+              {canEditScale && (
+                <Button onClick={() => setAddTeamOpen(true)} size="sm">
+                  <Plus className="h-4 w-4 mr-1" /> Criar Equipe
+                </Button>
+              )}
+            </EmptyState>
           ) : (
-            <div className="grid gap-4">
+            <div className="grid gap-4 stagger-fade">
               {teams.map((team) => (
                 <EventTeamCard
                   key={team.id}
@@ -178,9 +218,14 @@ const EventDetailPage = () => {
           )}
         </div>
 
-        {/* Presença */}
+        <Separator />
+
+        {/* Attendance */}
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold text-foreground">Presença</h2>
+          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <UserCheck className="h-5 w-5 text-primary" />
+            Presença
+          </h2>
           <AttendanceButton eventId={id!} eventStartDate={event.start_date} />
           {canEditScale && scaledUserIds.length > 0 && (
             <AttendanceList
@@ -192,19 +237,24 @@ const EventDetailPage = () => {
           )}
         </div>
 
+        <Separator />
+
         {/* Checklist */}
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold text-foreground">Checklist</h2>
+          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <ClipboardList className="h-5 w-5 text-primary" />
+            Checklist
+          </h2>
           <ChecklistSection eventId={id!} />
         </div>
 
-        {/* Modo Foco */}
+        {/* Focus Mode */}
         <Button
-          variant="outline"
-          className="w-full"
+          className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg transition-all duration-200"
+          size="lg"
           onClick={() => navigate(`/events/${id}/live`)}
         >
-          <Zap className="h-4 w-4 mr-2" /> Modo Foco
+          <Zap className="h-5 w-5 mr-2" /> Modo Foco
         </Button>
 
         <AddTeamDialog open={addTeamOpen} onClose={() => setAddTeamOpen(false)} onAdd={handleAddTeam} />
