@@ -51,7 +51,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <NotificationBell />
             </div>
           </header>
-          <main className="flex-1 overflow-auto p-4 md:p-6 animate-fade-in">
+          <main className="flex-1 overflow-auto p-4 md:p-6 page-transition">
             {children}
           </main>
         </div>
