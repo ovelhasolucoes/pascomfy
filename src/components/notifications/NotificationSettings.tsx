@@ -1,11 +1,14 @@
 import { useNotificationSettings } from "@/hooks/useNotificationSettings";
+import { usePushSubscription } from "@/hooks/usePushSubscription";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bell, MessageSquare, Mail } from "lucide-react";
+import { Bell, MessageSquare, Mail, Loader2 } from "lucide-react";
 
 export function NotificationSettings() {
   const { settings, isLoading, updateSettings } = useNotificationSettings();
+  const { isSubscribed, isLoading: pushLoading, isSupported, subscribe, unsubscribe } = usePushSubscription();
 
   if (isLoading) return <div className="text-muted-foreground text-sm">Carregando...</div>;
 
@@ -31,6 +34,29 @@ export function NotificationSettings() {
             onCheckedChange={(checked) => updateSettings({ push_enabled: checked })}
           />
         </div>
+
+        {pushEnabled && isSupported && (
+          <div className="ml-7 flex items-center gap-2">
+            {isSubscribed ? (
+              <Button variant="outline" size="sm" onClick={unsubscribe} disabled={pushLoading}>
+                {pushLoading && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                Desativar neste dispositivo
+              </Button>
+            ) : (
+              <Button variant="default" size="sm" onClick={subscribe} disabled={pushLoading}>
+                {pushLoading && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                Ativar neste dispositivo
+              </Button>
+            )}
+          </div>
+        )}
+
+        {pushEnabled && !isSupported && (
+          <p className="ml-7 text-xs text-muted-foreground">
+            Push não disponível neste navegador/ambiente.
+          </p>
+        )}
+
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
