@@ -81,13 +81,13 @@ export function AutomationDialog({ open, onOpenChange, editing, onCreate, onUpda
 
   const resolvedTitle = useMemo(() => {
     let text = form.title_template;
-    for (const [k, v] of Object.entries(SAMPLE_VALUES)) text = text.replaceAll(k, v);
+    for (const [k, v] of Object.entries(SAMPLE_VALUES)) text = text.split(k).join(v);
     return text;
   }, [form.title_template]);
 
   const resolvedMessage = useMemo(() => {
     let text = form.message_template;
-    for (const [k, v] of Object.entries(SAMPLE_VALUES)) text = text.replaceAll(k, v);
+    for (const [k, v] of Object.entries(SAMPLE_VALUES)) text = text.split(k).join(v);
     return text;
   }, [form.message_template]);
 
