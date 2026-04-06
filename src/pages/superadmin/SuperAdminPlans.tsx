@@ -70,6 +70,7 @@ const SuperAdminPlans = () => {
                     <TableCell>R$ {Number(p.price_monthly).toFixed(2)}</TableCell>
                     <TableCell>{p.max_users}</TableCell>
                     <TableCell>{p.max_storage_mb} MB</TableCell>
+                    <TableCell>{p.trial_days ?? 14} dias</TableCell>
                     <TableCell>{p.allows_whitelabel ? <Badge>Sim</Badge> : "Não"}</TableCell>
                     <TableCell>
                       <Button variant="ghost" size="icon" onClick={() => openEdit(p)}><Pencil className="h-4 w-4" /></Button>
