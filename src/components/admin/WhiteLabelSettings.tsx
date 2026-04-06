@@ -93,6 +93,43 @@ export function WhiteLabelSettings() {
     }
   };
 
+  const handleFaviconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !companyId) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Selecione um arquivo de imagem");
+      return;
+    }
+    if (file.size > 512 * 1024) {
+      toast.error("Favicon deve ter no máximo 512KB");
+      return;
+    }
+
+    setUploadingFavicon(true);
+    try {
+      const ext = file.name.split(".").pop() || "ico";
+      const path = `${companyId}/favicon.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("company-files")
+        .upload(path, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("company-files")
+        .getPublicUrl(path);
+
+      setFaviconUrl(urlData.publicUrl + "?t=" + Date.now());
+      toast.success("Favicon enviado com sucesso!");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Erro ao enviar favicon");
+    } finally {
+      setUploadingFavicon(false);
+    }
+  };
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
