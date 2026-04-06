@@ -1,127 +1,118 @@
 
 
-# Pascomfy — Frontend de Eventos e Escalas
+# Pascomfy — Checklist e Presença (Backend)
 
 ## Resumo
 
-Construção de 6 telas/componentes principais para gestão de eventos, equipes e escalas, com integração Supabase, design responsivo e navegação via sidebar/tabs.
+Uma migração SQL criando 6 tabelas (checklist templates, itens de template, checklists por evento, itens do checklist, progresso, e presença), com enums, índices, RLS policies e preparação para realtime/gamificação.
 
-## Estrutura de Arquivos
+## Enums
+
+- `checklist_status`: pendente, concluido
+- `attendance_status`: presente, ausente
+
+## Tabelas
+
+### `checklist_templates`
+- `id` uuid PK, `company_id` FK→companies, `name` text, `description` text nullable, `created_by` uuid FK→auth.users, `created_at` timestamptz
+- RLS: SELECT membros da company; INSERT/UPDATE/DELETE admin da company; ALL super_admin
+
+### `checklist_template_items`
+- `id` uuid PK, `template_id` FK→checklist_templates ON DELETE CASCADE, `title` text, `description` text nullable, `display_order` int default 0, `is_required` boolean default false, `created_at`
+- RLS: SELECT membros da company (via join com template); INSERT/UPDATE/DELETE admin; ALL super_admin
+- Problema: `company_id` ausente dificulta RLS. Solução: adicionar `company_id` diretamente na tabela (desnormalizado, padrão multi-tenant).
+
+### `event_checklists`
+- `id` uuid PK, `company_id` FK→companies, `event_id` FK→events ON DELETE CASCADE, `event_team_id` FK→event_teams nullable ON DELETE SET NULL, `template_id` FK→checklist_templates nullable (referência apenas informativa — dados são copiados), `name` text, `created_at`
+- Index: (event_id), (company_id)
+- RLS: SELECT membros da company; INSERT/UPDATE/DELETE permissão `editar_escala`; ALL super_admin
+
+### `event_checklist_items`
+- `id` uuid PK, `company_id` FK→companies, `event_checklist_id` FK→event_checklists ON DELETE CASCADE, `title` text, `description` text nullable, `display_order` int default 0, `is_required` boolean default false, `created_at`
+- Index: (event_checklist_id)
+- RLS: SELECT membros da company; INSERT/UPDATE/DELETE permissão `editar_escala`; ALL super_admin
+
+### `event_checklist_progress`
+- `id` uuid PK, `company_id` FK→companies, `event_checklist_item_id` FK→event_checklist_items ON DELETE CASCADE, `user_id` FK→profiles(id), `status` checklist_status default 'pendente', `completed_at` timestamptz nullable, `created_at`
+- unique(event_checklist_item_id, user_id)
+- Indexes: (user_id, company_id), (event_checklist_item_id)
+- RLS: SELECT membros da company; INSERT/UPDATE próprio registro (user_id = auth.uid()); ALL super_admin
+
+### `event_attendance`
+- `id` uuid PK, `company_id` FK→companies, `event_id` FK→events ON DELETE CASCADE, `user_id` FK→profiles(id), `status` attendance_status default 'presente', `checkin_at` timestamptz default now(), `created_at`
+- unique(event_id, user_id) — impede duplicidade
+- Indexes: (event_id, company_id), (user_id)
+- RLS: SELECT membros da company; INSERT próprio registro; UPDATE próprio registro; ALL super_admin
+
+## RLS — Resumo
 
 ```text
-src/
-  components/
-    layout/
-      AppSidebar.tsx          — sidebar com navegação principal
-      AppLayout.tsx            — layout wrapper (sidebar + content)
-    events/
-      EventCalendar.tsx        — calendário mensal com eventos coloridos
-      EventList.tsx            — lista de eventos (fallback mobile)
-      EventFilters.tsx         — filtros por tipo e equipe
-      EventForm.tsx            — formulário criar/editar evento
-      EventDetail.tsx          — modal/sheet com detalhes do evento
-      EventTeamCard.tsx        — card de equipe dentro do evento
-      TeamMemberRow.tsx        — linha de membro com função e status
-      AddMemberDialog.tsx      — dialog para adicionar membro à equipe
-      AddTeamDialog.tsx        — dialog para criar equipe no evento
-    schedule/
-      MySchedule.tsx           — agenda pessoal do usuário
-      ConfirmPresenceButton.tsx — botão confirmar presença
-  hooks/
-    useEvents.ts               — CRUD de eventos
-    useEventTeams.ts           — CRUD de equipes do evento
-    useEventMembers.ts         — CRUD de membros da equipe
-    useEventTypes.ts           — listar/criar event_types
-    useTeamTemplates.ts        — listar team_templates
-    useCompanyMembers.ts       — listar profiles da company
-  pages/
-    Events.tsx                 — página principal (calendário + filtros)
-    EventDetailPage.tsx        — página de detalhe do evento
-    EventCreate.tsx            — página de criação de evento
-    MySchedulePage.tsx         — agenda pessoal
-    admin/
-      EventSettings.tsx        — gestão de tipos e templates (admin)
+checklist_templates / checklist_template_items:
+  SELECT  → is_active_user + company_id match
+  ALL     → admin da company OU super_admin
+
+event_checklists / event_checklist_items:
+  SELECT  → is_active_user + company_id match
+  ALL     → check_user_permission('editar_escala') + company_id match
+  ALL     → super_admin
+
+event_checklist_progress:
+  SELECT  → is_active_user + company_id match
+  INSERT  → user_id = auth.uid() + company_id match
+  UPDATE  → user_id = auth.uid() + company_id match
+  ALL     → super_admin
+
+event_attendance:
+  SELECT  → is_active_user + company_id match
+  INSERT  → user_id = auth.uid() + company_id match (unique constraint impede duplicidade)
+  UPDATE  → user_id = auth.uid() (pode alterar status)
+  ALL     → super_admin
 ```
 
-## Rotas
+## Queries de Exemplo
 
-| Rota | Componente | Acesso |
-|------|-----------|--------|
-| `/events` | Events | Autenticado |
-| `/events/new` | EventCreate | Permissão `criar_evento` |
-| `/events/:id` | EventDetailPage | Autenticado |
-| `/my-schedule` | MySchedulePage | Autenticado |
-| `/admin/event-settings` | EventSettings | Admin |
+1. **Checklist de um usuário no evento:**
+```sql
+SELECT eci.title, eci.is_required, ecp.status, ecp.completed_at
+FROM event_checklist_items eci
+JOIN event_checklists ec ON ec.id = eci.event_checklist_id
+LEFT JOIN event_checklist_progress ecp 
+  ON ecp.event_checklist_item_id = eci.id AND ecp.user_id = :user_id
+WHERE ec.event_id = :event_id
+ORDER BY eci.display_order;
+```
 
-A rota `/` (Index) será atualizada para redirecionar para `/events` ou incluir links de navegação.
+2. **Progresso do evento (percentual):**
+```sql
+SELECT 
+  COUNT(*) as total,
+  COUNT(*) FILTER (WHERE ecp.status = 'concluido') as done,
+  ROUND(COUNT(*) FILTER (WHERE ecp.status = 'concluido') * 100.0 / NULLIF(COUNT(*), 0)) as pct
+FROM event_checklist_items eci
+JOIN event_checklists ec ON ec.id = eci.event_checklist_id
+LEFT JOIN event_checklist_progress ecp ON ecp.event_checklist_item_id = eci.id
+WHERE ec.event_id = :event_id;
+```
 
-## Implementação por Etapa
+3. **Presença do evento:**
+```sql
+SELECT p.name, ea.status, ea.checkin_at
+FROM event_attendance ea
+JOIN profiles p ON p.id = ea.user_id
+WHERE ea.event_id = :event_id
+ORDER BY ea.checkin_at;
+```
 
-### Etapa 1: Layout e Navegação
-- `AppLayout` com sidebar colapsável (shadcn Sidebar)
-- Links: Eventos, Minha Agenda, Admin (condicional)
-- Substituir layout atual do Index
+## Preparação Realtime
+- Habilitar `ALTER PUBLICATION supabase_realtime ADD TABLE event_checklist_progress, event_attendance;` na migração
+- Frontend poderá usar `supabase.channel().on('postgres_changes', ...)` para atualizações ao vivo
 
-### Etapa 2: Hooks de Dados
-- `useEvents`: fetch events com join em event_types, filtros por data/tipo/status
-- `useEventTeams`: fetch/create/delete equipes de um evento, com join em members
-- `useEventMembers`: add/remove/update membros, confirmar presença
-- `useEventTypes`: listar tipos da company
-- `useTeamTemplates`: listar templates da company
-- `useCompanyMembers`: listar profiles ativos da company (para dropdown de escalação)
-- Todos usam `useProfile` para obter `company_id` automaticamente
-
-### Etapa 3: Calendário de Eventos
-- Grid mensal com dias, eventos posicionados por `start_date`
-- Cor do evento = cor do `event_type`
-- Clicar no evento navega para `/events/:id`
-- Filtros: dropdown de tipo, dropdown de equipe
-- Botão "Novo Evento" (visível com permissão `criar_evento`)
-- Mobile: exibe lista ao invés de grid
-
-### Etapa 4: Criação de Evento
-- Formulário com: título, descrição, tipo (select de event_types), data início/fim (datepicker), local
-- `company_id` e `created_by` preenchidos automaticamente
-- Após salvar, redireciona para `/events/:id` para montar equipes
-
-### Etapa 5: Detalhe do Evento + Equipes + Escala
-- Header com info do evento (título, tipo, data, local, status)
-- Lista de equipes como cards
-- Cada card mostra membros com: nome, função (`role_name`), status (badge colorido)
-- Botão "Adicionar Equipe" — dialog com nome, descrição, cor, ou selecionar template
-- Botão "Adicionar Membro" por equipe — dialog com select de profiles + campo função
-- Ações por membro: editar função, alterar status, remover
-- Permissão `editar_escala` controla visibilidade dos botões de ação
-
-### Etapa 6: Agenda Pessoal
-- Lista de eventos futuros onde o usuário está escalado (join event_team_members → event_teams → events)
-- Cards com: título, data, equipe, função, status
-- Botão "Confirmar Presença" (atualiza status para `confirmado` + `confirmed_at`)
-- Destaque visual para eventos próximos (< 48h)
-
-### Etapa 7: Admin — Tipos e Templates
-- Tabs: "Tipos de Evento" | "Templates de Equipe"
-- CRUD simples com tabela + dialog de criação
-- Campos tipo: nome, cor, ícone
-- Campos template: nome, descrição, cor, ordem
-
-## Detalhes Técnicos
-
-- Queries usam `company_id` do profile logado; RLS garante isolamento
-- Datepicker usa shadcn Calendar com `pointer-events-auto`
-- React Query (`@tanstack/react-query`) para cache e refetch
-- Filtros de calendário via query params na URL
-- Status dos membros mapeados para cores: pendente=amarelo, confirmado=verde, ausente=vermelho, substituido=cinza
-- Mobile-first: calendário vira lista, equipes empilham verticalmente
+## Preparação Gamificação
+- `event_checklist_progress` tem `completed_at` para calcular pontos por tarefa
+- `event_attendance` tem `checkin_at` para pontuar presença
+- Futuro: tabela `user_points` que soma pontos de ambas fontes
 
 ## Ordem de Execução
-
-1. Layout (sidebar + rotas)
-2. Hooks de dados (useEvents, useEventTeams, useEventMembers, etc.)
-3. Calendário + filtros
-4. Criação de evento
-5. Detalhe do evento + gestão de equipes e escala
-6. Agenda pessoal
-7. Admin de tipos/templates
-8. Atualizar memória do projeto
+1. Migração SQL (enums, tabelas, índices, RLS, realtime)
+2. Atualizar memória do projeto
 
