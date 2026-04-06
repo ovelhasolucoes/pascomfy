@@ -13,7 +13,47 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, serviceKey);
 
   try {
-    const { post_id } = await req.json();
+    const body = await req.json();
+    const { post_id, scheduled_cron } = body;
+
+    // Cron trigger: find and publish all due scheduled posts
+    if (scheduled_cron) {
+      const { data: duePosts } = await supabase
+        .from("social_posts")
+        .select("id, platform")
+        .eq("status", "agendado")
+        .lte("scheduled_at", new Date().toISOString());
+
+      if (!duePosts || duePosts.length === 0) {
+        return new Response(JSON.stringify({ message: "No scheduled posts due" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const results = [];
+      for (const p of duePosts) {
+        try {
+          // Recursively call self for each post
+          const res = await fetch(`${supabaseUrl}/functions/v1/social-publish`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+            },
+            body: JSON.stringify({ post_id: p.id }),
+          });
+          const data = await res.json();
+          results.push({ post_id: p.id, ...data });
+        } catch (e: any) {
+          results.push({ post_id: p.id, error: e.message });
+        }
+      }
+
+      return new Response(JSON.stringify({ processed: results.length, results }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (!post_id) {
       return new Response(JSON.stringify({ error: "Missing post_id" }), {
         status: 400,
