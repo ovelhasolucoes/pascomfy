@@ -49,6 +49,9 @@ const App = () => (
             <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
             <Route path="/admin/event-settings" element={<Navigate to="/admin/settings" replace />} />
             <Route path="/admin/notifications" element={<ProtectedRoute><AdminNotifications /></ProtectedRoute>} />
+            <Route path="/social/posts" element={<ProtectedRoute><SocialPosts /></ProtectedRoute>} />
+            <Route path="/social/calendar" element={<ProtectedRoute><SocialCalendar /></ProtectedRoute>} />
+            <Route path="/social/accounts" element={<ProtectedRoute><SocialAccounts /></ProtectedRoute>} />
             <Route path="/superadmin" element={<ProtectedRoute><SuperAdminDashboard /></ProtectedRoute>} />
             <Route path="/superadmin/companies" element={<ProtectedRoute><SuperAdminCompanies /></ProtectedRoute>} />
             <Route path="/superadmin/plans" element={<ProtectedRoute><SuperAdminPlans /></ProtectedRoute>} />
