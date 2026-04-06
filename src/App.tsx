@@ -35,6 +35,7 @@ import CheckoutPage from "./pages/CheckoutPage";
 import MySubscriptionPage from "./pages/MySubscriptionPage";
 import Signup from "./pages/Signup";
 import AdminReferrals from "./pages/admin/AdminReferrals";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/invite/:token" element={<InviteAccept />} />
             <Route path="/bio/:slug" element={<BioPublicPage />} />
             <Route path="/pricing" element={<PricingPage />} />
