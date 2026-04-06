@@ -2,17 +2,21 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowLeft, MapPin, Clock, Plus } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Plus, Zap } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EventTeamCard } from "@/components/events/EventTeamCard";
 import { AddTeamDialog } from "@/components/events/AddTeamDialog";
 import { AddMemberDialog } from "@/components/events/AddMemberDialog";
+import { ChecklistSection } from "@/components/checklist/ChecklistSection";
+import { AttendanceButton } from "@/components/attendance/AttendanceButton";
+import { AttendanceList } from "@/components/attendance/AttendanceList";
 import { useEvents } from "@/hooks/useEvents";
 import { useEventTeams } from "@/hooks/useEventTeams";
 import { useEventMembers } from "@/hooks/useEventMembers";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useRealtimeChecklist } from "@/hooks/useRealtimeChecklist";
 import { toast } from "sonner";
 
 const EventDetailPage = () => {
