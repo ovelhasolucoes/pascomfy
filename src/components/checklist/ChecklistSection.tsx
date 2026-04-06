@@ -2,13 +2,17 @@ import { useEventChecklist } from "@/hooks/useEventChecklist";
 import { useChecklistProgress } from "@/hooks/useChecklistProgress";
 import { ChecklistItemRow } from "./ChecklistItemRow";
 import { ChecklistProgressBar } from "./ChecklistProgressBar";
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface ChecklistSectionProps {
   eventId: string;
+  canEdit?: boolean;
+  onDeleteChecklist?: (checklistId: string) => void;
 }
 
-export const ChecklistSection = ({ eventId }: ChecklistSectionProps) => {
+export const ChecklistSection = ({ eventId, canEdit, onDeleteChecklist }: ChecklistSectionProps) => {
   const { checklists, loading } = useEventChecklist(eventId);
   const { toggleItem } = useChecklistProgress(eventId);
 
@@ -34,6 +38,11 @@ export const ChecklistSection = ({ eventId }: ChecklistSectionProps) => {
         <div key={cl.id} className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-foreground">{cl.name}</h3>
+            {canEdit && onDeleteChecklist && (
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => onDeleteChecklist(cl.id)}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
           <ChecklistProgressBar
             completed={cl.completedCount}
