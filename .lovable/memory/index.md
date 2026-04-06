@@ -23,3 +23,4 @@ Dashboard unificado na rota / com cards por role.
 - [Super Admin](mem://features/superadmin) — Dashboard global, empresas, planos, logs
 - [Eventos/Escalas](mem://features/events-scales) — Eventos, equipes, membros, checklists
 - [Checklist/Attendance](mem://features/checklist-attendance) — Checklist por evento com progresso e presença
+- [Automações](mem://features/automations) — Sistema multi-canal com fila, triggers automáticos, disparo manual, montagem de mensagem de grupo
