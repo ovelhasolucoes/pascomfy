@@ -37,6 +37,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Update last_access_at on login
+  useEffect(() => {
+    if (user) {
+      supabase
+        .from("profiles")
+        .update({ last_access_at: new Date().toISOString() })
+        .eq("id", user.id)
+        .then(() => {});
+    }
+  }, [user]);
+
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
