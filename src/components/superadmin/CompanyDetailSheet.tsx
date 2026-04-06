@@ -62,7 +62,7 @@ export function CompanyDetailSheet({ company, open, onClose }: CompanyDetailShee
 
   if (!company) return null;
 
-  const sub = company.subscriptions?.[0];
+  const sub = Array.isArray(company.subscriptions) ? company.subscriptions?.[0] : company.subscriptions;
 
   const handleSave = async () => {
     setSaving(true);
