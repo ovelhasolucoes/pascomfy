@@ -1,6 +1,10 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 interface CompanyDetailSheetProps {
   company: any | null;
@@ -15,9 +19,24 @@ const statusColor: Record<string, string> = {
 };
 
 export function CompanyDetailSheet({ company, open, onClose }: CompanyDetailSheetProps) {
+  const queryClient = useQueryClient();
+
   if (!company) return null;
 
   const sub = company.subscriptions?.[0];
+
+  const handleBlockModeChange = async (value: string) => {
+    const { error } = await supabase
+      .from("companies")
+      .update({ block_mode: value } as any)
+      .eq("id", company.id);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Modo de bloqueio atualizado!");
+      queryClient.invalidateQueries({ queryKey: ["superadmin-companies"] });
+    }
+  };
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
@@ -54,6 +73,19 @@ export function CompanyDetailSheet({ company, open, onClose }: CompanyDetailShee
               </p>
             </div>
             <div className="col-span-2">
+              <p className="text-muted-foreground mb-1">Modo de bloqueio</p>
+              <Select defaultValue={company.block_mode || "soft"} onValueChange={handleBlockModeChange}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhum</SelectItem>
+                  <SelectItem value="soft">Soft (banner + limita ações)</SelectItem>
+                  <SelectItem value="hard">Hard (bloqueia acesso)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2">
               <p className="text-muted-foreground">Criado em</p>
               <p className="font-medium text-foreground">{format(new Date(company.created_at), "dd/MM/yyyy HH:mm")}</p>
             </div>
@@ -69,6 +101,14 @@ export function CompanyDetailSheet({ company, open, onClose }: CompanyDetailShee
                 <div>
                   <p className="text-muted-foreground">Valor</p>
                   <p className="text-foreground">R$ {Number(sub.plans?.price_monthly || 0).toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Gateway</p>
+                  <p className="text-foreground">{sub.gateway || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Asaas ID</p>
+                  <p className="text-foreground text-xs">{sub.asaas_customer_id || "—"}</p>
                 </div>
               </div>
             </div>
