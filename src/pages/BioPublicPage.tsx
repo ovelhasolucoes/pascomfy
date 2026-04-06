@@ -144,7 +144,7 @@ export default function BioPublicPage() {
           href="https://pascomfy.app"
           className="text-white/30 text-xs mt-8 hover:text-white/50 transition-colors tracking-wider font-medium"
         >
-          PASCOMFY
+          Powered by PASCOMFY
         </a>
       </div>
     </div>

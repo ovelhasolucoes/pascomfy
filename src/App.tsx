@@ -84,6 +84,7 @@ const App = () => (
             <Route path="/account-blocked" element={<AccountBlocked />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </CompanyThemeProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

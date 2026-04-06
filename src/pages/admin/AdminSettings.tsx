@@ -1,12 +1,17 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, MessageSquare, FileText, Calendar, Palette } from "lucide-react";
+import { Building2, MessageSquare, FileText, Calendar, Palette, Globe } from "lucide-react";
 import { CompanySettings } from "@/components/admin/CompanySettings";
 import { WhatsAppConfig } from "@/components/notifications/WhatsAppConfig";
 import { NotificationTemplates } from "@/components/admin/NotificationTemplates";
 import { EventSettingsContent } from "@/components/admin/EventSettingsContent";
+import { WhiteLabelSettings } from "@/components/admin/WhiteLabelSettings";
+import { CustomDomainSettings } from "@/components/admin/CustomDomainSettings";
+import { useCompanyTheme } from "@/contexts/CompanyThemeContext";
 
 const AdminSettings = () => {
+  const { isWhitelabel, allowsCustomDomain } = useCompanyTheme();
+
   return (
     <AppLayout>
       <div className="space-y-4">
@@ -33,6 +38,18 @@ const AdminSettings = () => {
               <FileText className="h-3.5 w-3.5" />
               Templates
             </TabsTrigger>
+            {isWhitelabel && (
+              <TabsTrigger value="whitelabel" className="flex items-center gap-1.5">
+                <Palette className="h-3.5 w-3.5" />
+                Identidade
+              </TabsTrigger>
+            )}
+            {allowsCustomDomain && (
+              <TabsTrigger value="domain" className="flex items-center gap-1.5">
+                <Globe className="h-3.5 w-3.5" />
+                Domínio
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="company">
@@ -50,6 +67,18 @@ const AdminSettings = () => {
           <TabsContent value="templates">
             <NotificationTemplates />
           </TabsContent>
+
+          {isWhitelabel && (
+            <TabsContent value="whitelabel">
+              <WhiteLabelSettings />
+            </TabsContent>
+          )}
+
+          {allowsCustomDomain && (
+            <TabsContent value="domain">
+              <CustomDomainSettings />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </AppLayout>
