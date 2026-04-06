@@ -1,4 +1,4 @@
-import { Calendar, CalendarDays, Users, Settings, LogOut, UserCircle, LayoutDashboard, Building2, CreditCard, Receipt, Link2, MessageSquare, ScrollText } from "lucide-react";
+import { Calendar, CalendarDays, Users, Settings, LogOut, UserCircle, LayoutDashboard, Building2, CreditCard, Receipt, Link2, MessageSquare, ScrollText, Bell } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { usePermissions } from "@/hooks/usePermissions";
