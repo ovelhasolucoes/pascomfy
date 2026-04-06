@@ -278,6 +278,19 @@ const EventDetailPage = () => {
           onAdd={handleAddMember}
           existingMemberIds={existingMemberIds}
         />
+        <AddChecklistDialog
+          open={addChecklistOpen}
+          onClose={() => setAddChecklistOpen(false)}
+          teams={teams.map((t) => ({ id: t.id, name: t.name }))}
+          onAddFromTemplate={async (templateId, teamId) => {
+            await addChecklistFromTemplate.mutateAsync({ templateId, eventTeamId: teamId });
+            toast.success("Checklist adicionado!");
+          }}
+          onAddAdHoc={async (name, items, teamId) => {
+            await addAdHocChecklist.mutateAsync({ name, items, eventTeamId: teamId });
+            toast.success("Checklist criado!");
+          }}
+        />
       </div>
     </AppLayout>
   );
