@@ -40,6 +40,7 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import DashboardPage from "./pages/DashboardPage";
 import ProfilePage from "./pages/ProfilePage";
+import AdminSubstitutions from "./pages/admin/AdminSubstitutions";
 
 const queryClient = new QueryClient();
 
@@ -73,6 +74,7 @@ const App = () => (
             <Route path="/admin/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
             <Route path="/admin/biolink" element={<AdminRoute><AdminBiolink /></AdminRoute>} />
             <Route path="/admin/referrals" element={<AdminRoute><AdminReferrals /></AdminRoute>} />
+            <Route path="/admin/substitutions" element={<AdminRoute><AdminSubstitutions /></AdminRoute>} />
             <Route path="/social/posts" element={<ProtectedRoute><SocialPosts /></ProtectedRoute>} />
             <Route path="/social/calendar" element={<ProtectedRoute><SocialCalendar /></ProtectedRoute>} />
             <Route path="/social/accounts" element={<AdminRoute><SocialAccounts /></AdminRoute>} />

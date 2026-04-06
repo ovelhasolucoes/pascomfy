@@ -2,7 +2,7 @@ import {
   Calendar, CalendarDays, Users, Settings, LogOut, LayoutDashboard,
   Building2, CreditCard, Receipt, Link2, MessageSquare, ScrollText,
   Bell, Share2, FileText, CalendarCheck, UserCog, ChevronRight,
-  Gift, Shield, Home, User
+  Gift, Shield, Home, User, RefreshCw
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -126,6 +126,7 @@ export function AppSidebar() {
 
   const adminItems: MenuItem[] = [
     { title: "Usuários", url: "/admin/users", icon: Users },
+    { title: "Substituições", url: "/admin/substitutions", icon: RefreshCw },
     { title: "Notificações", url: "/admin/notifications", icon: Bell },
     { title: "Biolink", url: "/admin/biolink", icon: Link2 },
     { title: "Indicações", url: "/admin/referrals", icon: Gift },
