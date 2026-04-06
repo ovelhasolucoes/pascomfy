@@ -42,6 +42,7 @@ export function WhiteLabelSettings() {
   const [theme, setTheme] = useState<string>("light");
   const [faviconUrl, setFaviconUrl] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [uploadingFavicon, setUploadingFavicon] = useState(false);
   const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
 
   useEffect(() => {
