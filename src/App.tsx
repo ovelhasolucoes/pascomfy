@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { CompanyThemeProvider } from "@/contexts/CompanyThemeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminRoute from "@/components/AdminRoute";
 import Login from "./pages/Login";
@@ -47,6 +48,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <CompanyThemeProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/reset-password" element={<ResetPassword />} />
@@ -82,6 +84,7 @@ const App = () => (
             <Route path="/account-blocked" element={<AccountBlocked />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </CompanyThemeProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
