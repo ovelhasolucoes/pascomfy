@@ -10,12 +10,12 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, description, children, className }: PageHeaderProps) {
   return (
-    <div className={cn("flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-fade-in", className)}>
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">{title}</h1>
-        {description && <p className="text-muted-foreground text-sm">{description}</p>}
+    <div className={cn("flex flex-col gap-3 animate-fade-in", className)}>
+      <div className="min-w-0">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground break-words">{title}</h1>
+        {description && <p className="text-muted-foreground text-sm mt-1">{description}</p>}
       </div>
-      {children && <div className="flex items-center gap-2 shrink-0">{children}</div>}
+      {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}
     </div>
   );
 }

@@ -14,7 +14,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (isMobile) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
+      <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
         {/* Mobile header */}
         <header className="h-12 flex items-center justify-between px-4 shrink-0 bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 sticky top-0 z-40 pt-[env(safe-area-inset-top)]">
           <div className="flex items-center gap-2" />
@@ -25,7 +25,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-auto px-4 pb-20 page-transition">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto px-4 pb-20 page-transition min-w-0">
           {children}
         </main>
 
