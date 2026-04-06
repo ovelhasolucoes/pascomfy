@@ -70,7 +70,7 @@ export function CreateCompanyDialog() {
       // 3. If admin email provided, create invite
       if (adminEmail.trim()) {
         await supabase.from("invites").insert({
-          company_id: sub.company_id,
+          company_id: companyId,
           email: adminEmail.trim().toLowerCase(),
           role: "admin" as const,
           created_by: (await supabase.auth.getUser()).data.user!.id,
@@ -78,7 +78,7 @@ export function CreateCompanyDialog() {
         });
       }
 
-      return sub.company_id;
+      return companyId;
     },
     onSuccess: () => {
       toast.success("Empresa criada com sucesso!");
