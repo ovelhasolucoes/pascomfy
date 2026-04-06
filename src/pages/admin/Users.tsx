@@ -11,9 +11,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PageHeader } from "@/components/ui/page-header";
 import { useToast } from "@/hooks/use-toast";
 import { Navigate, useNavigate } from "react-router-dom";
-import { UserPlus, ArrowLeft, Shield, Ban, CheckCircle } from "lucide-react";
+import { UserPlus, Shield, Ban, CheckCircle, Mail, Phone } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { Database } from "@/integrations/supabase/types";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -33,6 +36,7 @@ const Users = () => {
   const { isAdmin, isSuperAdmin, loading: permLoading } = usePermissions();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -106,7 +110,6 @@ const Users = () => {
   };
 
   const handleChangeRole = async (userId: string, newRole: AppRole) => {
-    // Remove existing roles, add new one
     await supabase.from("user_roles").delete().eq("user_id", userId);
     const { error } = await supabase
       .from("user_roles")
@@ -163,19 +166,16 @@ const Users = () => {
     return <Badge variant={variants[status] || "secondary"}>{status}</Badge>;
   };
 
+  const getInitials = (name: string) =>
+    name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
+
   return (
     <AppLayout>
-      <div className="mx-auto max-w-6xl space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-2xl font-bold text-foreground">Gestão de Usuários</h1>
-          </div>
+      <div className="mx-auto max-w-6xl space-y-4">
+        <PageHeader title="Gestão de Usuários">
           <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="w-full md:w-auto">
                 <UserPlus className="mr-2 h-4 w-4" />
                 Convidar Usuário
               </Button>
@@ -213,16 +213,75 @@ const Users = () => {
               </div>
             </DialogContent>
           </Dialog>
-        </div>
+        </PageHeader>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Usuários</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <p className="text-muted-foreground">Carregando...</p>
-            ) : (
+        {loading ? (
+          <p className="text-muted-foreground text-center py-10">Carregando...</p>
+        ) : isMobile ? (
+          /* Mobile: Card list */
+          <div className="space-y-3 stagger-fade">
+            {users.map((u) => (
+              <Card key={u.id} className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10 shrink-0">
+                      <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
+                        {getInitials(u.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-foreground truncate">{u.name}</p>
+                        {statusBadge(u.status)}
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
+                        <Mail className="h-3 w-3 shrink-0" />
+                        {u.email}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border">
+                    <Select
+                      value={u.roles[0] || "colaborador"}
+                      onValueChange={(v) => handleChangeRole(u.id, v as AppRole)}
+                      disabled={u.id === user?.id}
+                    >
+                      <SelectTrigger className="flex-1 h-10">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="colaborador">Colaborador</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        {isSuperAdmin && <SelectItem value="super_admin">Super Admin</SelectItem>}
+                      </SelectContent>
+                    </Select>
+                    {u.id !== user?.id && (
+                      <Button
+                        variant={u.status === "ativo" ? "outline" : "default"}
+                        size="sm"
+                        onClick={() => handleToggleStatus(u.id, u.status)}
+                        className="shrink-0"
+                      >
+                        {u.status === "ativo" ? (
+                          <Ban className="h-4 w-4" />
+                        ) : (
+                          <CheckCircle className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          /* Desktop: Table */
+          <Card>
+            <CardHeader>
+              <CardTitle>Usuários</CardTitle>
+            </CardHeader>
+            <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -275,9 +334,9 @@ const Users = () => {
                   ))}
                 </TableBody>
               </Table>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </AppLayout>
   );
