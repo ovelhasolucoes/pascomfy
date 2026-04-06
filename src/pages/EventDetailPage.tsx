@@ -30,6 +30,18 @@ const EventDetailPage = () => {
 
   const { teams, loading: teamsLoading, createTeam, deleteTeam } = useEventTeams(id);
   const { addMember, updateMember, removeMember } = useEventMembers(id);
+  useRealtimeChecklist(id);
+
+  // Collect scaled user info for admin attendance view
+  const scaledUserIds = teams.flatMap((t) =>
+    t.event_team_members?.map((m: any) => m.user_id) ?? []
+  );
+  const scaledUserNames: Record<string, string> = {};
+  teams.forEach((t) =>
+    t.event_team_members?.forEach((m: any) => {
+      if (m.profiles?.name) scaledUserNames[m.user_id] = m.profiles.name;
+    })
+  );
 
   const [addTeamOpen, setAddTeamOpen] = useState(false);
   const [addMemberTeamId, setAddMemberTeamId] = useState<string | null>(null);
