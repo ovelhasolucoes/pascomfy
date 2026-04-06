@@ -46,10 +46,10 @@ const App = () => (
             <Route path="/events/:id" element={<ProtectedRoute><EventDetailPage /></ProtectedRoute>} />
             <Route path="/events/:id/live" element={<ProtectedRoute><EventLivePage /></ProtectedRoute>} />
             <Route path="/my-schedule" element={<ProtectedRoute><MySchedulePage /></ProtectedRoute>} />
-            <Route path="/admin/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
-            <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
+            <Route path="/admin/users" element={<AdminRoute><Users /></AdminRoute>} />
+            <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
             <Route path="/admin/event-settings" element={<Navigate to="/admin/settings" replace />} />
-            <Route path="/admin/notifications" element={<ProtectedRoute><AdminNotifications /></ProtectedRoute>} />
+            <Route path="/admin/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
             <Route path="/social/posts" element={<ProtectedRoute><SocialPosts /></ProtectedRoute>} />
             <Route path="/social/calendar" element={<ProtectedRoute><SocialCalendar /></ProtectedRoute>} />
             <Route path="/social/accounts" element={<AdminRoute><SocialAccounts /></AdminRoute>} />
