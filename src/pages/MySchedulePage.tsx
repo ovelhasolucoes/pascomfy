@@ -98,69 +98,81 @@ const MySchedulePage = () => {
                   isUrgent && "border-primary shadow-sm ring-1 ring-primary/20"
                 )}>
                   <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                    <div className="space-y-3">
+                      {/* Title */}
+                      <div className="min-w-0">
+                        <div className="flex items-start gap-2">
                           {event.event_types?.color && (
-                            <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: event.event_types.color }} />
+                            <div className="w-2.5 h-2.5 rounded-full shrink-0 mt-1.5" style={{ backgroundColor: event.event_types.color }} />
                           )}
-                          <h3 className="font-semibold text-foreground truncate">{event.title}</h3>
-                          {isUrgent && (
-                            <Badge variant="destructive" className="text-xs shrink-0 animate-pulse">
-                              Em breve
-                            </Badge>
-                          )}
+                          <h3 className="font-semibold text-foreground break-words line-clamp-2 flex-1 min-w-0">{event.title}</h3>
                         </div>
-                        <div className="flex flex-wrap gap-3 mt-1.5 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3.5 w-3.5" />
-                            {format(new Date(event.start_date), "dd/MM · HH:mm", { locale: ptBR })}
+                      </div>
+
+                      {/* Date & Location */}
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3.5 w-3.5 shrink-0" />
+                          {format(new Date(event.start_date), "dd/MM · HH:mm", { locale: ptBR })}
+                        </span>
+                        {event.location && (
+                          <span className="flex items-center gap-1 min-w-0">
+                            <MapPin className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">{event.location}</span>
                           </span>
-                          {event.location && (
-                            <span className="flex items-center gap-1">
-                              <MapPin className="h-3.5 w-3.5" />
-                              {event.location}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 mt-2 text-sm">
-                          <span className="text-muted-foreground">Equipe:</span>
-                          <span className="font-medium text-foreground">{item.event_teams?.name}</span>
-                          {item.role_name && (
-                            <>
-                              <span className="text-muted-foreground">·</span>
-                              <span className="text-foreground">{item.role_name}</span>
-                            </>
-                          )}
-                        </div>
-                        {existingSub && (
-                          <div className="mt-2">
-                            <Badge variant={
-                              existingSub.status === "aprovado" ? "default" :
-                              existingSub.status === "rejeitado" ? "destructive" : "outline"
-                            } className="text-xs">
-                              Substituição: {existingSub.status}
-                            </Badge>
-                          </div>
                         )}
                       </div>
-                      <div className="flex flex-col items-end gap-2 shrink-0">
+
+                      {/* Team */}
+                      <div className="flex flex-wrap items-center gap-2 text-sm">
+                        <span className="text-muted-foreground">Equipe:</span>
+                        <span className="font-medium text-foreground">{item.event_teams?.name}</span>
+                        {item.role_name && (
+                          <>
+                            <span className="text-muted-foreground">·</span>
+                            <span className="text-foreground">{item.role_name}</span>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Badges */}
+                      <div className="flex flex-wrap gap-2">
                         <Badge variant={sc.variant}>{sc.label}</Badge>
-                        {item.status === "pendente" && (
-                          <Button size="sm" className="shadow-sm" onClick={() => handleConfirm(item.id)}>
-                            <Check className="h-3 w-3 mr-1" /> Confirmar
-                          </Button>
+                        {isUrgent && (
+                          <Badge variant="destructive" className="text-xs animate-pulse">
+                            Em breve
+                          </Badge>
                         )}
-                        {!existingSub && item.status !== "substituido" && hoursUntil > 0 && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setSubDialog({ eventId: event.id, memberId: item.id })}
-                          >
-                            <RefreshCw className="h-3 w-3 mr-1" /> Substituir
-                          </Button>
+                        {existingSub && (
+                          <Badge variant={
+                            existingSub.status === "aprovado" ? "default" :
+                            existingSub.status === "rejeitado" ? "destructive" : "outline"
+                          } className="text-xs">
+                            Substituição: {existingSub.status}
+                          </Badge>
                         )}
                       </div>
+
+                      {/* Actions */}
+                      {(item.status === "pendente" || (!existingSub && item.status !== "substituido" && hoursUntil > 0)) && (
+                        <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                          {item.status === "pendente" && (
+                            <Button size="sm" className="w-full sm:w-auto shadow-sm" onClick={() => handleConfirm(item.id)}>
+                              <Check className="h-3 w-3 mr-1" /> Confirmar
+                            </Button>
+                          )}
+                          {!existingSub && item.status !== "substituido" && hoursUntil > 0 && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full sm:w-auto"
+                              onClick={() => setSubDialog({ eventId: event.id, memberId: item.id })}
+                            >
+                              <RefreshCw className="h-3 w-3 mr-1" /> Substituir
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
