@@ -1,11 +1,12 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Send, Trash2, Clock, AlertCircle, CheckCircle2, FileEdit, Loader2, ChevronLeft, ChevronRight, Instagram, Facebook, MoreHorizontal } from "lucide-react";
+import { Send, Trash2, Clock, AlertCircle, CheckCircle2, FileEdit, Loader2, ChevronLeft, ChevronRight, Instagram, Facebook, MoreHorizontal, Heart, MessageCircle, Share2, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { SocialPost } from "@/hooks/useSocialPosts";
+import type { SocialPostMetrics } from "@/hooks/useSocialMetrics";
 import { useState } from "react";
 
 const statusConfig: Record<string, { label: string; className: string; icon: any }> = {
