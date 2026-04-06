@@ -178,6 +178,35 @@ const EventDetailPage = () => {
           )}
         </div>
 
+        {/* Presença */}
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold text-foreground">Presença</h2>
+          <AttendanceButton eventId={id!} eventStartDate={event.start_date} />
+          {canEditScale && scaledUserIds.length > 0 && (
+            <AttendanceList
+              eventId={id!}
+              eventStartDate={event.start_date}
+              scaledUserIds={[...new Set(scaledUserIds)]}
+              scaledUserNames={scaledUserNames}
+            />
+          )}
+        </div>
+
+        {/* Checklist */}
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold text-foreground">Checklist</h2>
+          <ChecklistSection eventId={id!} />
+        </div>
+
+        {/* Modo Foco */}
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => navigate(`/events/${id}/live`)}
+        >
+          <Zap className="h-4 w-4 mr-2" /> Modo Foco
+        </Button>
+
         <AddTeamDialog open={addTeamOpen} onClose={() => setAddTeamOpen(false)} onAdd={handleAddTeam} />
         <AddMemberDialog
           open={!!addMemberTeamId}
