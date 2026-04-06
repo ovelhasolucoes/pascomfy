@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -8,42 +9,67 @@ import { CompanyThemeProvider } from "@/contexts/CompanyThemeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminRoute from "@/components/AdminRoute";
 import SuperAdminRoute from "@/components/SuperAdminRoute";
+
+// Eager: critical routes
 import Login from "./pages/Login";
-import InviteAccept from "./pages/InviteAccept";
-import Events from "./pages/Events";
-import EventCreate from "./pages/EventCreate";
-import EventDetailPage from "./pages/EventDetailPage";
-import EventLivePage from "./pages/EventLivePage";
-import MySchedulePage from "./pages/MySchedulePage";
-import Users from "./pages/admin/Users";
-import AdminSettings from "./pages/admin/AdminSettings";
-import SuperAdminDashboard from "./pages/superadmin/SuperAdminDashboard";
-import SuperAdminCompanies from "./pages/superadmin/SuperAdminCompanies";
-import SuperAdminPlans from "./pages/superadmin/SuperAdminPlans";
-import SuperAdminSubscriptions from "./pages/superadmin/SuperAdminSubscriptions";
-import SuperAdminAffiliates from "./pages/superadmin/SuperAdminAffiliates";
-import SuperAdminTickets from "./pages/superadmin/SuperAdminTickets";
-import SuperAdminLogs from "./pages/superadmin/SuperAdminLogs";
-import SuperAdminPayments from "./pages/superadmin/SuperAdminPayments";
-import AdminNotifications from "./pages/admin/AdminNotifications";
-import AdminBiolink from "./pages/admin/AdminBiolink";
-import SocialPosts from "./pages/social/SocialPosts";
-import SocialCalendar from "./pages/social/SocialCalendar";
-import SocialAccounts from "./pages/social/SocialAccounts";
-import BioPublicPage from "./pages/BioPublicPage";
-import AccountBlocked from "./pages/AccountBlocked";
-import PricingPage from "./pages/PricingPage";
-import CheckoutPage from "./pages/CheckoutPage";
-import MySubscriptionPage from "./pages/MySubscriptionPage";
-import Signup from "./pages/Signup";
-import AdminReferrals from "./pages/admin/AdminReferrals";
-import ResetPassword from "./pages/ResetPassword";
-import NotFound from "./pages/NotFound";
 import DashboardPage from "./pages/DashboardPage";
-import ProfilePage from "./pages/ProfilePage";
-import AdminSubstitutions from "./pages/admin/AdminSubstitutions";
+
+// Lazy: secondary routes
+const Signup = lazy(() => import("./pages/Signup"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const InviteAccept = lazy(() => import("./pages/InviteAccept"));
+const BioPublicPage = lazy(() => import("./pages/BioPublicPage"));
+const PricingPage = lazy(() => import("./pages/PricingPage"));
+const Events = lazy(() => import("./pages/Events"));
+const EventCreate = lazy(() => import("./pages/EventCreate"));
+const EventDetailPage = lazy(() => import("./pages/EventDetailPage"));
+const EventLivePage = lazy(() => import("./pages/EventLivePage"));
+const MySchedulePage = lazy(() => import("./pages/MySchedulePage"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
+const AccountBlocked = lazy(() => import("./pages/AccountBlocked"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+// Lazy: admin routes
+const MySubscriptionPage = lazy(() => import("./pages/MySubscriptionPage"));
+const Users = lazy(() => import("./pages/admin/Users"));
+const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
+const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
+const AdminBiolink = lazy(() => import("./pages/admin/AdminBiolink"));
+const AdminReferrals = lazy(() => import("./pages/admin/AdminReferrals"));
+const AdminSubstitutions = lazy(() => import("./pages/admin/AdminSubstitutions"));
+
+// Lazy: social routes
+const SocialPosts = lazy(() => import("./pages/social/SocialPosts"));
+const SocialCalendar = lazy(() => import("./pages/social/SocialCalendar"));
+const SocialAccounts = lazy(() => import("./pages/social/SocialAccounts"));
+
+// Lazy: superadmin routes
+const SuperAdminDashboard = lazy(() => import("./pages/superadmin/SuperAdminDashboard"));
+const SuperAdminCompanies = lazy(() => import("./pages/superadmin/SuperAdminCompanies"));
+const SuperAdminPlans = lazy(() => import("./pages/superadmin/SuperAdminPlans"));
+const SuperAdminSubscriptions = lazy(() => import("./pages/superadmin/SuperAdminSubscriptions"));
+const SuperAdminAffiliates = lazy(() => import("./pages/superadmin/SuperAdminAffiliates"));
+const SuperAdminTickets = lazy(() => import("./pages/superadmin/SuperAdminTickets"));
+const SuperAdminLogs = lazy(() => import("./pages/superadmin/SuperAdminLogs"));
+const SuperAdminPayments = lazy(() => import("./pages/superadmin/SuperAdminPayments"));
 
 const queryClient = new QueryClient();
+
+function PageLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="flex flex-col items-center gap-3">
+        <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+        <p className="text-sm text-muted-foreground">Carregando...</p>
+      </div>
+    </div>
+  );
+}
+
+function SuspenseRoute({ children }: { children: React.ReactNode }) {
+  return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -55,40 +81,40 @@ const App = () => (
           <CompanyThemeProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/invite/:token" element={<InviteAccept />} />
-            <Route path="/bio/:slug" element={<BioPublicPage />} />
-            <Route path="/pricing" element={<PricingPage />} />
-            <Route path="/signup" element={<Signup />} />
+            <Route path="/reset-password" element={<SuspenseRoute><ResetPassword /></SuspenseRoute>} />
+            <Route path="/invite/:token" element={<SuspenseRoute><InviteAccept /></SuspenseRoute>} />
+            <Route path="/bio/:slug" element={<SuspenseRoute><BioPublicPage /></SuspenseRoute>} />
+            <Route path="/pricing" element={<SuspenseRoute><PricingPage /></SuspenseRoute>} />
+            <Route path="/signup" element={<SuspenseRoute><Signup /></SuspenseRoute>} />
             <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-            <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
-            <Route path="/events/new" element={<ProtectedRoute><EventCreate /></ProtectedRoute>} />
-            <Route path="/events/:id" element={<ProtectedRoute><EventDetailPage /></ProtectedRoute>} />
-            <Route path="/events/:id/live" element={<ProtectedRoute><EventLivePage /></ProtectedRoute>} />
-            <Route path="/my-schedule" element={<ProtectedRoute><MySchedulePage /></ProtectedRoute>} />
-            <Route path="/checkout/:planId" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
-            <Route path="/admin/my-subscription" element={<AdminRoute><MySubscriptionPage /></AdminRoute>} />
-            <Route path="/admin/users" element={<AdminRoute><Users /></AdminRoute>} />
-            <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><SuspenseRoute><ProfilePage /></SuspenseRoute></ProtectedRoute>} />
+            <Route path="/events" element={<ProtectedRoute><SuspenseRoute><Events /></SuspenseRoute></ProtectedRoute>} />
+            <Route path="/events/new" element={<ProtectedRoute><SuspenseRoute><EventCreate /></SuspenseRoute></ProtectedRoute>} />
+            <Route path="/events/:id" element={<ProtectedRoute><SuspenseRoute><EventDetailPage /></SuspenseRoute></ProtectedRoute>} />
+            <Route path="/events/:id/live" element={<ProtectedRoute><SuspenseRoute><EventLivePage /></SuspenseRoute></ProtectedRoute>} />
+            <Route path="/my-schedule" element={<ProtectedRoute><SuspenseRoute><MySchedulePage /></SuspenseRoute></ProtectedRoute>} />
+            <Route path="/checkout/:planId" element={<ProtectedRoute><SuspenseRoute><CheckoutPage /></SuspenseRoute></ProtectedRoute>} />
+            <Route path="/admin/my-subscription" element={<AdminRoute><SuspenseRoute><MySubscriptionPage /></SuspenseRoute></AdminRoute>} />
+            <Route path="/admin/users" element={<AdminRoute><SuspenseRoute><Users /></SuspenseRoute></AdminRoute>} />
+            <Route path="/admin/settings" element={<AdminRoute><SuspenseRoute><AdminSettings /></SuspenseRoute></AdminRoute>} />
             <Route path="/admin/event-settings" element={<Navigate to="/admin/settings" replace />} />
-            <Route path="/admin/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
-            <Route path="/admin/biolink" element={<AdminRoute><AdminBiolink /></AdminRoute>} />
-            <Route path="/admin/referrals" element={<AdminRoute><AdminReferrals /></AdminRoute>} />
-            <Route path="/admin/substitutions" element={<AdminRoute><AdminSubstitutions /></AdminRoute>} />
-            <Route path="/social/posts" element={<ProtectedRoute><SocialPosts /></ProtectedRoute>} />
-            <Route path="/social/calendar" element={<ProtectedRoute><SocialCalendar /></ProtectedRoute>} />
-            <Route path="/social/accounts" element={<AdminRoute><SocialAccounts /></AdminRoute>} />
-            <Route path="/superadmin" element={<SuperAdminRoute><SuperAdminDashboard /></SuperAdminRoute>} />
-            <Route path="/superadmin/companies" element={<SuperAdminRoute><SuperAdminCompanies /></SuperAdminRoute>} />
-            <Route path="/superadmin/plans" element={<SuperAdminRoute><SuperAdminPlans /></SuperAdminRoute>} />
-            <Route path="/superadmin/subscriptions" element={<SuperAdminRoute><SuperAdminSubscriptions /></SuperAdminRoute>} />
-            <Route path="/superadmin/affiliates" element={<SuperAdminRoute><SuperAdminAffiliates /></SuperAdminRoute>} />
-            <Route path="/superadmin/tickets" element={<SuperAdminRoute><SuperAdminTickets /></SuperAdminRoute>} />
-            <Route path="/superadmin/logs" element={<SuperAdminRoute><SuperAdminLogs /></SuperAdminRoute>} />
-            <Route path="/superadmin/payments" element={<SuperAdminRoute><SuperAdminPayments /></SuperAdminRoute>} />
-            <Route path="/account-blocked" element={<AccountBlocked />} />
-            <Route path="*" element={<NotFound />} />
+            <Route path="/admin/notifications" element={<AdminRoute><SuspenseRoute><AdminNotifications /></SuspenseRoute></AdminRoute>} />
+            <Route path="/admin/biolink" element={<AdminRoute><SuspenseRoute><AdminBiolink /></SuspenseRoute></AdminRoute>} />
+            <Route path="/admin/referrals" element={<AdminRoute><SuspenseRoute><AdminReferrals /></SuspenseRoute></AdminRoute>} />
+            <Route path="/admin/substitutions" element={<AdminRoute><SuspenseRoute><AdminSubstitutions /></SuspenseRoute></AdminRoute>} />
+            <Route path="/social/posts" element={<ProtectedRoute><SuspenseRoute><SocialPosts /></SuspenseRoute></ProtectedRoute>} />
+            <Route path="/social/calendar" element={<ProtectedRoute><SuspenseRoute><SocialCalendar /></SuspenseRoute></ProtectedRoute>} />
+            <Route path="/social/accounts" element={<AdminRoute><SuspenseRoute><SocialAccounts /></SuspenseRoute></AdminRoute>} />
+            <Route path="/superadmin" element={<SuperAdminRoute><SuspenseRoute><SuperAdminDashboard /></SuspenseRoute></SuperAdminRoute>} />
+            <Route path="/superadmin/companies" element={<SuperAdminRoute><SuspenseRoute><SuperAdminCompanies /></SuspenseRoute></SuperAdminRoute>} />
+            <Route path="/superadmin/plans" element={<SuperAdminRoute><SuspenseRoute><SuperAdminPlans /></SuspenseRoute></SuperAdminRoute>} />
+            <Route path="/superadmin/subscriptions" element={<SuperAdminRoute><SuspenseRoute><SuperAdminSubscriptions /></SuspenseRoute></SuperAdminRoute>} />
+            <Route path="/superadmin/affiliates" element={<SuperAdminRoute><SuspenseRoute><SuperAdminAffiliates /></SuspenseRoute></SuperAdminRoute>} />
+            <Route path="/superadmin/tickets" element={<SuperAdminRoute><SuspenseRoute><SuperAdminTickets /></SuspenseRoute></SuperAdminRoute>} />
+            <Route path="/superadmin/logs" element={<SuperAdminRoute><SuspenseRoute><SuperAdminLogs /></SuspenseRoute></SuperAdminRoute>} />
+            <Route path="/superadmin/payments" element={<SuperAdminRoute><SuspenseRoute><SuperAdminPayments /></SuspenseRoute></SuperAdminRoute>} />
+            <Route path="/account-blocked" element={<SuspenseRoute><AccountBlocked /></SuspenseRoute>} />
+            <Route path="*" element={<SuspenseRoute><NotFound /></SuspenseRoute>} />
           </Routes>
           </CompanyThemeProvider>
         </AuthProvider>

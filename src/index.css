@@ -147,4 +147,36 @@
   .stagger-fade > *:nth-child(8) { animation-delay: 350ms; }
   .stagger-fade > *:nth-child(9) { animation-delay: 400ms; }
   .stagger-fade > *:nth-child(10) { animation-delay: 450ms; }
+
+  .page-transition {
+    animation: page-enter 0.3s ease-out both;
+  }
+
+  @keyframes page-enter {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .tap-highlight {
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.1s ease, opacity 0.1s ease;
+  }
+  .tap-highlight:active {
+    transform: scale(0.97);
+    opacity: 0.8;
+  }
+
+  .touch-list > * {
+    transition: background-color 0.15s ease, transform 0.1s ease;
+  }
+  .touch-list > *:active {
+    background-color: hsl(var(--muted));
+    transform: scale(0.99);
+  }
 }
