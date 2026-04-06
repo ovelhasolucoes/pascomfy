@@ -176,14 +176,14 @@ export function AppSidebar() {
         {isAdmin && (
           <>
             <SidebarSeparator />
-            <MenuGroup label="Administração" items={adminItems} collapsed={collapsed} icon={Settings} />
+            <MenuGroup label="Social" items={socialItems} collapsed={collapsed} icon={Share2} />
           </>
         )}
 
         {isAdmin && (
           <>
             <SidebarSeparator />
-            <MenuGroup label="Social" items={socialItems} collapsed={collapsed} icon={Share2} />
+            <MenuGroup label="Administração" items={adminItems} collapsed={collapsed} icon={Settings} />
           </>
         )}
 
