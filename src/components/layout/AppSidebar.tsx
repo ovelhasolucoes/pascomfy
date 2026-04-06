@@ -2,7 +2,7 @@ import {
   Calendar, CalendarDays, Users, Settings, LogOut, LayoutDashboard,
   Building2, CreditCard, Receipt, Link2, MessageSquare, ScrollText,
   Bell, Share2, FileText, CalendarCheck, UserCog, ChevronRight,
-  Gift, Shield
+  Gift, Shield, Home, User
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -118,8 +118,10 @@ export function AppSidebar() {
   const { companyName, logoUrl, isWhitelabel } = useCompanyTheme();
 
   const mainItems: MenuItem[] = [
+    { title: "Dashboard", url: "/", icon: Home },
     { title: "Eventos", url: "/events", icon: Calendar },
     { title: "Minha Agenda", url: "/my-schedule", icon: CalendarDays },
+    { title: "Meu Perfil", url: "/profile", icon: User },
   ];
 
   const adminItems: MenuItem[] = [

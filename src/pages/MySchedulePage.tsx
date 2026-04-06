@@ -1,12 +1,16 @@
+import { useState } from "react";
 import { format, differenceInHours } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Check, Clock, MapPin } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Check, Clock, MapPin, RefreshCw, Loader2 } from "lucide-react";
 import { useMySchedule } from "@/hooks/useMySchedule";
 import { useEventMembers } from "@/hooks/useEventMembers";
+import { useSubstitutions } from "@/hooks/useSubstitutions";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +24,10 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
 const MySchedulePage = () => {
   const { schedule, loading } = useMySchedule();
   const { confirmPresence } = useEventMembers();
+  const { mySubstitutions, requestSubstitution } = useSubstitutions();
+
+  const [subDialog, setSubDialog] = useState<{ eventId: string; memberId: string } | null>(null);
+  const [reason, setReason] = useState("");
 
   const handleConfirm = async (memberId: string) => {
     try {
@@ -28,6 +36,26 @@ const MySchedulePage = () => {
     } catch (err: any) {
       toast.error(err.message);
     }
+  };
+
+  const handleRequestSub = async () => {
+    if (!subDialog || !reason.trim()) return;
+    try {
+      await requestSubstitution.mutateAsync({
+        eventId: subDialog.eventId,
+        eventTeamMemberId: subDialog.memberId,
+        reason: reason.trim(),
+      });
+      toast.success("Substituição solicitada!");
+      setSubDialog(null);
+      setReason("");
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const getSubStatus = (memberId: string) => {
+    return mySubstitutions.find((s) => s.event_team_member_id === memberId);
   };
 
   return (
@@ -50,6 +78,7 @@ const MySchedulePage = () => {
               const hoursUntil = differenceInHours(new Date(event.start_date), new Date());
               const isUrgent = hoursUntil <= 48 && hoursUntil > 0;
               const sc = statusConfig[item.status] || statusConfig.pendente;
+              const existingSub = getSubStatus(item.id);
 
               return (
                 <Card key={item.id} className={cn(isUrgent && "border-primary")}>
@@ -85,12 +114,31 @@ const MySchedulePage = () => {
                             </>
                           )}
                         </div>
+                        {existingSub && (
+                          <div className="mt-2">
+                            <Badge variant={
+                              existingSub.status === "aprovado" ? "default" :
+                              existingSub.status === "rejeitado" ? "destructive" : "outline"
+                            } className="text-xs">
+                              Substituição: {existingSub.status}
+                            </Badge>
+                          </div>
+                        )}
                       </div>
                       <div className="flex flex-col items-end gap-2 shrink-0">
                         <Badge variant={sc.variant}>{sc.label}</Badge>
                         {item.status === "pendente" && (
                           <Button size="sm" onClick={() => handleConfirm(item.id)}>
                             <Check className="h-3 w-3 mr-1" /> Confirmar
+                          </Button>
+                        )}
+                        {!existingSub && item.status !== "substituido" && hoursUntil > 0 && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setSubDialog({ eventId: event.id, memberId: item.id })}
+                          >
+                            <RefreshCw className="h-3 w-3 mr-1" /> Substituir
                           </Button>
                         )}
                       </div>
@@ -102,6 +150,30 @@ const MySchedulePage = () => {
           </div>
         )}
       </div>
+
+      <Dialog open={!!subDialog} onOpenChange={() => { setSubDialog(null); setReason(""); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Solicitar Substituição</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">Informe o motivo da substituição. O admin será notificado.</p>
+            <Textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Motivo..."
+              rows={3}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setSubDialog(null); setReason(""); }}>Cancelar</Button>
+            <Button onClick={handleRequestSub} disabled={!reason.trim() || requestSubstitution.isPending}>
+              {requestSubstitution.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Solicitar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 };
