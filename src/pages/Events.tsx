@@ -2,6 +2,8 @@ import { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { EventCalendar } from "@/components/events/EventCalendar";
 import { EventFilters } from "@/components/events/EventFilters";
+import { PageHeader } from "@/components/ui/page-header";
+import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { useEvents } from "@/hooks/useEvents";
 import { useEventTypes } from "@/hooks/useEventTypes";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -22,11 +24,8 @@ const Events = () => {
 
   return (
     <AppLayout>
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Eventos</h1>
-          <p className="text-muted-foreground">Calendário de eventos da sua paróquia</p>
-        </div>
+      <div className="space-y-6">
+        <PageHeader title="Eventos" description="Calendário de eventos da sua paróquia" />
 
         <EventFilters
           eventTypes={eventTypes}
@@ -37,7 +36,9 @@ const Events = () => {
         />
 
         {loading ? (
-          <p className="text-muted-foreground text-center py-12">Carregando eventos...</p>
+          <div className="space-y-3">
+            <SkeletonCard lines={6} />
+          </div>
         ) : (
           <EventCalendar events={events} canCreate={hasPermission("criar_evento")} />
         )}

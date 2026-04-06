@@ -7,7 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, Clock, MapPin, RefreshCw, Loader2 } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SkeletonCard } from "@/components/ui/skeleton-card";
+import { Check, Clock, MapPin, RefreshCw, Loader2, CalendarDays } from "lucide-react";
 import { useMySchedule } from "@/hooks/useMySchedule";
 import { useEventMembers } from "@/hooks/useEventMembers";
 import { useSubstitutions } from "@/hooks/useSubstitutions";
@@ -60,18 +63,21 @@ const MySchedulePage = () => {
 
   return (
     <AppLayout>
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Minha Agenda</h1>
-          <p className="text-muted-foreground">Eventos em que você está escalado</p>
-        </div>
+      <div className="space-y-6">
+        <PageHeader title="Minha Agenda" description="Eventos em que você está escalado" />
 
         {loading ? (
-          <p className="text-muted-foreground text-center py-12">Carregando...</p>
-        ) : schedule.length === 0 ? (
-          <p className="text-muted-foreground text-center py-12">Você não está escalado em nenhum evento futuro.</p>
-        ) : (
           <div className="grid gap-3">
+            {[1, 2, 3].map((i) => <SkeletonCard key={i} hasHeader={false} lines={3} />)}
+          </div>
+        ) : schedule.length === 0 ? (
+          <EmptyState
+            icon={CalendarDays}
+            title="Nenhum evento na sua agenda"
+            description="Você não está escalado em nenhum evento futuro."
+          />
+        ) : (
+          <div className="grid gap-3 stagger-fade">
             {schedule.map((item: any) => {
               const event = item.event_teams?.events;
               if (!event) return null;
@@ -81,32 +87,39 @@ const MySchedulePage = () => {
               const existingSub = getSubStatus(item.id);
 
               return (
-                <Card key={item.id} className={cn(isUrgent && "border-primary")}>
+                <Card key={item.id} className={cn(
+                  "transition-all duration-200 hover:shadow-md",
+                  isUrgent && "border-primary shadow-sm ring-1 ring-primary/20"
+                )}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           {event.event_types?.color && (
-                            <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: event.event_types.color }} />
+                            <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: event.event_types.color }} />
                           )}
-                          <h3 className="font-medium text-foreground truncate">{event.title}</h3>
-                          {isUrgent && <Badge variant="destructive" className="text-xs shrink-0">Em breve</Badge>}
+                          <h3 className="font-semibold text-foreground truncate">{event.title}</h3>
+                          {isUrgent && (
+                            <Badge variant="destructive" className="text-xs shrink-0 animate-pulse">
+                              Em breve
+                            </Badge>
+                          )}
                         </div>
-                        <div className="flex flex-wrap gap-3 mt-1 text-sm text-muted-foreground">
+                        <div className="flex flex-wrap gap-3 mt-1.5 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
+                            <Clock className="h-3.5 w-3.5" />
                             {format(new Date(event.start_date), "dd/MM · HH:mm", { locale: ptBR })}
                           </span>
                           {event.location && (
                             <span className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
+                              <MapPin className="h-3.5 w-3.5" />
                               {event.location}
                             </span>
                           )}
                         </div>
                         <div className="flex items-center gap-2 mt-2 text-sm">
                           <span className="text-muted-foreground">Equipe:</span>
-                          <span className="text-foreground">{item.event_teams?.name}</span>
+                          <span className="font-medium text-foreground">{item.event_teams?.name}</span>
                           {item.role_name && (
                             <>
                               <span className="text-muted-foreground">·</span>
@@ -128,7 +141,7 @@ const MySchedulePage = () => {
                       <div className="flex flex-col items-end gap-2 shrink-0">
                         <Badge variant={sc.variant}>{sc.label}</Badge>
                         {item.status === "pendente" && (
-                          <Button size="sm" onClick={() => handleConfirm(item.id)}>
+                          <Button size="sm" className="shadow-sm" onClick={() => handleConfirm(item.id)}>
                             <Check className="h-3 w-3 mr-1" /> Confirmar
                           </Button>
                         )}

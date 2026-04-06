@@ -9,6 +9,7 @@ import { useLocation } from "react-router-dom";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
+import { useNotifications } from "@/hooks/useNotifications";
 import {
   Sidebar,
   SidebarContent,
@@ -24,6 +25,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { useCompanyTheme } from "@/contexts/CompanyThemeContext";
 import {
   Collapsible,
@@ -31,7 +33,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
-type MenuItem = { title: string; url: string; icon: React.ElementType };
+type MenuItem = { title: string; url: string; icon: React.ElementType; badge?: number };
 
 function MenuGroup({
   label,
@@ -60,10 +62,17 @@ function MenuGroup({
                 <SidebarMenuButton asChild tooltip={item.title}>
                   <NavLink
                     to={item.url}
-                    className="hover:bg-sidebar-accent"
+                    className="hover:bg-sidebar-accent transition-colors"
                     activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                   >
-                    <item.icon className="h-4 w-4" />
+                    <div className="relative">
+                      <item.icon className="h-4 w-4" />
+                      {item.badge !== undefined && item.badge > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground">
+                          {item.badge > 9 ? "9+" : item.badge}
+                        </span>
+                      )}
+                    </div>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -81,7 +90,7 @@ function MenuGroup({
           <SidebarGroupLabel className="cursor-pointer hover:bg-sidebar-accent/50 rounded-md transition-colors">
             <Icon className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
             {label}
-            <ChevronRight className="ml-auto h-3.5 w-3.5 text-muted-foreground transition-transform group-data-[state=open]/collapsible:rotate-90" />
+            <ChevronRight className="ml-auto h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
           </SidebarGroupLabel>
         </CollapsibleTrigger>
         <CollapsibleContent>
@@ -92,11 +101,16 @@ function MenuGroup({
                   <SidebarMenuButton asChild>
                     <NavLink
                       to={item.url}
-                      className="hover:bg-sidebar-accent"
+                      className="hover:bg-sidebar-accent transition-colors"
                       activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                     >
                       <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                      <span className="flex-1">{item.title}</span>
+                      {item.badge !== undefined && item.badge > 0 && (
+                        <Badge variant="destructive" className="h-5 min-w-[20px] px-1.5 text-[10px] font-bold">
+                          {item.badge > 99 ? "99+" : item.badge}
+                        </Badge>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -116,6 +130,7 @@ export function AppSidebar() {
   const { signOut } = useAuth();
   const { profile } = useProfile();
   const { companyName, logoUrl, isWhitelabel } = useCompanyTheme();
+  const { unreadCount } = useNotifications();
 
   const mainItems: MenuItem[] = [
     { title: "Dashboard", url: "/", icon: Home },
@@ -127,7 +142,7 @@ export function AppSidebar() {
   const adminItems: MenuItem[] = [
     { title: "Usuários", url: "/admin/users", icon: Users },
     { title: "Substituições", url: "/admin/substitutions", icon: RefreshCw },
-    { title: "Notificações", url: "/admin/notifications", icon: Bell },
+    { title: "Notificações", url: "/admin/notifications", icon: Bell, badge: unreadCount },
     { title: "Biolink", url: "/admin/biolink", icon: Link2 },
     { title: "Indicações", url: "/admin/referrals", icon: Gift },
     { title: "Assinatura", url: "/admin/my-subscription", icon: CreditCard },
@@ -161,16 +176,16 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="px-3 py-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           {isWhitelabel && logoUrl ? (
-            <img src={logoUrl} alt={companyName} className="h-8 w-8 rounded-lg object-contain shrink-0" />
+            <img src={logoUrl} alt={companyName} className="h-8 w-8 rounded-xl object-contain shrink-0" />
           ) : (
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm shrink-0">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-sm shrink-0 shadow-sm">
               {companyName.charAt(0)}
             </div>
           )}
           {!collapsed && (
-            <span className="text-lg font-semibold text-sidebar-foreground tracking-tight">
+            <span className="text-lg font-bold text-sidebar-foreground tracking-tight">
               {isWhitelabel ? companyName : "Pascomfy"}
             </span>
           )}
@@ -207,8 +222,8 @@ export function AppSidebar() {
       <SidebarSeparator />
 
       <SidebarFooter className="p-3">
-        <div className="flex items-center gap-2">
-          <Avatar className="h-8 w-8 shrink-0">
+        <div className="flex items-center gap-2.5 p-2 rounded-xl bg-sidebar-accent/50 transition-colors">
+          <Avatar className="h-8 w-8 shrink-0 ring-2 ring-sidebar-border">
             <AvatarImage src={profile?.avatar_url ?? undefined} alt={profile?.name} />
             <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
               {initials}
@@ -219,7 +234,7 @@ export function AppSidebar() {
               <p className="text-sm font-medium text-sidebar-foreground truncate">
                 {profile?.name}
               </p>
-              <p className="text-xs text-muted-foreground truncate">
+              <p className="text-[11px] text-muted-foreground truncate">
                 {profile?.email}
               </p>
             </div>
@@ -227,7 +242,7 @@ export function AppSidebar() {
           <button
             onClick={signOut}
             title="Sair"
-            className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
           >
             <LogOut className="h-4 w-4" />
           </button>

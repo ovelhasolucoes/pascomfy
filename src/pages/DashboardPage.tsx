@@ -5,9 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatCard } from "@/components/ui/stat-card";
+import { SkeletonCard } from "@/components/ui/skeleton-card";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Calendar, CheckSquare, Trophy, Users, ArrowRightCircle,
   Clock, MapPin, Star, TrendingUp, AlertTriangle, Medal,
+  CalendarDays, ListChecks,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -17,7 +22,7 @@ import { useGamification } from "@/hooks/useGamification";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useProfile } from "@/hooks/useProfile";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const MEDAL_STYLES = [
   "bg-primary/20 text-primary border-primary/30",
@@ -27,18 +32,27 @@ const MEDAL_STYLES = [
 const MEDAL_LABELS = ["🥇", "🥈", "🥉"];
 
 const DashboardPage = () => {
-  const { schedule } = useMySchedule();
+  const { schedule, loading: scheduleLoading } = useMySchedule();
   const { isActive: gamActive, myPoints, currentLevel, ranking, levels } = useGamification();
   const {
     upcomingEvents, pendingChecklists, totalUsers, eventsThisMonth,
     pendingSubstitutions, attendanceChart, topPerformers, topAbsences,
+    loading: statsLoading,
   } = useDashboardStats();
   const { isAdmin } = usePermissions();
   const { profile } = useProfile();
+  const navigate = useNavigate();
 
   const nextEvents = schedule.slice(0, 3);
+  const loading = scheduleLoading || statsLoading;
 
-  // Calculate progress to next level
+  const getGreeting = () => {
+    const h = new Date().getHours();
+    if (h < 12) return "Bom dia";
+    if (h < 18) return "Boa tarde";
+    return "Boa noite";
+  };
+
   const nextLevel = levels.find((l) => l.min_points > myPoints);
   const progressPercent = nextLevel
     ? Math.min(100, Math.round((myPoints / nextLevel.min_points) * 100))
@@ -46,149 +60,131 @@ const DashboardPage = () => {
 
   return (
     <AppLayout>
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            Olá, {profile?.name?.split(" ")[0]} 👋
-          </h1>
-          <p className="text-muted-foreground">Resumo do que está acontecendo</p>
-        </div>
+      <div className="space-y-6">
+        <PageHeader
+          title={`${getGreeting()}, ${profile?.name?.split(" ")[0] ?? ""} 👋`}
+          description="Resumo do que está acontecendo"
+        />
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {isAdmin && (
-            <>
-              <Card>
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <Users className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-foreground">{totalUsers}</p>
-                    <p className="text-xs text-muted-foreground">Usuários ativos</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <Calendar className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-foreground">{eventsThisMonth}</p>
-                    <p className="text-xs text-muted-foreground">Eventos no mês</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Link to="/admin/substitutions">
-                <Card className="hover:border-primary/50 transition-colors cursor-pointer">
-                  <CardContent className="p-4 flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-destructive/10">
-                      <AlertTriangle className="h-5 w-5 text-destructive" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-foreground">{pendingSubstitutions}</p>
-                      <p className="text-xs text-muted-foreground">Substituições</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            </>
-          )}
-          {gamActive && (
-            <Card>
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <TrendingUp className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{myPoints}</p>
-                  <p className="text-xs text-muted-foreground">Meus pontos</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+        {loading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[1, 2, 3, 4].map((i) => (
+              <SkeletonCard key={i} hasHeader={false} lines={2} />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 stagger-fade">
+            {isAdmin && (
+              <>
+                <StatCard icon={Users} label="Usuários ativos" value={totalUsers} />
+                <StatCard icon={Calendar} label="Eventos no mês" value={eventsThisMonth} />
+                <StatCard
+                  icon={AlertTriangle}
+                  label="Substituições"
+                  value={pendingSubstitutions}
+                  onClick={() => navigate("/admin/substitutions")}
+                  iconClassName="bg-destructive/10"
+                />
+              </>
+            )}
+            {gamActive && (
+              <StatCard icon={TrendingUp} label="Meus pontos" value={myPoints} />
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* My Next Events */}
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-primary" />
-                  Próximos Eventos
-                </CardTitle>
-                <Link to="/my-schedule" className="text-xs text-primary hover:underline flex items-center gap-1">
-                  Ver todos <ArrowRightCircle className="h-3 w-3" />
-                </Link>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {nextEvents.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">Nenhum evento próximo</p>
-              ) : (
-                nextEvents.map((item: any) => {
-                  const event = item.event_teams?.events;
-                  if (!event) return null;
-                  return (
-                    <div key={item.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
-                      {event.event_types?.color && (
-                        <div className="w-1 h-10 rounded-full shrink-0" style={{ backgroundColor: event.event_types.color }} />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{event.title}</p>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          {format(new Date(event.start_date), "dd/MM · HH:mm", { locale: ptBR })}
-                          {event.location && (
-                            <>
-                              <MapPin className="h-3 w-3 ml-1" />
-                              <span className="truncate">{event.location}</span>
-                            </>
+          {loading ? (
+            <SkeletonCard lines={4} />
+          ) : (
+            <Card className="transition-shadow hover:shadow-md">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-primary" />
+                    Próximos Eventos
+                  </CardTitle>
+                  <Link to="/my-schedule" className="text-xs text-primary hover:underline flex items-center gap-1">
+                    Ver todos <ArrowRightCircle className="h-3 w-3" />
+                  </Link>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {nextEvents.length === 0 ? (
+                  <EmptyState icon={CalendarDays} title="Nenhum evento próximo" description="Você será notificado quando for escalado" className="py-6" />
+                ) : (
+                  <div className="space-y-2 stagger-fade">
+                    {nextEvents.map((item: any) => {
+                      const event = item.event_teams?.events;
+                      if (!event) return null;
+                      return (
+                        <div key={item.id} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/50 transition-colors">
+                          {event.event_types?.color && (
+                            <div className="w-1 h-10 rounded-full shrink-0" style={{ backgroundColor: event.event_types.color }} />
                           )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">{event.title}</p>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <Clock className="h-3 w-3" />
+                              {format(new Date(event.start_date), "dd/MM · HH:mm", { locale: ptBR })}
+                              {event.location && (
+                                <>
+                                  <MapPin className="h-3 w-3 ml-1" />
+                                  <span className="truncate">{event.location}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          <Badge variant={item.status === "confirmado" ? "default" : "outline"} className="text-xs shrink-0">
+                            {item.status}
+                          </Badge>
                         </div>
-                      </div>
-                      <Badge variant={item.status === "confirmado" ? "default" : "outline"} className="text-xs shrink-0">
-                        {item.status}
-                      </Badge>
-                    </div>
-                  );
-                })
-              )}
-            </CardContent>
-          </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Pending Checklists */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <CheckSquare className="h-4 w-4 text-primary" />
-                Tarefas Pendentes
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {pendingChecklists.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">Tudo em dia! ✅</p>
-              ) : (
-                pendingChecklists.slice(0, 5).map((item: any) => (
-                  <div key={item.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50">
-                    <div className="w-2 h-2 rounded-full bg-destructive/60 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-foreground truncate">{item.event_checklist_items?.title}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {item.event_checklist_items?.event_checklists?.events?.title}
-                      </p>
-                    </div>
+          {loading ? (
+            <SkeletonCard lines={4} />
+          ) : (
+            <Card className="transition-shadow hover:shadow-md">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <CheckSquare className="h-4 w-4 text-primary" />
+                  Tarefas Pendentes
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {pendingChecklists.length === 0 ? (
+                  <EmptyState icon={ListChecks} title="Tudo em dia! ✅" description="Nenhuma tarefa pendente" className="py-6" />
+                ) : (
+                  <div className="space-y-2 stagger-fade">
+                    {pendingChecklists.slice(0, 5).map((item: any) => (
+                      <div key={item.id} className="flex items-center gap-2 p-2.5 rounded-xl hover:bg-muted/50 transition-colors">
+                        <div className="w-2 h-2 rounded-full bg-destructive/60 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-foreground truncate">{item.event_checklist_items?.title}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {item.event_checklist_items?.event_checklists?.events?.title}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
-          {/* Gamification - Points & Level with Progress */}
+          {/* Gamification */}
           {gamActive && (
-            <Card>
+            <Card className="transition-shadow hover:shadow-md">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Star className="h-4 w-4 text-primary" />
@@ -223,46 +219,48 @@ const DashboardPage = () => {
             </Card>
           )}
 
-          {/* Ranking with Medals */}
+          {/* Ranking */}
           {gamActive && (
-            <Card>
+            <Card className="transition-shadow hover:shadow-md">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Trophy className="h-4 w-4 text-primary" />
                   Ranking
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-1">
+              <CardContent>
                 {ranking.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">Sem dados ainda</p>
+                  <EmptyState icon={Trophy} title="Sem dados ainda" className="py-6" />
                 ) : (
-                  ranking.slice(0, 5).map((r, i) => (
-                    <div
-                      key={r.userId}
-                      className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${
-                        i < 3 ? "bg-muted/30" : ""
-                      } ${r.userId === profile?.id ? "ring-1 ring-primary/30" : ""}`}
-                    >
-                      <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold border ${
-                        i < 3 ? MEDAL_STYLES[i] : "bg-muted text-muted-foreground border-border"
-                      }`}>
-                        {i < 3 ? MEDAL_LABELS[i] : i + 1}
+                  <div className="space-y-1 stagger-fade">
+                    {ranking.slice(0, 5).map((r, i) => (
+                      <div
+                        key={r.userId}
+                        className={`flex items-center gap-3 p-2.5 rounded-xl transition-colors ${
+                          i < 3 ? "bg-muted/30" : ""
+                        } ${r.userId === profile?.id ? "ring-1 ring-primary/30" : ""}`}
+                      >
+                        <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold border ${
+                          i < 3 ? MEDAL_STYLES[i] : "bg-muted text-muted-foreground border-border"
+                        }`}>
+                          {i < 3 ? MEDAL_LABELS[i] : i + 1}
+                        </div>
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={r.avatar_url ?? undefined} />
+                          <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                            {r.name.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-medium text-foreground truncate block">{r.name}</span>
+                          {r.userId === profile?.id && (
+                            <span className="text-xs text-primary">Você</span>
+                          )}
+                        </div>
+                        <span className="text-sm font-bold text-primary">{r.total} pts</span>
                       </div>
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={r.avatar_url ?? undefined} />
-                        <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                          {r.name.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm font-medium text-foreground truncate block">{r.name}</span>
-                        {r.userId === profile?.id && (
-                          <span className="text-xs text-primary">Você</span>
-                        )}
-                      </div>
-                      <span className="text-sm font-bold text-primary">{r.total} pts</span>
-                    </div>
-                  ))
+                    ))}
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -270,7 +268,7 @@ const DashboardPage = () => {
 
           {/* Admin: Attendance Chart */}
           {isAdmin && attendanceChart.length > 0 && (
-            <Card className="lg:col-span-2">
+            <Card className="lg:col-span-2 transition-shadow hover:shadow-md">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <TrendingUp className="h-4 w-4 text-primary" />
@@ -287,13 +285,13 @@ const DashboardPage = () => {
                       contentStyle={{
                         backgroundColor: "hsl(var(--card))",
                         border: "1px solid hsl(var(--border))",
-                        borderRadius: "8px",
+                        borderRadius: "12px",
                         color: "hsl(var(--foreground))",
                       }}
                     />
                     <Legend />
-                    <Bar dataKey="presente" name="Presentes" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="ausente" name="Ausentes" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="presente" name="Presentes" fill="hsl(var(--chart-1))" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="ausente" name="Ausentes" fill="hsl(var(--destructive))" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -302,56 +300,60 @@ const DashboardPage = () => {
 
           {/* Admin: Top Performers */}
           {isAdmin && topPerformers.length > 0 && (
-            <Card>
+            <Card className="transition-shadow hover:shadow-md">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Medal className="h-4 w-4 text-primary" />
                   Mais Ativos
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                {topPerformers.map((u, i) => (
-                  <div key={i} className="flex items-center gap-3 p-1.5">
-                    <span className={`text-sm font-bold w-5 text-center ${i < 3 ? "text-primary" : "text-muted-foreground"}`}>
-                      {i < 3 ? MEDAL_LABELS[i] : i + 1}
-                    </span>
-                    <Avatar className="h-7 w-7">
-                      <AvatarImage src={u.avatar_url ?? undefined} />
-                      <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                        {u.name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="flex-1 text-sm text-foreground truncate">{u.name}</span>
-                    <Badge variant="secondary" className="text-xs">{u.count} presenças</Badge>
-                  </div>
-                ))}
+              <CardContent>
+                <div className="space-y-2 stagger-fade">
+                  {topPerformers.map((u, i) => (
+                    <div key={i} className="flex items-center gap-3 p-1.5">
+                      <span className={`text-sm font-bold w-5 text-center ${i < 3 ? "text-primary" : "text-muted-foreground"}`}>
+                        {i < 3 ? MEDAL_LABELS[i] : i + 1}
+                      </span>
+                      <Avatar className="h-7 w-7">
+                        <AvatarImage src={u.avatar_url ?? undefined} />
+                        <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                          {u.name.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="flex-1 text-sm text-foreground truncate">{u.name}</span>
+                      <Badge variant="secondary" className="text-xs">{u.count} presenças</Badge>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           )}
 
           {/* Admin: Top Absences */}
           {isAdmin && topAbsences.length > 0 && (
-            <Card>
+            <Card className="transition-shadow hover:shadow-md">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-destructive" />
                   Mais Faltas
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                {topAbsences.map((u, i) => (
-                  <div key={i} className="flex items-center gap-3 p-1.5">
-                    <span className="text-sm font-bold w-5 text-center text-muted-foreground">{i + 1}</span>
-                    <Avatar className="h-7 w-7">
-                      <AvatarImage src={u.avatar_url ?? undefined} />
-                      <AvatarFallback className="text-xs bg-destructive/10 text-destructive">
-                        {u.name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="flex-1 text-sm text-foreground truncate">{u.name}</span>
-                    <Badge variant="destructive" className="text-xs">{u.count} faltas</Badge>
-                  </div>
-                ))}
+              <CardContent>
+                <div className="space-y-2 stagger-fade">
+                  {topAbsences.map((u, i) => (
+                    <div key={i} className="flex items-center gap-3 p-1.5">
+                      <span className="text-sm font-bold w-5 text-center text-muted-foreground">{i + 1}</span>
+                      <Avatar className="h-7 w-7">
+                        <AvatarImage src={u.avatar_url ?? undefined} />
+                        <AvatarFallback className="text-xs bg-destructive/10 text-destructive">
+                          {u.name.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="flex-1 text-sm text-foreground truncate">{u.name}</span>
+                      <Badge variant="destructive" className="text-xs">{u.count} faltas</Badge>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           )}
