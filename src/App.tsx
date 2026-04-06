@@ -35,6 +35,7 @@ import CheckoutPage from "./pages/CheckoutPage";
 import MySubscriptionPage from "./pages/MySubscriptionPage";
 import Signup from "./pages/Signup";
 import AdminReferrals from "./pages/admin/AdminReferrals";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
