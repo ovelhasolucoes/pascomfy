@@ -44,6 +44,7 @@ const App = () => (
             <Route path="/my-schedule" element={<ProtectedRoute><MySchedulePage /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
             <Route path="/admin/event-settings" element={<ProtectedRoute><EventSettings /></ProtectedRoute>} />
+            <Route path="/admin/notifications" element={<ProtectedRoute><AdminNotifications /></ProtectedRoute>} />
             <Route path="/superadmin" element={<ProtectedRoute><SuperAdminDashboard /></ProtectedRoute>} />
             <Route path="/superadmin/companies" element={<ProtectedRoute><SuperAdminCompanies /></ProtectedRoute>} />
             <Route path="/superadmin/plans" element={<ProtectedRoute><SuperAdminPlans /></ProtectedRoute>} />
