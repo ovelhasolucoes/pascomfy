@@ -4,7 +4,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
-  const { isAdmin, isSuperAdmin, isLoading } = usePermissions();
+  const { isAdmin, isSuperAdmin, loading: isLoading } = usePermissions();
 
   if (loading || isLoading) {
     return (
