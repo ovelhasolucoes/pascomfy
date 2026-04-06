@@ -341,6 +341,7 @@ export type Database = {
       companies: {
         Row: {
           active_users_count: number
+          block_mode: string
           created_at: string
           custom_domain: string | null
           id: string
@@ -357,6 +358,7 @@ export type Database = {
         }
         Insert: {
           active_users_count?: number
+          block_mode?: string
           created_at?: string
           custom_domain?: string | null
           id?: string
@@ -373,6 +375,7 @@ export type Database = {
         }
         Update: {
           active_users_count?: number
+          block_mode?: string
           created_at?: string
           custom_domain?: string | null
           id?: string
@@ -1077,6 +1080,57 @@ export type Database = {
           },
         ]
       }
+      payments: {
+        Row: {
+          amount: number
+          company_id: string
+          created_at: string
+          external_id: string | null
+          gateway: string | null
+          id: string
+          paid_at: string | null
+          status: Database["public"]["Enums"]["payment_status"]
+          subscription_id: string
+        }
+        Insert: {
+          amount?: number
+          company_id: string
+          created_at?: string
+          external_id?: string | null
+          gateway?: string | null
+          id?: string
+          paid_at?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          subscription_id: string
+        }
+        Update: {
+          amount?: number
+          company_id?: string
+          created_at?: string
+          external_id?: string | null
+          gateway?: string | null
+          id?: string
+          paid_at?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          subscription_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permissions: {
         Row: {
           created_at: string
@@ -1446,6 +1500,8 @@ export type Database = {
       }
       subscriptions: {
         Row: {
+          asaas_customer_id: string | null
+          asaas_subscription_id: string | null
           company_id: string
           created_at: string
           ends_at: string | null
@@ -1455,8 +1511,11 @@ export type Database = {
           plan_id: string
           started_at: string
           status: Database["public"]["Enums"]["subscription_status"]
+          trial_until: string | null
         }
         Insert: {
+          asaas_customer_id?: string | null
+          asaas_subscription_id?: string | null
           company_id: string
           created_at?: string
           ends_at?: string | null
@@ -1466,8 +1525,11 @@ export type Database = {
           plan_id: string
           started_at?: string
           status?: Database["public"]["Enums"]["subscription_status"]
+          trial_until?: string | null
         }
         Update: {
+          asaas_customer_id?: string | null
+          asaas_subscription_id?: string | null
           company_id?: string
           created_at?: string
           ends_at?: string | null
@@ -1477,6 +1539,7 @@ export type Database = {
           plan_id?: string
           started_at?: string
           status?: Database["public"]["Enums"]["subscription_status"]
+          trial_until?: string | null
         }
         Relationships: [
           {
@@ -1847,6 +1910,7 @@ export type Database = {
       notification_channel: "push" | "whatsapp" | "in_app"
       notification_send_status: "enviado" | "erro"
       notification_type: "escala" | "evento" | "aviso" | "sistema"
+      payment_status: "pago" | "pendente" | "falhou" | "estornado"
       permission_level: "basico" | "avancado"
       referral_status: "pendente" | "convertido"
       subscription_status: "ativo" | "cancelado" | "trial" | "atrasado"
@@ -1998,6 +2062,7 @@ export const Constants = {
       notification_channel: ["push", "whatsapp", "in_app"],
       notification_send_status: ["enviado", "erro"],
       notification_type: ["escala", "evento", "aviso", "sistema"],
+      payment_status: ["pago", "pendente", "falhou", "estornado"],
       permission_level: ["basico", "avancado"],
       referral_status: ["pendente", "convertido"],
       subscription_status: ["ativo", "cancelado", "trial", "atrasado"],

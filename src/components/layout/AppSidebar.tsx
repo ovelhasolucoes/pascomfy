@@ -49,6 +49,7 @@ export function AppSidebar() {
     { title: "Companies", url: "/superadmin/companies", icon: Building2 },
     { title: "Planos", url: "/superadmin/plans", icon: CreditCard },
     { title: "Assinaturas", url: "/superadmin/subscriptions", icon: Receipt },
+    { title: "Pagamentos", url: "/superadmin/payments", icon: Share2 },
     { title: "Afiliados", url: "/superadmin/affiliates", icon: Link2 },
     { title: "Tickets", url: "/superadmin/tickets", icon: MessageSquare },
     { title: "Logs", url: "/superadmin/logs", icon: ScrollText },

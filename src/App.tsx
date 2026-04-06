@@ -22,12 +22,14 @@ import SuperAdminSubscriptions from "./pages/superadmin/SuperAdminSubscriptions"
 import SuperAdminAffiliates from "./pages/superadmin/SuperAdminAffiliates";
 import SuperAdminTickets from "./pages/superadmin/SuperAdminTickets";
 import SuperAdminLogs from "./pages/superadmin/SuperAdminLogs";
+import SuperAdminPayments from "./pages/superadmin/SuperAdminPayments";
 import AdminNotifications from "./pages/admin/AdminNotifications";
 import AdminBiolink from "./pages/admin/AdminBiolink";
 import SocialPosts from "./pages/social/SocialPosts";
 import SocialCalendar from "./pages/social/SocialCalendar";
 import SocialAccounts from "./pages/social/SocialAccounts";
 import BioPublicPage from "./pages/BioPublicPage";
+import AccountBlocked from "./pages/AccountBlocked";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -64,6 +66,8 @@ const App = () => (
             <Route path="/superadmin/affiliates" element={<ProtectedRoute><SuperAdminAffiliates /></ProtectedRoute>} />
             <Route path="/superadmin/tickets" element={<ProtectedRoute><SuperAdminTickets /></ProtectedRoute>} />
             <Route path="/superadmin/logs" element={<ProtectedRoute><SuperAdminLogs /></ProtectedRoute>} />
+            <Route path="/superadmin/payments" element={<ProtectedRoute><SuperAdminPayments /></ProtectedRoute>} />
+            <Route path="/account-blocked" element={<AccountBlocked />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
