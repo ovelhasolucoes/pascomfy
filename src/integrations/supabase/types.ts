@@ -132,6 +132,129 @@ export type Database = {
           },
         ]
       }
+      biolink_clicks: {
+        Row: {
+          biolink_item_id: string
+          clicked_at: string
+          id: string
+          referer: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          biolink_item_id: string
+          clicked_at?: string
+          id?: string
+          referer?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          biolink_item_id?: string
+          clicked_at?: string
+          id?: string
+          referer?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "biolink_clicks_biolink_item_id_fkey"
+            columns: ["biolink_item_id"]
+            isOneToOne: false
+            referencedRelation: "biolink_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      biolink_items: {
+        Row: {
+          ativo: boolean
+          biolink_id: string
+          created_at: string
+          icone: string | null
+          id: string
+          ordem: number
+          tipo: Database["public"]["Enums"]["biolink_item_type"]
+          titulo: string
+          url: string
+        }
+        Insert: {
+          ativo?: boolean
+          biolink_id: string
+          created_at?: string
+          icone?: string | null
+          id?: string
+          ordem?: number
+          tipo?: Database["public"]["Enums"]["biolink_item_type"]
+          titulo: string
+          url: string
+        }
+        Update: {
+          ativo?: boolean
+          biolink_id?: string
+          created_at?: string
+          icone?: string | null
+          id?: string
+          ordem?: number
+          tipo?: Database["public"]["Enums"]["biolink_item_type"]
+          titulo?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "biolink_items_biolink_id_fkey"
+            columns: ["biolink_id"]
+            isOneToOne: false
+            referencedRelation: "biolinks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      biolinks: {
+        Row: {
+          ativo: boolean
+          company_id: string
+          cor_primaria: string
+          cor_secundaria: string
+          created_at: string
+          descricao: string | null
+          id: string
+          logo_url: string | null
+          slug: string
+          titulo: string
+        }
+        Insert: {
+          ativo?: boolean
+          company_id: string
+          cor_primaria?: string
+          cor_secundaria?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          logo_url?: string | null
+          slug: string
+          titulo: string
+        }
+        Update: {
+          ativo?: boolean
+          company_id?: string
+          cor_primaria?: string
+          cor_secundaria?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          logo_url?: string | null
+          slug?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "biolinks_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checklist_template_items: {
         Row: {
           company_id: string
@@ -1709,6 +1832,13 @@ export type Database = {
     Enums: {
       app_role: "colaborador" | "admin" | "super_admin"
       attendance_status: "presente" | "ausente"
+      biolink_item_type:
+        | "link"
+        | "whatsapp"
+        | "youtube"
+        | "instagram"
+        | "facebook"
+        | "doacao"
       checklist_status: "pendente" | "concluido"
       company_status: "ativa" | "suspensa" | "cancelada"
       event_status: "ativo" | "cancelado"
@@ -1852,6 +1982,14 @@ export const Constants = {
     Enums: {
       app_role: ["colaborador", "admin", "super_admin"],
       attendance_status: ["presente", "ausente"],
+      biolink_item_type: [
+        "link",
+        "whatsapp",
+        "youtube",
+        "instagram",
+        "facebook",
+        "doacao",
+      ],
       checklist_status: ["pendente", "concluido"],
       company_status: ["ativa", "suspensa", "cancelada"],
       event_status: ["ativo", "cancelado"],
