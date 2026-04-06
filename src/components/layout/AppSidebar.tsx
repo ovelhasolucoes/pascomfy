@@ -1,4 +1,4 @@
-import { Calendar, CalendarDays, Users, Settings, LogOut, UserCircle } from "lucide-react";
+import { Calendar, CalendarDays, Users, Settings, LogOut, UserCircle, LayoutDashboard, Building2, CreditCard, Receipt, Link2, MessageSquare, ScrollText } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -22,7 +22,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
-  const { isAdmin } = usePermissions();
+  const { isAdmin, isSuperAdmin } = usePermissions();
   const { signOut } = useAuth();
   const { profile } = useProfile();
 
@@ -34,6 +34,16 @@ export function AppSidebar() {
   const adminItems = [
     { title: "Usuários", url: "/admin/users", icon: Users },
     { title: "Configurações", url: "/admin/event-settings", icon: Settings },
+  ];
+
+  const superAdminItems = [
+    { title: "Dashboard", url: "/superadmin", icon: LayoutDashboard },
+    { title: "Companies", url: "/superadmin/companies", icon: Building2 },
+    { title: "Planos", url: "/superadmin/plans", icon: CreditCard },
+    { title: "Assinaturas", url: "/superadmin/subscriptions", icon: Receipt },
+    { title: "Afiliados", url: "/superadmin/affiliates", icon: Link2 },
+    { title: "Tickets", url: "/superadmin/tickets", icon: MessageSquare },
+    { title: "Logs", url: "/superadmin/logs", icon: ScrollText },
   ];
 
   return (
@@ -63,6 +73,26 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {adminItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink to={item.url} className="hover:bg-sidebar-accent" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
+                        <item.icon className="h-4 w-4" />
+                        {!collapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {isSuperAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>{collapsed ? "SA" : "Super Admin"}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {superAdminItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
                       <NavLink to={item.url} className="hover:bg-sidebar-accent" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
