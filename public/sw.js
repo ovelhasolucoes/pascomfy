@@ -13,11 +13,16 @@ self.addEventListener("push", (event) => {
     }
   }
 
+  // Build URL from metadata.event_id if available
+  const metadata = data.metadata || {};
+  const eventId = metadata.event_id;
+  const url = eventId ? `/events/${eventId}` : "/";
+
   const options = {
     body: data.body || data.message || "Nova notificação",
     icon: "/favicon.ico",
     badge: "/favicon.ico",
-    data: data.metadata || {},
+    data: { ...metadata, url },
     tag: data.type || "default",
     renotify: true,
   };
@@ -34,8 +39,12 @@ self.addEventListener("notificationclick", (event) => {
 
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
+      // Try to find an existing window and navigate it
       for (const client of windowClients) {
         if (client.url.includes(self.location.origin) && "focus" in client) {
+          if ("navigate" in client) {
+            client.navigate(urlToOpen);
+          }
           return client.focus();
         }
       }
