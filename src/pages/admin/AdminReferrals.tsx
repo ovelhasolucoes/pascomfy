@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Copy, Gift, Loader2, Users, Share2, TrendingUp, CheckCircle2, Clock, Link2 } from "lucide-react";
+import { Copy, Gift, Loader2, Users, Share2, TrendingUp, CheckCircle2, Clock, Link2, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 
 const rewardTypeLabel: Record<string, string> = {
