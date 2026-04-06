@@ -15,6 +15,7 @@ const Signup = () => {
 
   const [companyName, setCompanyName] = useState("");
   const [name, setName] = useState("");
+  const [city, setCity] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [referralCode, setReferralCode] = useState(refCode);
