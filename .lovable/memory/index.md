@@ -17,3 +17,4 @@ Profiles expandido: status, phone, avatar_url, availability (jsonb), reliability
 - [Super Admin](mem://features/superadmin) — Painel SaaS: dashboard, companies, planos, assinaturas, afiliados, tickets, logs
 - [Frontend Events](mem://features/frontend-events) — Páginas de eventos, calendário, criação, detalhe, live mode
 - [Storage](mem://features/storage) — StorageService multi-provider, tabela files, bucket company-files, Edge Function generate-upload-url
+- [Notificações](mem://features/notifications) — Multi-canal (In-App realtime, Push stub, WhatsApp Meta/Evo), triggers automáticos, envio manual admin
