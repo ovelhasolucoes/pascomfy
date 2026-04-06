@@ -15,3 +15,4 @@ Layout: AppLayout com sidebar colapsável (shadcn Sidebar). Rota raiz redirecion
 - [Convites](mem://features/invites) — Fluxo de convite por token com vinculação automática à company
 - [Eventos e Escalas](mem://features/events-scales) — Tabelas events, event_types, team_templates, event_teams, event_team_members com RLS multi-tenant
 - [Frontend Eventos](mem://features/frontend-events) — Calendário, criação, detalhe, equipes, escala, agenda pessoal, admin settings
+- [Checklist e Presença](mem://features/checklist-attendance) — Templates de checklist, checklists por evento, progresso individual, presença/check-in com realtime
