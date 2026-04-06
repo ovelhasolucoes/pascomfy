@@ -46,6 +46,11 @@ const AdminReferrals = () => {
     }
   };
 
+  const shareWhatsApp = () => {
+    const text = `Conheça o Pascomfy! Cadastre sua paróquia com meu link e ganhe um trial de 14 dias grátis:\n${shareLink}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+  };
+
   const totalReferrals = referrals.length;
   const convertedReferrals = referrals.filter((r: any) => r.status === "convertido").length;
   const pendingReferrals = referrals.filter((r: any) => r.status === "pendente").length;
