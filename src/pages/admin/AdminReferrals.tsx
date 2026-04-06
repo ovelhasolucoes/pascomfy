@@ -167,6 +167,10 @@ const AdminReferrals = () => {
                       <Link2 className="h-4 w-4" />
                       Copiar
                     </Button>
+                    <Button onClick={shareWhatsApp} variant="outline" className="shrink-0 gap-2 text-green-600 border-green-200 hover:bg-green-50">
+                      <MessageCircle className="h-4 w-4" />
+                      WhatsApp
+                    </Button>
                   </div>
                 </div>
               </div>
