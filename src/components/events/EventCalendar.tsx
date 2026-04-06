@@ -40,23 +40,23 @@ export function EventCalendar({ events, canCreate }: EventCalendarProps) {
   return (
     <TooltipProvider>
       <div className="space-y-4 animate-fade-in">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <Button variant="outline" size="icon" onClick={() => setCurrentDate(subMonths(currentDate, 1))}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <h2 className="text-lg font-semibold text-foreground capitalize min-w-[160px] text-center">
+            <h2 className="text-lg font-semibold text-foreground capitalize flex-1 text-center sm:flex-none sm:min-w-[160px]">
               {format(currentDate, "MMMM yyyy", { locale: ptBR })}
             </h2>
             <Button variant="outline" size="icon" onClick={() => setCurrentDate(addMonths(currentDate, 1))}>
               <ChevronRight className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => setCurrentDate(new Date())} className="text-primary">
+            <Button variant="ghost" size="sm" onClick={() => setCurrentDate(new Date())} className="text-primary shrink-0">
               Hoje
             </Button>
           </div>
           {canCreate && (
-            <Button onClick={() => navigate("/events/new")} className="shadow-sm">
+            <Button onClick={() => navigate("/events/new")} className="w-full sm:w-auto shadow-sm">
               <Plus className="h-4 w-4 mr-1" /> Novo Evento
             </Button>
           )}
