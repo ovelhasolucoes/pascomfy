@@ -1,122 +1,138 @@
 
 
-# Pascomfy — Módulo Biolink
+# Pascomfy — Sistema de Billing & Assinaturas com Asaas
 
 ## Resumo
 
-Sistema de biolink (link-in-bio) por company, com página pública SSR via Edge Function, painel admin no sidebar, e analytics de cliques. Cada paróquia terá sua página pública acessível sem login.
+Sistema completo de billing SaaS: tabela `payments`, edge functions para integração real com Asaas (criar cliente, cobrança, webhook), trial híbrido com alertas + automação, bloqueio configurável por company, e UI no super admin.
 
 ## Arquitetura
 
 ```text
 ┌─────────────────────────────────────────────────┐
-│  Admin (SPA React)                              │
-│  /admin/biolink → editar links, cores, logo     │
-│  AdminRoute protegido                           │
+│  Super Admin UI                                 │
+│  /superadmin/subscriptions (expandida)          │
+│  /superadmin/companies (bloqueio config)        │
 └────────────┬────────────────────────────────────┘
-             │ supabase client
+             │
 ┌────────────▼────────────────────────────────────┐
 │  Supabase DB                                    │
-│  biolinks + biolink_items + biolink_clicks      │
-│  RLS: admin write, anon read (ativo=true)       │
-└────────────┬────────────────────────────────────┘
-             │ service_role
-┌────────────▼────────────────────────────────────┐
-│  Edge Function: biolink-page                    │
-│  GET /?slug=paroquia-sao-jose                   │
-│  Retorna HTML completo (SSR)                    │
-│  Registra clique via query param ?click=item_id │
-└─────────────────────────────────────────────────┘
+│  payments (novo) + subscriptions (expandir)     │
+│  companies.block_mode (novo campo)              │
+└────────────┬──────────────┬─────────────────────┘
+             │              │
+┌────────────▼──────┐  ┌────▼────────────────────┐
+│  Edge: asaas-     │  │  Edge: asaas-webhook    │
+│  billing          │  │  POST (público)         │
+│  (criar cliente,  │  │  Valida token, atualiza │
+│  gerar cobrança)  │  │  payment + subscription │
+└───────────────────┘  └─────────────────────────┘
+                       ┌─────────────────────────┐
+                       │  Edge: check-trials     │
+                       │  CRON (diário)           │
+                       │  Alerta + muda status   │
+                       └─────────────────────────┘
 ```
-
-A página pública será acessada via URL do Edge Function. Internamente, o slug resolve para a company correta.
 
 ## Etapa 1 — Migração SQL
 
-Três tabelas:
+**Nova tabela `payments`:**
+- `id`, `company_id`, `subscription_id`, `amount` (numeric), `status` (enum: `pago`, `pendente`, `falhou`, `estornado`), `gateway` (text), `external_id` (text), `paid_at` (timestamptz nullable), `created_at`
 
-**biolinks**
-- `id`, `company_id` (FK companies), `slug` (unique), `titulo`, `descricao`, `logo_url`, `cor_primaria` (#6366f1), `cor_secundaria` (#8b5cf6), `ativo` (default true), `created_at`
+**Expandir `subscriptions`:**
+- Adicionar `trial_until` (timestamptz nullable)
+- Adicionar `asaas_customer_id` (text nullable)
+- Adicionar `asaas_subscription_id` (text nullable)
 
-**biolink_items**
-- `id`, `biolink_id` (FK biolinks CASCADE), `titulo`, `url`, `tipo` (enum: link, whatsapp, youtube, instagram, facebook, doacao), `icone`, `ordem` (int), `ativo` (default true), `created_at`
+**Expandir `companies`:**
+- Adicionar `block_mode` (text, default `'soft'`, valores: `'soft'`, `'hard'`, `'none'`)
 
-**biolink_clicks**
-- `id`, `biolink_item_id` (FK biolink_items CASCADE), `clicked_at` (default now()), `user_agent`, `referer`
-- Sem company_id necessário (join via biolink_items → biolinks)
+**RLS para `payments`:**
+- Super admin: ALL
+- Company admin: SELECT onde `company_id = get_user_company_id(auth.uid())`
+- Service role: INSERT/UPDATE (webhooks)
 
-**RLS Policies:**
-- `biolinks`: admin da company faz ALL; anon SELECT onde `ativo = true`; members SELECT da company
-- `biolink_items`: admin da company faz ALL; anon SELECT onde `ativo = true` e biolink ativo; members SELECT da company
-- `biolink_clicks`: service_role INSERT; admin da company SELECT (via join)
+**Enum:** `payment_status` (`pago`, `pendente`, `falhou`, `estornado`)
 
-**Índices:**
-- `UNIQUE` em `biolinks.slug`
-- Index em `biolink_items.biolink_id` + `ordem`
-- Index em `biolink_clicks.biolink_item_id` + `clicked_at`
+## Etapa 2 — Edge Function `asaas-billing`
 
-## Etapa 2 — Edge Function `biolink-page`
+**Arquivo:** `supabase/functions/asaas-billing/index.ts`
 
-**Arquivo:** `supabase/functions/biolink-page/index.ts`
+Endpoints (via body action):
+1. **`create_customer`** — Cria cliente no Asaas com dados da company (name, email do admin). Salva `asaas_customer_id` na subscription.
+2. **`create_charge`** — Gera cobrança (boleto/PIX) no Asaas para a subscription. Insere registro em `payments` com status `pendente`.
+3. **`create_subscription`** — Cria assinatura recorrente no Asaas (boleto ou PIX). Salva `asaas_subscription_id`.
 
-Lógica:
-1. Recebe `slug` via query param (`?slug=xxx`)
-2. Se receber `?click=item_id`, registra clique em `biolink_clicks` e redireciona para a URL do item (302)
-3. Caso contrário, busca biolink + items (ativo=true, ordenados por `ordem`)
-4. Retorna HTML completo com:
-   - Meta tags (title, description, og:image)
-   - CSS inline com cores personalizadas
-   - Logo, título, descrição
-   - Lista de links estilizados por tipo (ícones diferentes para WhatsApp, YouTube, etc.)
-   - Links apontam para o próprio Edge Function com `?slug=xxx&click=item_id` (para tracking)
-5. Design responsivo, mobile-first, leve (sem JS framework)
+Requer secret: `ASAAS_API_KEY` (sandbox ou produção).
+Autenticação: valida JWT, verifica `super_admin` role.
 
-## Etapa 3 — Admin UI
+## Etapa 3 — Edge Function `asaas-webhook`
 
-**Nova rota:** `/admin/biolink` (protegida com AdminRoute)
+**Arquivo:** `supabase/functions/asaas-webhook/index.ts`
 
-**Sidebar:** Novo item "Biolink" com ícone `Link2` na seção admin
+- Endpoint público (sem JWT)
+- Valida token de webhook do Asaas via header ou query param
+- Eventos tratados:
+  - `PAYMENT_CONFIRMED` / `PAYMENT_RECEIVED` → atualiza `payments.status = 'pago'`, `subscription.status = 'ativo'`, `company.status = 'ativa'`
+  - `PAYMENT_OVERDUE` → `payments.status = 'falhou'`, `subscription.status = 'atrasado'`
+  - `PAYMENT_REFUNDED` → `payments.status = 'estornado'`
+- Requer secret: `ASAAS_WEBHOOK_TOKEN`
 
-**Página:** `src/pages/admin/AdminBiolink.tsx`
-- Se não existe biolink para a company, mostra formulário de criação (slug, título, etc.)
-- Se existe, mostra:
-  - Preview miniatura do biolink
-  - Formulário de personalização (cores, logo, título, descrição, slug)
-  - Toggle ativo/desativo
-  - Lista de items com drag-to-reorder (ou setas ↑↓)
-  - Botão adicionar item (dialog com: título, url, tipo, ícone)
-  - Toggle ativo por item
-  - Link para abrir a página pública
+## Etapa 4 — Edge Function `check-trials`
 
-**Componentes:**
-- `src/components/biolink/BiolinkEditor.tsx` — formulário principal
-- `src/components/biolink/BiolinkItemList.tsx` — lista de items ordenável
-- `src/components/biolink/BiolinkItemDialog.tsx` — dialog add/edit item
-- `src/components/biolink/BiolinkPreview.tsx` — preview inline
+**Arquivo:** `supabase/functions/check-trials/index.ts`
 
-**Hook:** `src/hooks/useBiolink.ts` — CRUD de biolinks e items via React Query
+- Executada via CRON (pg_cron diário)
+- Busca subscriptions com `status = 'trial'` e `trial_until < now()`
+- Ação: muda `subscription.status = 'atrasado'` e insere notificação para o admin da company
+- Não bloqueia diretamente (super admin decide) — comportamento híbrido
 
-**Analytics simples:** Seção no editor mostrando total de cliques por item (query count agrupada)
+## Etapa 5 — Bloqueio Configurável
 
-## Etapa 4 — Sidebar e Rotas
+**No `ProtectedRoute.tsx`:**
+- Verificar `company.status` e `company.block_mode`:
+  - `hard` + status `suspensa`/`cancelada` → redireciona para tela "Conta Suspensa" com link de pagamento
+  - `soft` + status `suspensa` → banner de aviso no topo, bloqueia criação de eventos/posts
+  - `none` → sem bloqueio (super admin decide não bloquear)
 
-- Adicionar item "Biolink" no sidebar (seção admin, ícone Link2)
-- Adicionar rota `/admin/biolink` com AdminRoute no App.tsx
+**Nova página:** `src/pages/AccountBlocked.tsx` — tela para hard block com informações de contato/pagamento
 
-## Detalhes Técnicos
+## Etapa 6 — UI Super Admin
 
-- Edge Function usa `service_role` para ler dados (anon read via RLS) e inserir cliques
-- HTML gerado é ~5KB, sem dependências externas, carregamento ultra-rápido
-- Tipo enum para `biolink_item_type` garante consistência
-- Slug validado no frontend (lowercase, hifens, sem espaços)
-- CORS não necessário (Edge Function retorna HTML, não JSON)
-- URL pública: `https://cchovdurprjtefisautg.supabase.co/functions/v1/biolink-page?slug=xxx`
+**Expandir `SuperAdminSubscriptions.tsx`:**
+- Adicionar colunas: Trial até, Gateway, Asaas ID
+- Botão "Gerar Cobrança" que chama `asaas-billing` (create_charge)
+- Botão "Criar no Asaas" para vincular company ao gateway
 
-## Evoluções Futuras
+**Expandir `SuperAdminCompanies.tsx` (CompanyDetailSheet):**
+- Campo para selecionar `block_mode` (soft/hard/none)
+- Seção mostrando histórico de pagamentos da company
 
-- Temas pré-definidos (dark, colorful, minimal)
-- QR Code gerado automaticamente para o biolink
-- Custom domain por company (pascomfy.app/slug → dominio-proprio.com)
-- Integração com analytics externo (GA, Pixel)
-- Formulário de contato embutido no biolink
+**Nova página:** `src/pages/superadmin/SuperAdminPayments.tsx`
+- Tabela com todos payments (company, valor, status, gateway, data)
+- Filtros por status e company
+- Rota: `/superadmin/payments`
+
+**Sidebar:** Adicionar item "Pagamentos" na seção super admin com ícone `Receipt`
+
+## Etapa 7 — Hook e Queries
+
+**`src/hooks/usePayments.ts`:**
+- Query de payments por company ou global (super admin)
+- Mutation para chamar edge function `asaas-billing`
+
+**Expandir `useSubscriptions.ts`:**
+- Incluir campos novos (trial_until, asaas_customer_id)
+
+## Segurança
+
+- Asaas API key e webhook token como secrets do Supabase (nunca no frontend)
+- Webhook valida token antes de processar
+- Dados financeiros acessíveis apenas por super admin e admin da company (via RLS)
+- Edge functions validam JWT e role antes de ações financeiras
+
+## Secrets Necessários
+
+- `ASAAS_API_KEY` — chave da API Asaas (sandbox inicialmente)
+- `ASAAS_WEBHOOK_TOKEN` — token para validar webhooks
 
