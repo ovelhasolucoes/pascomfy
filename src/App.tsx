@@ -33,6 +33,8 @@ import AccountBlocked from "./pages/AccountBlocked";
 import PricingPage from "./pages/PricingPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import MySubscriptionPage from "./pages/MySubscriptionPage";
+import Signup from "./pages/Signup";
+import AdminReferrals from "./pages/admin/AdminReferrals";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,6 +51,7 @@ const App = () => (
             <Route path="/invite/:token" element={<InviteAccept />} />
             <Route path="/bio/:slug" element={<BioPublicPage />} />
             <Route path="/pricing" element={<PricingPage />} />
+            <Route path="/signup" element={<Signup />} />
             <Route path="/" element={<Navigate to="/events" replace />} />
             <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
             <Route path="/events/new" element={<ProtectedRoute><EventCreate /></ProtectedRoute>} />
@@ -62,6 +65,7 @@ const App = () => (
             <Route path="/admin/event-settings" element={<Navigate to="/admin/settings" replace />} />
             <Route path="/admin/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
             <Route path="/admin/biolink" element={<AdminRoute><AdminBiolink /></AdminRoute>} />
+            <Route path="/admin/referrals" element={<AdminRoute><AdminReferrals /></AdminRoute>} />
             <Route path="/social/posts" element={<ProtectedRoute><SocialPosts /></ProtectedRoute>} />
             <Route path="/social/calendar" element={<ProtectedRoute><SocialCalendar /></ProtectedRoute>} />
             <Route path="/social/accounts" element={<AdminRoute><SocialAccounts /></AdminRoute>} />

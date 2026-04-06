@@ -59,26 +59,29 @@ export type Database = {
         Row: {
           active: boolean
           code: string
-          commission_pct: number
           company_id: string
           created_at: string
           id: string
+          reward_type: Database["public"]["Enums"]["reward_type"]
+          reward_value: number
         }
         Insert: {
           active?: boolean
           code: string
-          commission_pct?: number
           company_id: string
           created_at?: string
           id?: string
+          reward_type?: Database["public"]["Enums"]["reward_type"]
+          reward_value?: number
         }
         Update: {
           active?: boolean
           code?: string
-          commission_pct?: number
           company_id?: string
           created_at?: string
           id?: string
+          reward_type?: Database["public"]["Enums"]["reward_type"]
+          reward_value?: number
         }
         Relationships: [
           {
@@ -126,8 +129,56 @@ export type Database = {
           {
             foreignKeyName: "affiliate_referrals_referred_company_id_fkey"
             columns: ["referred_company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliate_rewards: {
+        Row: {
+          affiliate_company_id: string
+          applied: boolean
+          applied_at: string | null
+          created_at: string
+          id: string
+          referral_id: string
+          reward_type: Database["public"]["Enums"]["reward_type"]
+          reward_value: number
+        }
+        Insert: {
+          affiliate_company_id: string
+          applied?: boolean
+          applied_at?: string | null
+          created_at?: string
+          id?: string
+          referral_id: string
+          reward_type: Database["public"]["Enums"]["reward_type"]
+          reward_value?: number
+        }
+        Update: {
+          affiliate_company_id?: string
+          applied?: boolean
+          applied_at?: string | null
+          created_at?: string
+          id?: string
+          referral_id?: string
+          reward_type?: Database["public"]["Enums"]["reward_type"]
+          reward_value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_rewards_affiliate_company_id_fkey"
+            columns: ["affiliate_company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_rewards_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_referrals"
             referencedColumns: ["id"]
           },
         ]
@@ -1913,6 +1964,7 @@ export type Database = {
       payment_status: "pago" | "pendente" | "falhou" | "estornado"
       permission_level: "basico" | "avancado"
       referral_status: "pendente" | "convertido"
+      reward_type: "dias_gratis" | "desconto" | "upgrade"
       subscription_status: "ativo" | "cancelado" | "trial" | "atrasado"
       ticket_status: "aberto" | "respondido" | "fechado"
       user_status: "ativo" | "inativo" | "bloqueado"
@@ -2065,6 +2117,7 @@ export const Constants = {
       payment_status: ["pago", "pendente", "falhou", "estornado"],
       permission_level: ["basico", "avancado"],
       referral_status: ["pendente", "convertido"],
+      reward_type: ["dias_gratis", "desconto", "upgrade"],
       subscription_status: ["ativo", "cancelado", "trial", "atrasado"],
       ticket_status: ["aberto", "respondido", "fechado"],
       user_status: ["ativo", "inativo", "bloqueado"],
