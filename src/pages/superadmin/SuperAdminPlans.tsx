@@ -93,6 +93,7 @@ const SuperAdminPlans = () => {
               <div><Label>Max usuários</Label><Input type="number" value={form.max_users} onChange={(e) => setForm({ ...form, max_users: Number(e.target.value) })} /></div>
               <div><Label>Storage (MB)</Label><Input type="number" value={form.max_storage_mb} onChange={(e) => setForm({ ...form, max_storage_mb: Number(e.target.value) })} /></div>
               <div><Label>Max uploads</Label><Input type="number" value={form.max_uploads} onChange={(e) => setForm({ ...form, max_uploads: Number(e.target.value) })} /></div>
+              <div><Label>Dias de trial</Label><Input type="number" value={form.trial_days} onChange={(e) => setForm({ ...form, trial_days: Number(e.target.value) })} min={0} /></div>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2"><Switch checked={form.allows_whitelabel} onCheckedChange={(v) => setForm({ ...form, allows_whitelabel: v })} /><Label>Whitelabel</Label></div>
