@@ -34,8 +34,8 @@ export function useAutomationLogs(filters?: Filters) {
         .order("created_at", { ascending: false })
         .limit(200);
 
-      if (filters?.channel) q = q.eq("channel", filters.channel);
-      if (filters?.status) q = q.eq("status", filters.status);
+      if (filters?.channel && filters.channel !== "all") q = q.eq("channel", filters.channel as "in_app" | "push" | "whatsapp" | "email");
+      if (filters?.status && filters.status !== "all") q = q.eq("status", filters.status);
 
       const { data, error } = await q;
       if (error) throw error;

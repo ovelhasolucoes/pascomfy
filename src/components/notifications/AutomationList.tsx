@@ -152,7 +152,7 @@ export function AutomationList() {
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                {a.type === "automatica" ? <Zap className="h-4 w-4 text-yellow-500" /> : <Send className="h-4 w-4 text-blue-500" />}
+                {a.type === "automatica" ? <Zap className="h-4 w-4 text-primary" /> : <Send className="h-4 w-4 text-muted-foreground" />}
                 <CardTitle className="text-base">{a.name}</CardTitle>
               </div>
               <div className="flex items-center gap-2">
