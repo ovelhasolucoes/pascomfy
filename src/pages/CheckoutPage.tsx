@@ -111,9 +111,9 @@ const CheckoutPage = () => {
             company_id: profile.company_id,
             amount: plan.price_monthly,
             plan_name: `Plano ${plan.name} - Pascomfy`,
-            success_url: `${appUrl}/my-subscription?status=success`,
-            failure_url: `${appUrl}/my-subscription?status=failure`,
-            pending_url: `${appUrl}/my-subscription?status=pending`,
+            success_url: `${appUrl}/admin/my-subscription?status=success`,
+            failure_url: `${appUrl}/admin/my-subscription?status=failure`,
+            pending_url: `${appUrl}/admin/my-subscription?status=pending`,
           },
         });
         if (error) throw error;
@@ -127,7 +127,7 @@ const CheckoutPage = () => {
       } else if (data.gateway === "asaas") {
         toast.success("Cobrança gerada! Verifique o PIX ou boleto.");
       }
-      navigate("/my-subscription");
+      navigate("/admin/my-subscription");
     },
     onError: (err: any) => {
       toast.error(err.message || "Erro ao processar pagamento");
