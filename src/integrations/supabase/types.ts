@@ -93,6 +93,214 @@ export type Database = {
           },
         ]
       }
+      event_team_members: {
+        Row: {
+          company_id: string
+          confirmed_at: string | null
+          created_at: string
+          event_team_id: string
+          id: string
+          role_description: string | null
+          role_name: string | null
+          status: Database["public"]["Enums"]["member_status"]
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          confirmed_at?: string | null
+          created_at?: string
+          event_team_id: string
+          id?: string
+          role_description?: string | null
+          role_name?: string | null
+          status?: Database["public"]["Enums"]["member_status"]
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          confirmed_at?: string | null
+          created_at?: string
+          event_team_id?: string
+          id?: string
+          role_description?: string | null
+          role_name?: string | null
+          status?: Database["public"]["Enums"]["member_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_team_members_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_team_members_event_team_id_fkey"
+            columns: ["event_team_id"]
+            isOneToOne: false
+            referencedRelation: "event_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_team_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_teams: {
+        Row: {
+          color: string | null
+          company_id: string
+          created_at: string
+          description: string | null
+          display_order: number
+          event_id: string
+          id: string
+          name: string
+          template_id: string | null
+        }
+        Insert: {
+          color?: string | null
+          company_id: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          event_id: string
+          id?: string
+          name: string
+          template_id?: string | null
+        }
+        Update: {
+          color?: string | null
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          event_id?: string
+          id?: string
+          name?: string
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_teams_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_teams_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_teams_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "team_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_types: {
+        Row: {
+          color: string | null
+          company_id: string
+          created_at: string
+          icon: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          color?: string | null
+          company_id: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string | null
+          company_id?: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_types_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          end_date: string | null
+          event_type_id: string | null
+          id: string
+          location: string | null
+          start_date: string
+          status: Database["public"]["Enums"]["event_status"]
+          title: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          end_date?: string | null
+          event_type_id?: string | null
+          id?: string
+          location?: string | null
+          start_date: string
+          status?: Database["public"]["Enums"]["event_status"]
+          title: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          end_date?: string | null
+          event_type_id?: string | null
+          id?: string
+          location?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["event_status"]
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_event_type_id_fkey"
+            columns: ["event_type_id"]
+            isOneToOne: false
+            referencedRelation: "event_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invites: {
         Row: {
           company_id: string
@@ -270,6 +478,44 @@ export type Database = {
           },
         ]
       }
+      team_templates: {
+        Row: {
+          color: string | null
+          company_id: string
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          name: string
+        }
+        Insert: {
+          color?: string | null
+          company_id: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string | null
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_templates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_permissions: {
         Row: {
           allowed: boolean
@@ -354,7 +600,9 @@ export type Database = {
     }
     Enums: {
       app_role: "colaborador" | "admin" | "super_admin"
+      event_status: "ativo" | "cancelado"
       invite_status: "pendente" | "aceito" | "expirado"
+      member_status: "pendente" | "confirmado" | "ausente" | "substituido"
       permission_level: "basico" | "avancado"
       user_status: "ativo" | "inativo" | "bloqueado"
     }
@@ -485,7 +733,9 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["colaborador", "admin", "super_admin"],
+      event_status: ["ativo", "cancelado"],
       invite_status: ["pendente", "aceito", "expirado"],
+      member_status: ["pendente", "confirmado", "ausente", "substituido"],
       permission_level: ["basico", "avancado"],
       user_status: ["ativo", "inativo", "bloqueado"],
     },
