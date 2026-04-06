@@ -34,30 +34,38 @@ export function CreateCompanyDialog() {
       if (!name.trim()) throw new Error("Nome da empresa é obrigatório");
       if (!planId) throw new Error("Selecione um plano");
 
-      // 1. Create subscription
+      const companyId = crypto.randomUUID();
+
+      // 1. Create company first (no subscription yet)
+      const { error: compErr } = await supabase
+        .from("companies")
+        .insert({
+          id: companyId,
+          name: name.trim(),
+          status: "ativa" as const,
+          plan_id: planId,
+        });
+      if (compErr) throw compErr;
+
+      // 2. Create subscription referencing existing company
       const { data: sub, error: subErr } = await supabase
         .from("subscriptions")
         .insert({
           plan_id: planId,
-          company_id: crypto.randomUUID(),
+          company_id: companyId,
           status: "ativo" as const,
           started_at: new Date().toISOString(),
         })
-        .select("id, company_id")
+        .select("id")
         .single();
       if (subErr) throw subErr;
 
-      // 2. Create company
-      const { error: compErr } = await supabase
+      // 3. Link subscription to company
+      const { error: updErr } = await supabase
         .from("companies")
-        .insert({
-          id: sub.company_id,
-          name: name.trim(),
-          status: "ativa" as const,
-          subscription_id: sub.id,
-          plan_id: planId,
-        });
-      if (compErr) throw compErr;
+        .update({ subscription_id: sub.id })
+        .eq("id", companyId);
+      if (updErr) throw updErr;
 
       // 3. If admin email provided, create invite
       if (adminEmail.trim()) {
