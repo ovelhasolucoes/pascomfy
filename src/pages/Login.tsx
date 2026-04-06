@@ -68,6 +68,12 @@ const Login = () => {
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Entrando..." : "Entrar"}
             </Button>
+            <p className="text-center text-sm text-muted-foreground">
+              Ainda não tem conta?{" "}
+              <Link to="/signup" className="text-primary underline font-medium">
+                Cadastre sua paróquia
+              </Link>
+            </p>
           </form>
         </CardContent>
       </Card>
