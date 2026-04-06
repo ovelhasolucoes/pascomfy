@@ -2,7 +2,7 @@ import {
   Calendar, CalendarDays, Users, Settings, LogOut, LayoutDashboard,
   Building2, CreditCard, Receipt, Link2, MessageSquare, ScrollText,
   Bell, Share2, FileText, CalendarCheck, UserCog, ChevronRight,
-  Gift, Shield, Home, User
+  Gift, Shield, Home, User, RefreshCw
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
