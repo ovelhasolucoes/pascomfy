@@ -11,9 +11,9 @@ interface EventFiltersProps {
 
 export function EventFilters({ eventTypes, selectedType, onTypeChange, selectedStatus, onStatusChange }: EventFiltersProps) {
   return (
-    <div className="flex flex-wrap gap-3">
+    <div className="grid grid-cols-2 gap-3">
       <Select value={selectedType} onValueChange={onTypeChange}>
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger className="w-full">
           <SelectValue placeholder="Tipo de evento" />
         </SelectTrigger>
         <SelectContent>
@@ -30,7 +30,7 @@ export function EventFilters({ eventTypes, selectedType, onTypeChange, selectedS
       </Select>
 
       <Select value={selectedStatus} onValueChange={onStatusChange}>
-        <SelectTrigger className="w-[150px]">
+        <SelectTrigger className="w-full">
           <SelectValue placeholder="Status" />
         </SelectTrigger>
         <SelectContent>

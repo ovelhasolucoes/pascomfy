@@ -136,19 +136,21 @@ export function EventCalendar({ events, canCreate }: EventCalendarProps) {
                   onClick={() => navigate(`/events/${ev.id}`)}
                   className="w-full text-left p-4 rounded-xl border border-border hover:bg-muted/50 hover:shadow-sm transition-all"
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-start gap-2 min-w-0">
                     {ev.event_types?.color && (
-                      <div className="w-3 h-3 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: ev.event_types.color }} />
+                      <div className="w-3 h-3 rounded-full shrink-0 shadow-sm mt-1" style={{ backgroundColor: ev.event_types.color }} />
                     )}
-                    <span className="font-semibold text-foreground truncate">{ev.title}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-foreground break-words line-clamp-2">{ev.title}</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {format(new Date(ev.start_date), "dd/MM · HH:mm", { locale: ptBR })}
+                        {ev.location && ` · ${ev.location}`}
+                      </p>
+                    </div>
                     {ev.event_types?.name && (
-                      <Badge variant="secondary" className="text-xs ml-auto shrink-0">{ev.event_types.name}</Badge>
+                      <Badge variant="secondary" className="text-xs shrink-0 mt-0.5">{ev.event_types.name}</Badge>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {format(new Date(ev.start_date), "dd/MM · HH:mm", { locale: ptBR })}
-                    {ev.location && ` · ${ev.location}`}
-                  </p>
                 </button>
               ))}
             </div>
