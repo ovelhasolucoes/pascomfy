@@ -34,35 +34,43 @@ export function CreateCompanyDialog() {
       if (!name.trim()) throw new Error("Nome da empresa é obrigatório");
       if (!planId) throw new Error("Selecione um plano");
 
-      // 1. Create subscription
-      const { data: sub, error: subErr } = await supabase
-        .from("subscriptions")
-        .insert({
-          plan_id: planId,
-          company_id: crypto.randomUUID(),
-          status: "ativo" as const,
-          started_at: new Date().toISOString(),
-        })
-        .select("id, company_id")
-        .single();
-      if (subErr) throw subErr;
+      const companyId = crypto.randomUUID();
 
-      // 2. Create company
+      // 1. Create company first (no subscription yet)
       const { error: compErr } = await supabase
         .from("companies")
         .insert({
-          id: sub.company_id,
+          id: companyId,
           name: name.trim(),
           status: "ativa" as const,
-          subscription_id: sub.id,
           plan_id: planId,
         });
       if (compErr) throw compErr;
 
+      // 2. Create subscription referencing existing company
+      const { data: sub, error: subErr } = await supabase
+        .from("subscriptions")
+        .insert({
+          plan_id: planId,
+          company_id: companyId,
+          status: "ativo" as const,
+          started_at: new Date().toISOString(),
+        })
+        .select("id")
+        .single();
+      if (subErr) throw subErr;
+
+      // 3. Link subscription to company
+      const { error: updErr } = await supabase
+        .from("companies")
+        .update({ subscription_id: sub.id })
+        .eq("id", companyId);
+      if (updErr) throw updErr;
+
       // 3. If admin email provided, create invite
       if (adminEmail.trim()) {
         await supabase.from("invites").insert({
-          company_id: sub.company_id,
+          company_id: companyId,
           email: adminEmail.trim().toLowerCase(),
           role: "admin" as const,
           created_by: (await supabase.auth.getUser()).data.user!.id,
@@ -70,7 +78,7 @@ export function CreateCompanyDialog() {
         });
       }
 
-      return sub.company_id;
+      return companyId;
     },
     onSuccess: () => {
       toast.success("Empresa criada com sucesso!");
