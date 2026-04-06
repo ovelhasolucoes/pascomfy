@@ -34,7 +34,7 @@ export function AppSidebar() {
   const adminItems = [
     { title: "Usuários", url: "/admin/users", icon: Users },
     { title: "Notificações", url: "/admin/notifications", icon: Bell },
-    { title: "Configurações", url: "/admin/event-settings", icon: Settings },
+    { title: "Configurações", url: "/admin/settings", icon: Settings },
   ];
 
   const superAdminItems = [
