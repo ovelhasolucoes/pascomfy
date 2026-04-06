@@ -1,124 +1,127 @@
 
 
-# Pascomfy — Sistema de Eventos e Escalas
+# Pascomfy — Frontend de Eventos e Escalas
 
 ## Resumo
 
-Criação do núcleo operacional do sistema: eventos, equipes, escalas e funções individuais. Inclui tabela dinâmica de tipos de evento, templates reutilizáveis de equipe e visibilidade híbrida (calendário geral + agenda pessoal).
+Construção de 6 telas/componentes principais para gestão de eventos, equipes e escalas, com integração Supabase, design responsivo e navegação via sidebar/tabs.
 
-## Estrutura de Tabelas
-
-### `event_types` — Tipos dinâmicos por company
-- `id` uuid PK, `company_id` FK→companies, `name` text, `color` text nullable, `icon` text nullable, `created_at`
-- unique(company_id, name)
-- RLS: SELECT para membros da company; INSERT/UPDATE/DELETE para admin da company; ALL para super_admin
-
-### `team_templates` — Templates de equipe reutilizáveis
-- `id` uuid PK, `company_id` FK→companies, `name` text, `description` text nullable, `color` text nullable, `display_order` int default 0, `created_at`
-- unique(company_id, name)
-- RLS: SELECT para membros da company; INSERT/UPDATE/DELETE para admin; ALL para super_admin
-
-### `events` — Eventos
-- `id` uuid PK, `company_id` FK→companies, `title` text, `description` text nullable, `event_type_id` FK→event_types nullable, `start_date` timestamptz, `end_date` timestamptz nullable, `location` text nullable, `status` enum `event_status` (ativo, cancelado) default 'ativo', `created_by` uuid FK→auth.users, `created_at`
-- Indexes: (company_id, start_date), (company_id, status)
-- RLS: SELECT para membros ativos da company; INSERT/UPDATE/DELETE com permissão `criar_evento`; ALL para super_admin
-
-### `event_teams` — Equipes do evento
-- `id` uuid PK, `company_id` FK→companies, `event_id` FK→events ON DELETE CASCADE, `template_id` FK→team_templates nullable, `name` text, `description` text nullable, `color` text nullable, `display_order` int default 0, `created_at`
-- Index: (event_id)
-- RLS: SELECT para membros da company; INSERT/UPDATE/DELETE com permissão `editar_escala`; ALL para super_admin
-
-### `event_team_members` — Escala (membros + funções)
-- `id` uuid PK, `company_id` FK→companies, `event_team_id` FK→event_teams ON DELETE CASCADE, `user_id` FK→profiles(id), `status` enum `member_status` (pendente, confirmado, ausente, substituido) default 'pendente', `role_name` text nullable (nome da função: "foto do altar"), `role_description` text nullable, `confirmed_at` timestamptz nullable, `created_at`
-- unique(event_team_id, user_id)
-- Indexes: (user_id, company_id), (event_team_id)
-- RLS: SELECT para membros da company; UPDATE próprio registro (para confirmar presença); INSERT/DELETE com permissão `editar_escala`; ALL para super_admin
-
-## Enums
-- `event_status`: ativo, cancelado
-- `member_status`: pendente, confirmado, ausente, substituido
-
-## Migração SQL (uma única migração)
-Criação de enums, tabelas, índices, foreign keys e RLS policies. Seed de event_types padrão (missa, procissão, reunião, celebração, retiro) e team_templates padrão (Foto, Vídeo, Stories, Transmissão, Som) — via insert tool após a migração.
-
-## Policies RLS — Resumo
+## Estrutura de Arquivos
 
 ```text
-event_types / team_templates:
-  SELECT  → is_active_user + company_id match
-  ALL     → admin da company OU super_admin
-
-events:
-  SELECT  → is_active_user + company_id match (visão geral)
-  INSERT  → check_user_permission('criar_evento')
-  UPDATE  → check_user_permission('criar_evento') + company_id match
-  DELETE  → admin da company OU super_admin
-
-event_teams:
-  SELECT  → is_active_user + company_id match
-  INSERT/UPDATE/DELETE → check_user_permission('editar_escala') + company_id match
-
-event_team_members:
-  SELECT  → is_active_user + company_id match
-  UPDATE  → user_id = auth.uid() (auto-confirmação) OU check_user_permission('editar_escala')
-  INSERT/DELETE → check_user_permission('editar_escala') + company_id match
+src/
+  components/
+    layout/
+      AppSidebar.tsx          — sidebar com navegação principal
+      AppLayout.tsx            — layout wrapper (sidebar + content)
+    events/
+      EventCalendar.tsx        — calendário mensal com eventos coloridos
+      EventList.tsx            — lista de eventos (fallback mobile)
+      EventFilters.tsx         — filtros por tipo e equipe
+      EventForm.tsx            — formulário criar/editar evento
+      EventDetail.tsx          — modal/sheet com detalhes do evento
+      EventTeamCard.tsx        — card de equipe dentro do evento
+      TeamMemberRow.tsx        — linha de membro com função e status
+      AddMemberDialog.tsx      — dialog para adicionar membro à equipe
+      AddTeamDialog.tsx        — dialog para criar equipe no evento
+    schedule/
+      MySchedule.tsx           — agenda pessoal do usuário
+      ConfirmPresenceButton.tsx — botão confirmar presença
+  hooks/
+    useEvents.ts               — CRUD de eventos
+    useEventTeams.ts           — CRUD de equipes do evento
+    useEventMembers.ts         — CRUD de membros da equipe
+    useEventTypes.ts           — listar/criar event_types
+    useTeamTemplates.ts        — listar team_templates
+    useCompanyMembers.ts       — listar profiles da company
+  pages/
+    Events.tsx                 — página principal (calendário + filtros)
+    EventDetailPage.tsx        — página de detalhe do evento
+    EventCreate.tsx            — página de criação de evento
+    MySchedulePage.tsx         — agenda pessoal
+    admin/
+      EventSettings.tsx        — gestão de tipos e templates (admin)
 ```
 
-## Queries Preparadas (exemplos no frontend)
+## Rotas
 
-1. **Agenda pessoal** — eventos onde o usuário está escalado:
-```sql
-SELECT e.* FROM events e
-JOIN event_teams et ON et.event_id = e.id
-JOIN event_team_members etm ON etm.event_team_id = et.id
-WHERE etm.user_id = auth.uid()
-AND e.start_date >= now()
-ORDER BY e.start_date;
-```
+| Rota | Componente | Acesso |
+|------|-----------|--------|
+| `/events` | Events | Autenticado |
+| `/events/new` | EventCreate | Permissão `criar_evento` |
+| `/events/:id` | EventDetailPage | Autenticado |
+| `/my-schedule` | MySchedulePage | Autenticado |
+| `/admin/event-settings` | EventSettings | Admin |
 
-2. **Calendário da company** — todos os eventos ativos:
-```sql
-SELECT * FROM events
-WHERE status = 'ativo' AND start_date >= now()
-ORDER BY start_date;
-```
+A rota `/` (Index) será atualizada para redirecionar para `/events` ou incluir links de navegação.
 
-3. **Escala de um evento** — equipes + membros + funções:
-```sql
-SELECT et.name as team, p.name as member, etm.role_name, etm.status
-FROM event_teams et
-JOIN event_team_members etm ON etm.event_team_id = et.id
-JOIN profiles p ON p.id = etm.user_id
-WHERE et.event_id = :event_id
-ORDER BY et.display_order, p.name;
-```
+## Implementação por Etapa
 
-## Frontend (páginas a criar)
+### Etapa 1: Layout e Navegação
+- `AppLayout` com sidebar colapsável (shadcn Sidebar)
+- Links: Eventos, Minha Agenda, Admin (condicional)
+- Substituir layout atual do Index
 
-Nesta fase, foco apenas na migração e seed. Páginas de UI serão implementadas em uma fase seguinte:
-- Calendário de eventos
-- Criação/edição de evento com seleção de equipes via templates
-- Tela de escala com drag-and-drop de membros
-- Agenda pessoal do usuário com confirmação de presença
+### Etapa 2: Hooks de Dados
+- `useEvents`: fetch events com join em event_types, filtros por data/tipo/status
+- `useEventTeams`: fetch/create/delete equipes de um evento, com join em members
+- `useEventMembers`: add/remove/update membros, confirmar presença
+- `useEventTypes`: listar tipos da company
+- `useTeamTemplates`: listar templates da company
+- `useCompanyMembers`: listar profiles ativos da company (para dropdown de escalação)
+- Todos usam `useProfile` para obter `company_id` automaticamente
 
-## Ordem de Execução
+### Etapa 3: Calendário de Eventos
+- Grid mensal com dias, eventos posicionados por `start_date`
+- Cor do evento = cor do `event_type`
+- Clicar no evento navega para `/events/:id`
+- Filtros: dropdown de tipo, dropdown de equipe
+- Botão "Novo Evento" (visível com permissão `criar_evento`)
+- Mobile: exibe lista ao invés de grid
 
-1. Migração SQL (enums, tabelas, índices, RLS)
-2. Seed de event_types e team_templates padrão via insert tool
-3. Atualizar memória do projeto
+### Etapa 4: Criação de Evento
+- Formulário com: título, descrição, tipo (select de event_types), data início/fim (datepicker), local
+- `company_id` e `created_by` preenchidos automaticamente
+- Após salvar, redireciona para `/events/:id` para montar equipes
+
+### Etapa 5: Detalhe do Evento + Equipes + Escala
+- Header com info do evento (título, tipo, data, local, status)
+- Lista de equipes como cards
+- Cada card mostra membros com: nome, função (`role_name`), status (badge colorido)
+- Botão "Adicionar Equipe" — dialog com nome, descrição, cor, ou selecionar template
+- Botão "Adicionar Membro" por equipe — dialog com select de profiles + campo função
+- Ações por membro: editar função, alterar status, remover
+- Permissão `editar_escala` controla visibilidade dos botões de ação
+
+### Etapa 6: Agenda Pessoal
+- Lista de eventos futuros onde o usuário está escalado (join event_team_members → event_teams → events)
+- Cards com: título, data, equipe, função, status
+- Botão "Confirmar Presença" (atualiza status para `confirmado` + `confirmed_at`)
+- Destaque visual para eventos próximos (< 48h)
+
+### Etapa 7: Admin — Tipos e Templates
+- Tabs: "Tipos de Evento" | "Templates de Equipe"
+- CRUD simples com tabela + dialog de criação
+- Campos tipo: nome, cor, ícone
+- Campos template: nome, descrição, cor, ordem
 
 ## Detalhes Técnicos
 
-```text
-Fluxo de criação de evento:
-  Admin → Cria evento (tipo, data, local)
-       → Seleciona templates de equipe → copia para event_teams
-       → Escala membros em cada equipe com função específica
-       → Membros recebem status "pendente"
-       → Membros confirmam presença → status "confirmado" + confirmed_at
+- Queries usam `company_id` do profile logado; RLS garante isolamento
+- Datepicker usa shadcn Calendar com `pointer-events-auto`
+- React Query (`@tanstack/react-query`) para cache e refetch
+- Filtros de calendário via query params na URL
+- Status dos membros mapeados para cores: pendente=amarelo, confirmado=verde, ausente=vermelho, substituido=cinza
+- Mobile-first: calendário vira lista, equipes empilham verticalmente
 
-Visibilidade híbrida:
-  Calendário geral: todos os eventos da company (SELECT via RLS company_id)
-  Agenda pessoal: filtro no frontend via JOIN com event_team_members.user_id
-```
+## Ordem de Execução
+
+1. Layout (sidebar + rotas)
+2. Hooks de dados (useEvents, useEventTeams, useEventMembers, etc.)
+3. Calendário + filtros
+4. Criação de evento
+5. Detalhe do evento + gestão de equipes e escala
+6. Agenda pessoal
+7. Admin de tipos/templates
+8. Atualizar memória do projeto
 
