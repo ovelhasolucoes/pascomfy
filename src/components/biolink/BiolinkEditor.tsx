@@ -5,12 +5,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ExternalLink, Copy, Plus } from "lucide-react";
+import { ExternalLink, Copy, Plus, Eye } from "lucide-react";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
 import type { Biolink, BiolinkItem } from "@/hooks/useBiolink";
 import { BiolinkPreview } from "./BiolinkPreview";
 import { BiolinkItemList } from "./BiolinkItemList";
 import { BiolinkItemDialog } from "./BiolinkItemDialog";
+import { BiolinkLogoUpload } from "./BiolinkLogoUpload";
 
 interface Props {
   biolink: Biolink;
@@ -45,33 +47,29 @@ export function BiolinkEditor({
     toast.success("Link copiado!");
   };
 
-  const handleMoveUp = (index: number) => {
-    if (index === 0) return;
-    const newItems = [...items];
-    [newItems[index - 1], newItems[index]] = [newItems[index], newItems[index - 1]];
-    onReorder(newItems.map((item, i) => ({ id: item.id, ordem: i })));
-  };
-
-  const handleMoveDown = (index: number) => {
-    if (index === items.length - 1) return;
-    const newItems = [...items];
-    [newItems[index], newItems[index + 1]] = [newItems[index + 1], newItems[index]];
-    onReorder(newItems.map((item, i) => ({ id: item.id, ordem: i })));
-  };
+  const totalClicks = Object.values(clickCounts).reduce((a, b) => a + b, 0);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Settings */}
       <div className="lg:col-span-2 space-y-6">
-        {/* Public URL */}
+        {/* Public URL + Stats */}
         <Card>
-          <CardContent className="pt-4">
+          <CardContent className="pt-4 space-y-3">
             <div className="flex items-center gap-2">
-              <Input value={publicUrl} readOnly className="text-xs" />
-              <Button variant="outline" size="icon" onClick={handleCopy}><Copy className="h-4 w-4" /></Button>
-              <Button variant="outline" size="icon" asChild>
+              <Input value={publicUrl} readOnly className="text-xs font-mono" />
+              <Button variant="outline" size="icon" onClick={handleCopy} title="Copiar"><Copy className="h-4 w-4" /></Button>
+              <Button variant="outline" size="icon" asChild title="Abrir">
                 <a href={publicUrl} target="_blank" rel="noopener noreferrer"><ExternalLink className="h-4 w-4" /></a>
               </Button>
+              <Button variant="outline" size="icon" asChild title="Preview">
+                <Link to={`/bio/${biolink.slug}`} target="_blank"><Eye className="h-4 w-4" /></Link>
+              </Button>
+            </div>
+            <div className="flex gap-4 text-sm">
+              <span className="text-muted-foreground">{items.length} links</span>
+              <span className="text-muted-foreground">•</span>
+              <span className="text-muted-foreground">{totalClicks} cliques total</span>
             </div>
           </CardContent>
         </Card>
@@ -79,7 +77,13 @@ export function BiolinkEditor({
         {/* Personalização */}
         <Card>
           <CardHeader><CardTitle className="text-base">Personalização</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-5">
+            <BiolinkLogoUpload
+              currentUrl={biolink.logo_url}
+              companyId={biolink.company_id}
+              onUploaded={(url) => onUpdate({ logo_url: url })}
+            />
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Slug</Label>
@@ -101,14 +105,6 @@ export function BiolinkEditor({
                 rows={2}
               />
             </div>
-            <div className="space-y-2">
-              <Label>URL do Logo</Label>
-              <Input
-                value={biolink.logo_url || ""}
-                onChange={(e) => onUpdate({ logo_url: e.target.value })}
-                placeholder="https://..."
-              />
-            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Cor Primária</Label>
@@ -117,9 +113,9 @@ export function BiolinkEditor({
                     type="color"
                     value={biolink.cor_primaria}
                     onChange={(e) => onUpdate({ cor_primaria: e.target.value })}
-                    className="h-9 w-12 rounded border cursor-pointer"
+                    className="h-9 w-12 rounded-lg border cursor-pointer"
                   />
-                  <Input value={biolink.cor_primaria} onChange={(e) => onUpdate({ cor_primaria: e.target.value })} />
+                  <Input value={biolink.cor_primaria} onChange={(e) => onUpdate({ cor_primaria: e.target.value })} className="font-mono text-xs" />
                 </div>
               </div>
               <div className="space-y-2">
@@ -129,14 +125,17 @@ export function BiolinkEditor({
                     type="color"
                     value={biolink.cor_secundaria}
                     onChange={(e) => onUpdate({ cor_secundaria: e.target.value })}
-                    className="h-9 w-12 rounded border cursor-pointer"
+                    className="h-9 w-12 rounded-lg border cursor-pointer"
                   />
-                  <Input value={biolink.cor_secundaria} onChange={(e) => onUpdate({ cor_secundaria: e.target.value })} />
+                  <Input value={biolink.cor_secundaria} onChange={(e) => onUpdate({ cor_secundaria: e.target.value })} className="font-mono text-xs" />
                 </div>
               </div>
             </div>
-            <div className="flex items-center justify-between">
-              <Label>Biolink Ativo</Label>
+            <div className="flex items-center justify-between pt-2">
+              <div>
+                <Label>Biolink Ativo</Label>
+                <p className="text-xs text-muted-foreground">Quando desativado, a página pública não será acessível</p>
+              </div>
               <Switch checked={biolink.ativo} onCheckedChange={(ativo) => onUpdate({ ativo })} />
             </div>
           </CardContent>
@@ -157,8 +156,7 @@ export function BiolinkEditor({
               onToggle={(id, ativo) => onUpdateItem({ id, ativo })}
               onDelete={onDeleteItem}
               onEdit={setEditItem}
-              onMoveUp={handleMoveUp}
-              onMoveDown={handleMoveDown}
+              onReorder={onReorder}
             />
           </CardContent>
         </Card>
@@ -188,7 +186,9 @@ export function BiolinkEditor({
       {/* Preview */}
       <div className="space-y-3">
         <h3 className="text-sm font-medium text-muted-foreground">Preview</h3>
-        <BiolinkPreview biolink={biolink} items={items} />
+        <div className="sticky top-6">
+          <BiolinkPreview biolink={biolink} items={items} />
+        </div>
       </div>
     </div>
   );
