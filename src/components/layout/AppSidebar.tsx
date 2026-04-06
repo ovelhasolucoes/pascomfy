@@ -115,6 +115,7 @@ export function AppSidebar() {
   const { isAdmin, isSuperAdmin } = usePermissions();
   const { signOut } = useAuth();
   const { profile } = useProfile();
+  const { companyName, logoUrl, isWhitelabel } = useCompanyTheme();
 
   const mainItems: MenuItem[] = [
     { title: "Eventos", url: "/events", icon: Calendar },
