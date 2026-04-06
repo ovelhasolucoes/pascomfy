@@ -10,7 +10,7 @@ import { CustomDomainSettings } from "@/components/admin/CustomDomainSettings";
 import { useCompanyTheme } from "@/contexts/CompanyThemeContext";
 
 const AdminSettings = () => {
-  const { isWhitelabel, allowsCustomDomain } = useCompanyTheme();
+  const { isWhitelabel } = useCompanyTheme();
 
   return (
     <AppLayout>
@@ -30,6 +30,16 @@ const AdminSettings = () => {
               <Calendar className="h-3.5 w-3.5" />
               Eventos
             </TabsTrigger>
+            {isWhitelabel && (
+              <TabsTrigger value="whitelabel" className="flex items-center gap-1.5">
+                <Palette className="h-3.5 w-3.5" />
+                Personalização
+              </TabsTrigger>
+            )}
+            <TabsTrigger value="domain" className="flex items-center gap-1.5">
+              <Globe className="h-3.5 w-3.5" />
+              Domínio
+            </TabsTrigger>
             <TabsTrigger value="whatsapp" className="flex items-center gap-1.5">
               <MessageSquare className="h-3.5 w-3.5" />
               WhatsApp
@@ -38,18 +48,6 @@ const AdminSettings = () => {
               <FileText className="h-3.5 w-3.5" />
               Templates
             </TabsTrigger>
-            {isWhitelabel && (
-              <TabsTrigger value="whitelabel" className="flex items-center gap-1.5">
-                <Palette className="h-3.5 w-3.5" />
-                Identidade
-              </TabsTrigger>
-            )}
-            {allowsCustomDomain && (
-              <TabsTrigger value="domain" className="flex items-center gap-1.5">
-                <Globe className="h-3.5 w-3.5" />
-                Domínio
-              </TabsTrigger>
-            )}
           </TabsList>
 
           <TabsContent value="company">
@@ -60,6 +58,16 @@ const AdminSettings = () => {
             <EventSettingsContent />
           </TabsContent>
 
+          {isWhitelabel && (
+            <TabsContent value="whitelabel">
+              <WhiteLabelSettings />
+            </TabsContent>
+          )}
+
+          <TabsContent value="domain">
+            <CustomDomainSettings />
+          </TabsContent>
+
           <TabsContent value="whatsapp">
             <WhatsAppConfig />
           </TabsContent>
@@ -67,18 +75,6 @@ const AdminSettings = () => {
           <TabsContent value="templates">
             <NotificationTemplates />
           </TabsContent>
-
-          {isWhitelabel && (
-            <TabsContent value="whitelabel">
-              <WhiteLabelSettings />
-            </TabsContent>
-          )}
-
-          {allowsCustomDomain && (
-            <TabsContent value="domain">
-              <CustomDomainSettings />
-            </TabsContent>
-          )}
         </Tabs>
       </div>
     </AppLayout>
