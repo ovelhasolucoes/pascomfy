@@ -310,20 +310,57 @@ export function WhiteLabelSettings() {
 
             <Separator />
 
-            <div className="space-y-2">
-              <Label className="text-sm">URL do Favicon</Label>
-              <Input
-                value={faviconUrl}
-                onChange={(e) => setFaviconUrl(e.target.value)}
-                placeholder="https://exemplo.com/favicon.ico"
-                className="text-sm"
-              />
-              {faviconUrl && (
-                <div className="flex items-center gap-2 mt-1">
-                  <img src={faviconUrl} alt="Favicon" className="h-5 w-5 rounded object-contain" />
-                  <span className="text-xs text-muted-foreground">Preview</span>
+            <div className="space-y-3">
+              <Label className="text-sm">Favicon</Label>
+              <div className="flex items-start gap-3">
+                <div
+                  className="relative group h-12 w-12 rounded-lg border-2 border-dashed border-border flex items-center justify-center overflow-hidden shrink-0 transition-colors hover:border-primary/50 cursor-pointer"
+                  onClick={() => faviconInputRef.current?.click()}
+                >
+                  {faviconUrl ? (
+                    <>
+                      <img src={faviconUrl} alt="Favicon" className="h-full w-full object-contain p-1" />
+                      <div className="absolute inset-0 bg-foreground/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Upload className="h-3.5 w-3.5 text-background" />
+                      </div>
+                    </>
+                  ) : (
+                    <Upload className="h-4 w-4 text-muted-foreground" />
+                  )}
+                  {uploadingFavicon && (
+                    <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    </div>
+                  )}
                 </div>
-              )}
+                <input
+                  ref={faviconInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFaviconUpload}
+                  className="hidden"
+                />
+                <div className="flex-1 space-y-1.5">
+                  <Input
+                    value={faviconUrl}
+                    onChange={(e) => setFaviconUrl(e.target.value)}
+                    placeholder="Ou cole a URL..."
+                    className="text-sm"
+                  />
+                  {faviconUrl && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 text-[10px] text-destructive hover:text-destructive px-2"
+                      onClick={() => setFaviconUrl("")}
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Remover
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <p className="text-[10px] text-muted-foreground">Recomendado: 32×32 ou 64×64 px, máx 512KB</p>
             </div>
           </CardContent>
         </Card>
