@@ -58,7 +58,8 @@ const App = () => (
             <Route path="/bio/:slug" element={<BioPublicPage />} />
             <Route path="/pricing" element={<PricingPage />} />
             <Route path="/signup" element={<Signup />} />
-            <Route path="/" element={<Navigate to="/events" replace />} />
+            <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
             <Route path="/events/new" element={<ProtectedRoute><EventCreate /></ProtectedRoute>} />
             <Route path="/events/:id" element={<ProtectedRoute><EventDetailPage /></ProtectedRoute>} />

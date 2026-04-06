@@ -118,8 +118,10 @@ export function AppSidebar() {
   const { companyName, logoUrl, isWhitelabel } = useCompanyTheme();
 
   const mainItems: MenuItem[] = [
+    { title: "Dashboard", url: "/", icon: Home },
     { title: "Eventos", url: "/events", icon: Calendar },
     { title: "Minha Agenda", url: "/my-schedule", icon: CalendarDays },
+    { title: "Meu Perfil", url: "/profile", icon: User },
   ];
 
   const adminItems: MenuItem[] = [
