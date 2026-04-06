@@ -34,7 +34,20 @@ export default function SocialPosts() {
             <h1 className="text-2xl font-bold">Posts</h1>
             <p className="text-sm text-muted-foreground">Gerencie suas publicações no Facebook e Instagram</p>
           </div>
-          <PostForm accounts={accounts} onSubmit={(post) => createPost.mutate(post)} />
+          <div className="flex items-center gap-2">
+            {publishedPostIds.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refreshMetrics.mutate(undefined)}
+                disabled={refreshMetrics.isPending}
+              >
+                <RefreshCw className={`h-4 w-4 mr-1 ${refreshMetrics.isPending ? "animate-spin" : ""}`} />
+                Atualizar métricas
+              </Button>
+            )}
+            <PostForm accounts={accounts} onSubmit={(post) => createPost.mutate(post)} />
+          </div>
         </div>
 
         {/* Status tabs */}
