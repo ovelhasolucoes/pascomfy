@@ -33,7 +33,7 @@ interface PostCardProps {
   isRefreshing?: boolean;
 }
 
-export function PostCard({ post, onPublish, onDelete, isPublishing }: PostCardProps) {
+export function PostCard({ post, onPublish, onDelete, isPublishing, metrics, onRefreshMetrics, isRefreshing }: PostCardProps) {
   const config = statusConfig[post.status] || statusConfig.rascunho;
   const StatusIcon = config.icon;
   const pConfig = platformIcons[post.platform] || platformIcons.facebook;
