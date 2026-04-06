@@ -28,6 +28,9 @@ interface PostCardProps {
   onPublish: (id: string) => void;
   onDelete: (id: string) => void;
   isPublishing?: boolean;
+  metrics?: SocialPostMetrics;
+  onRefreshMetrics?: (postId: string) => void;
+  isRefreshing?: boolean;
 }
 
 export function PostCard({ post, onPublish, onDelete, isPublishing }: PostCardProps) {
