@@ -13,7 +13,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus, Pencil } from "lucide-react";
 
-const emptyPlan = { name: "", price_monthly: 0, max_users: 10, max_storage_mb: 500, max_uploads: 100, allows_whitelabel: false, allows_custom_domain: false, description: "" };
+const emptyPlan = { name: "", price_monthly: 0, max_users: 10, max_storage_mb: 500, max_uploads: 100, allows_whitelabel: false, allows_custom_domain: false, description: "", trial_days: 14 };
 
 const SuperAdminPlans = () => {
   const { data: plans, isLoading } = useSuperAdminPlans();
@@ -22,7 +22,7 @@ const SuperAdminPlans = () => {
   const [form, setForm] = useState(emptyPlan);
 
   const openNew = () => { setForm(emptyPlan); setEditing("new"); };
-  const openEdit = (p: any) => { setForm({ name: p.name, price_monthly: p.price_monthly, max_users: p.max_users, max_storage_mb: p.max_storage_mb, max_uploads: p.max_uploads, allows_whitelabel: p.allows_whitelabel, allows_custom_domain: p.allows_custom_domain, description: p.description || "" }); setEditing(p.id); };
+  const openEdit = (p: any) => { setForm({ name: p.name, price_monthly: p.price_monthly, max_users: p.max_users, max_storage_mb: p.max_storage_mb, max_uploads: p.max_uploads, allows_whitelabel: p.allows_whitelabel, allows_custom_domain: p.allows_custom_domain, description: p.description || "", trial_days: p.trial_days ?? 14 }); setEditing(p.id); };
 
   const save = async () => {
     try {
@@ -58,6 +58,7 @@ const SuperAdminPlans = () => {
                   <TableHead>Preço/mês</TableHead>
                   <TableHead>Usuários</TableHead>
                   <TableHead>Storage</TableHead>
+                  <TableHead>Trial</TableHead>
                   <TableHead>Whitelabel</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
@@ -69,6 +70,7 @@ const SuperAdminPlans = () => {
                     <TableCell>R$ {Number(p.price_monthly).toFixed(2)}</TableCell>
                     <TableCell>{p.max_users}</TableCell>
                     <TableCell>{p.max_storage_mb} MB</TableCell>
+                    <TableCell>{p.trial_days ?? 14} dias</TableCell>
                     <TableCell>{p.allows_whitelabel ? <Badge>Sim</Badge> : "Não"}</TableCell>
                     <TableCell>
                       <Button variant="ghost" size="icon" onClick={() => openEdit(p)}><Pencil className="h-4 w-4" /></Button>
@@ -91,6 +93,7 @@ const SuperAdminPlans = () => {
               <div><Label>Max usuários</Label><Input type="number" value={form.max_users} onChange={(e) => setForm({ ...form, max_users: Number(e.target.value) })} /></div>
               <div><Label>Storage (MB)</Label><Input type="number" value={form.max_storage_mb} onChange={(e) => setForm({ ...form, max_storage_mb: Number(e.target.value) })} /></div>
               <div><Label>Max uploads</Label><Input type="number" value={form.max_uploads} onChange={(e) => setForm({ ...form, max_uploads: Number(e.target.value) })} /></div>
+              <div><Label>Dias de trial</Label><Input type="number" value={form.trial_days} onChange={(e) => setForm({ ...form, trial_days: Number(e.target.value) })} min={0} /></div>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2"><Switch checked={form.allows_whitelabel} onCheckedChange={(v) => setForm({ ...form, allows_whitelabel: v })} /><Label>Whitelabel</Label></div>

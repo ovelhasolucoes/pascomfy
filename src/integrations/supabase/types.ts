@@ -1583,6 +1583,7 @@ export type Database = {
           max_users: number
           name: string
           price_monthly: number
+          trial_days: number
         }
         Insert: {
           allows_custom_domain?: boolean
@@ -1595,6 +1596,7 @@ export type Database = {
           max_users?: number
           name: string
           price_monthly?: number
+          trial_days?: number
         }
         Update: {
           allows_custom_domain?: boolean
@@ -1607,6 +1609,7 @@ export type Database = {
           max_users?: number
           name?: string
           price_monthly?: number
+          trial_days?: number
         }
         Relationships: []
       }
