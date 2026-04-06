@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowLeft, MapPin, Clock, Plus, Zap, Users, ClipboardList, UserCheck } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Plus, Zap, Users, ClipboardList, UserCheck, Trash2 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,7 @@ import { EventTeamCard } from "@/components/events/EventTeamCard";
 import { AddTeamDialog } from "@/components/events/AddTeamDialog";
 import { AddMemberDialog } from "@/components/events/AddMemberDialog";
 import { ChecklistSection } from "@/components/checklist/ChecklistSection";
+import { AddChecklistDialog } from "@/components/checklist/AddChecklistDialog";
 import { AttendanceButton } from "@/components/attendance/AttendanceButton";
 import { AttendanceList } from "@/components/attendance/AttendanceList";
 import { useEvents } from "@/hooks/useEvents";
@@ -22,6 +23,7 @@ import { useEventTeams } from "@/hooks/useEventTeams";
 import { useEventMembers } from "@/hooks/useEventMembers";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useRealtimeChecklist } from "@/hooks/useRealtimeChecklist";
+import { useEventChecklistManage } from "@/hooks/useEventChecklistManage";
 import { toast } from "sonner";
 
 const EventDetailPage = () => {
@@ -35,7 +37,10 @@ const EventDetailPage = () => {
 
   const { teams, loading: teamsLoading, createTeam, deleteTeam } = useEventTeams(id);
   const { addMember, updateMember, removeMember } = useEventMembers(id);
+  const { addChecklistFromTemplate, addAdHocChecklist, deleteChecklist } = useEventChecklistManage(id);
   useRealtimeChecklist(id);
+
+  const [addChecklistOpen, setAddChecklistOpen] = useState(false);
 
   const scaledUserIds = teams.flatMap((t) =>
     t.event_team_members?.map((m: any) => m.user_id) ?? []
@@ -241,11 +246,20 @@ const EventDetailPage = () => {
 
         {/* Checklist */}
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <ClipboardList className="h-5 w-5 text-primary" />
-            Checklist
-          </h2>
-          <ChecklistSection eventId={id!} />
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <ClipboardList className="h-5 w-5 text-primary" />
+              Checklist
+            </h2>
+            {canEditScale && (
+              <Button onClick={() => setAddChecklistOpen(true)} size="sm">
+                <Plus className="h-4 w-4 mr-1" /> Checklist
+              </Button>
+            )}
+          </div>
+          <ChecklistSection eventId={id!} canEdit={canEditScale} onDeleteChecklist={(clId) => {
+            deleteChecklist.mutateAsync(clId).then(() => toast.success("Checklist removido")).catch((e: any) => toast.error(e.message));
+          }} />
         </div>
 
         {/* Focus Mode */}
@@ -263,6 +277,19 @@ const EventDetailPage = () => {
           onClose={() => setAddMemberTeamId(null)}
           onAdd={handleAddMember}
           existingMemberIds={existingMemberIds}
+        />
+        <AddChecklistDialog
+          open={addChecklistOpen}
+          onClose={() => setAddChecklistOpen(false)}
+          teams={teams.map((t) => ({ id: t.id, name: t.name }))}
+          onAddFromTemplate={async (templateId, teamId) => {
+            await addChecklistFromTemplate.mutateAsync({ templateId, eventTeamId: teamId });
+            toast.success("Checklist adicionado!");
+          }}
+          onAddAdHoc={async (name, items, teamId) => {
+            await addAdHocChecklist.mutateAsync({ name, items, eventTeamId: teamId });
+            toast.success("Checklist criado!");
+          }}
         />
       </div>
     </AppLayout>
