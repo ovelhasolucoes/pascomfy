@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
+import { PageHeader } from "@/components/ui/page-header";
+import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { Camera, Plus, X, Save, Loader2 } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/contexts/AuthContext";
@@ -119,8 +121,10 @@ const ProfilePage = () => {
   if (loading) {
     return (
       <AppLayout>
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <div className="space-y-4 max-w-2xl">
+          <SkeletonCard lines={2} hasHeader={false} />
+          <SkeletonCard lines={4} />
+          <SkeletonCard lines={3} />
         </div>
       </AppLayout>
     );
@@ -130,35 +134,34 @@ const ProfilePage = () => {
 
   return (
     <AppLayout>
-      <div className="space-y-4 max-w-2xl">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Meu Perfil</h1>
-          <p className="text-muted-foreground">Edite suas informações pessoais</p>
-        </div>
+      <div className="space-y-6 max-w-2xl">
+        <PageHeader title="Meu Perfil" description="Edite suas informações pessoais" />
 
-        <Card>
+        <Card className="animate-fade-in">
           <CardHeader>
             <CardTitle className="text-lg">Informações Pessoais</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Avatar */}
             <div className="flex items-center gap-4">
-              <div className="relative">
-                <Avatar className="h-20 w-20">
+              <div className="relative group">
+                <Avatar className="h-24 w-24 ring-2 ring-border">
                   <AvatarImage src={avatarUrl ?? undefined} />
-                  <AvatarFallback className="text-lg bg-primary/10 text-primary">{initials}</AvatarFallback>
+                  <AvatarFallback className="text-xl bg-primary/10 text-primary">{initials}</AvatarFallback>
                 </Avatar>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="absolute bottom-0 right-0 p-1.5 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+                  className="absolute inset-0 flex items-center justify-center rounded-full bg-foreground/0 group-hover:bg-foreground/40 transition-colors"
                   disabled={uploading}
                 >
-                  {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Camera className="h-3 w-3" />}
+                  <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    {uploading ? <Loader2 className="h-5 w-5 animate-spin text-background" /> : <Camera className="h-5 w-5 text-background" />}
+                  </span>
                 </button>
                 <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
               </div>
               <div>
-                <p className="font-medium text-foreground">{name}</p>
+                <p className="font-semibold text-foreground text-lg">{name}</p>
                 <p className="text-sm text-muted-foreground">{profile?.email}</p>
               </div>
             </div>
@@ -182,14 +185,14 @@ const ProfilePage = () => {
         </Card>
 
         {/* Skills */}
-        <Card>
+        <Card className="animate-fade-in" style={{ animationDelay: "50ms" }}>
           <CardHeader>
             <CardTitle className="text-lg">Habilidades</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex flex-wrap gap-2">
               {skills.map((s) => (
-                <Badge key={s} variant="secondary" className="gap-1">
+                <Badge key={s} variant="secondary" className="gap-1 transition-all hover:bg-destructive/10">
                   {s}
                   <button onClick={() => setSkills(skills.filter((x) => x !== s))}>
                     <X className="h-3 w-3" />
@@ -212,14 +215,14 @@ const ProfilePage = () => {
         </Card>
 
         {/* Preferred Roles */}
-        <Card>
+        <Card className="animate-fade-in" style={{ animationDelay: "100ms" }}>
           <CardHeader>
             <CardTitle className="text-lg">Funções Preferidas</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex flex-wrap gap-2">
               {preferredRoles.map((r) => (
-                <Badge key={r} variant="outline" className="gap-1">
+                <Badge key={r} variant="outline" className="gap-1 transition-all hover:bg-destructive/10">
                   {r}
                   <button onClick={() => setPreferredRoles(preferredRoles.filter((x) => x !== r))}>
                     <X className="h-3 w-3" />
@@ -242,7 +245,7 @@ const ProfilePage = () => {
         </Card>
 
         {/* Availability */}
-        <Card>
+        <Card className="animate-fade-in" style={{ animationDelay: "150ms" }}>
           <CardHeader>
             <CardTitle className="text-lg">Disponibilidade Semanal</CardTitle>
           </CardHeader>
@@ -267,9 +270,9 @@ const ProfilePage = () => {
                           <td key={shift} className="text-center py-2 px-2">
                             <button
                               onClick={() => toggleAvailability(day, shift)}
-                              className={`w-8 h-8 rounded-md text-xs font-medium transition-colors ${
+                              className={`w-10 h-10 rounded-xl text-xs font-medium transition-all duration-200 ${
                                 active
-                                  ? "bg-primary text-primary-foreground"
+                                  ? "bg-success text-success-foreground shadow-sm"
                                   : "bg-muted text-muted-foreground hover:bg-muted/80"
                               }`}
                             >
@@ -286,8 +289,9 @@ const ProfilePage = () => {
           </CardContent>
         </Card>
 
-        <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={saving}>
+        {/* Sticky save button on mobile */}
+        <div className="flex justify-end sticky bottom-4 z-10">
+          <Button onClick={handleSave} disabled={saving} size="lg" className="shadow-lg">
             {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
             Salvar Perfil
           </Button>
