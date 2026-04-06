@@ -1,166 +1,205 @@
 
 
-# Pascomfy — Painel Super Admin (Backend + Frontend)
+# Pascomfy — Storage Abstrato com Thumbnails e Limites por Plano
 
 ## Resumo
 
-Migração SQL para expandir a tabela `plans`, criar `subscriptions`, `affiliate_program`, `affiliate_referrals`, `support_tickets`, `support_messages` e `global_logs`. Expandir `companies` com campos de controle. Frontend com painel completo de super admin: dashboard de métricas, gestão de companies/planos/assinaturas, afiliados, tickets e logs.
+Criar tabela `files` com metadata, bucket Supabase Storage com RLS, Edge Function para upload híbrido (signed URL + thumbnail generation), e um StorageService abstrato no frontend com provider pattern preparado para R2.
 
-## Migração SQL
-
-### Enums novos
-- `subscription_status`: ativo, cancelado, trial, atrasado
-- `company_status`: ativa, suspensa, cancelada
-- `ticket_status`: aberto, respondido, fechado
-- `referral_status`: pendente, convertido
-
-### Alterações em `plans`
-Adicionar colunas: `price_monthly` numeric(10,2), `max_uploads` int default 100, `allows_whitelabel` boolean default false, `allows_custom_domain` boolean default false, `description` text nullable.
-
-### Alterações em `companies`
-Adicionar colunas: `status` company_status default 'ativa', `storage_used_mb` int default 0, `active_users_count` int default 0, `trial_until` timestamptz nullable, `custom_domain` text nullable, `settings` jsonb default '{}', `subscription_id` uuid nullable (FK para subscriptions, adicionada após criar a tabela).
-
-### Novas tabelas
-
-**subscriptions**
-- `id` uuid PK, `company_id` FK→companies, `plan_id` FK→plans, `status` subscription_status default 'trial', `started_at` timestamptz default now(), `ends_at` timestamptz nullable, `gateway` text nullable, `external_id` text nullable, `created_at`
-- Indexes: (company_id), (status), (plan_id)
-- RLS: SELECT para membros da company (own); ALL para super_admin
-
-**affiliate_program**
-- `id` uuid PK, `company_id` FK→companies, `code` text unique, `active` boolean default true, `commission_pct` numeric(5,2) default 10, `created_at`
-- RLS: SELECT own company; ALL super_admin
-
-**affiliate_referrals**
-- `id` uuid PK, `affiliate_id` FK→affiliate_program, `referred_company_id` FK→companies, `status` referral_status default 'pendente', `reward_applied` boolean default false, `created_at`
-- RLS: SELECT via join com affiliate_program.company_id; ALL super_admin
-
-**support_tickets**
-- `id` uuid PK, `company_id` FK→companies, `user_id` FK→profiles(id), `title` text, `description` text, `status` ticket_status default 'aberto', `created_at`
-- Indexes: (company_id), (status), (user_id)
-- RLS: SELECT/INSERT/UPDATE own company; ALL super_admin
-
-**support_messages**
-- `id` uuid PK, `ticket_id` FK→support_tickets ON DELETE CASCADE, `user_id` FK→profiles(id), `message` text, `created_at`
-- RLS: SELECT via join com ticket.company_id; INSERT own ticket; ALL super_admin
-
-**global_logs**
-- `id` uuid PK, `user_id` uuid nullable, `action` text, `entity` text, `entity_id` uuid nullable, `metadata` jsonb default '{}', `ip_address` text nullable, `created_at`
-- Indexes: (user_id), (entity, entity_id), (created_at DESC)
-- RLS: SELECT/INSERT super_admin only
-
-### Funções auxiliares
-
-**get_company_limits(company_id)**
-- Security definer, retorna: max_users, max_storage_mb, max_uploads, current users count, current storage
-- Usado para validação de limites no frontend
-
-## Frontend — Estrutura de Arquivos
+## Arquitetura
 
 ```text
-src/
-  pages/
-    superadmin/
-      SuperAdminDashboard.tsx   — métricas MRR, companies, churn
-      SuperAdminCompanies.tsx   — lista + detalhes de companies
-      SuperAdminPlans.tsx       — CRUD de planos
-      SuperAdminSubscriptions.tsx — gestão de assinaturas
-      SuperAdminAffiliates.tsx  — programa de afiliados
-      SuperAdminTickets.tsx     — tickets de suporte
-      SuperAdminLogs.tsx        — log global de auditoria
-  components/
-    superadmin/
-      MetricCard.tsx            — card de métrica com ícone e valor
-      CompanyDetailSheet.tsx    — sheet lateral com detalhes da company
-      TicketThread.tsx          — thread de mensagens do ticket
-  hooks/
-    useSuperAdminStats.ts       — queries de métricas SaaS
-    useSubscriptions.ts         — CRUD subscriptions
-    useSupportTickets.ts        — CRUD tickets + messages
+┌─────────────────────────────────────────────┐
+│  Frontend                                    │
+│  FileUpload component → StorageService       │
+│                          ├─ SupabaseProvider │
+│                          └─ R2Provider (fut) │
+└──────────┬──────────────────────────────────┘
+           │ 1. Request signed URL
+           ▼
+┌──────────────────────────┐
+│  Edge Function            │
+│  generate-upload-url      │
+│  - valida company limits  │
+│  - gera signed URL        │
+│  - cria thumbnail (img)   │
+│  - insere registro files  │
+└──────────────────────────┘
+           │
+           ▼
+┌──────────────────────────┐
+│  Supabase Storage         │
+│  bucket: company-files    │
+│  path: /{company_id}/...  │
+└──────────────────────────┘
 ```
 
-### Rotas (protegidas por isSuperAdmin)
+## 1. Migração SQL
 
-| Rota | Componente |
-|------|-----------|
-| `/superadmin` | SuperAdminDashboard |
-| `/superadmin/companies` | SuperAdminCompanies |
-| `/superadmin/plans` | SuperAdminPlans |
-| `/superadmin/subscriptions` | SuperAdminSubscriptions |
-| `/superadmin/affiliates` | SuperAdminAffiliates |
-| `/superadmin/tickets` | SuperAdminTickets |
-| `/superadmin/logs` | SuperAdminLogs |
-
-### Sidebar
-
-Adicionar seção "Super Admin" no AppSidebar (condicional `isSuperAdmin`) com links para as rotas acima.
-
-### Dashboard de Métricas
-
-Cards com:
-- Companies ativas (COUNT WHERE status='ativa')
-- MRR (SUM plans.price_monthly WHERE subscriptions.status='ativo')
-- Usuários totais (COUNT profiles)
-- Tickets abertos (COUNT WHERE status='aberto')
-- Crescimento mensal (companies criadas este mês vs anterior)
-
-### Gestão de Companies
-
-- Tabela com: nome, plano, status, usuários, storage, criado em
-- Ações: suspender/ativar, alterar plano, ver detalhes
-- Sheet lateral com informações completas
-
-### Gestão de Planos
-
-- CRUD completo de planos
-- Campos: nome, preço, limites, flags whitelabel/domínio
-
-### Tickets de Suporte
-
-- Lista com filtros por status
-- Abrir ticket → thread de mensagens
-- Super admin responde diretamente
-
-## Detalhes Técnicos
-
-- Super admin global (sem company_id) — bypass via `has_role(auth.uid(), 'super_admin')`
-- RLS: policies ALL para super_admin em todas as tabelas novas
-- Companies só veem seus próprios dados de subscription/tickets
-- `global_logs` restrito exclusivamente a super_admin
-- Métricas calculadas via queries diretas (sem materialização por agora)
-- Preparado para gateways: campos `gateway` e `external_id` em subscriptions
-
-## Queries de Exemplo
+### Tabela `files`
 
 ```sql
--- MRR
-SELECT SUM(p.price_monthly) as mrr
-FROM subscriptions s JOIN plans p ON p.id = s.plan_id
-WHERE s.status = 'ativo';
-
--- Companies ativas com plano
-SELECT c.name, p.name as plan, s.status, c.active_users_count
-FROM companies c
-LEFT JOIN subscriptions s ON s.company_id = c.id
-LEFT JOIN plans p ON p.id = s.plan_id
-WHERE c.status = 'ativa';
-
--- Afiliados com conversões
-SELECT ap.code, c.name, COUNT(ar.id) as referrals,
-  COUNT(*) FILTER (WHERE ar.status = 'convertido') as converted
-FROM affiliate_program ap
-JOIN companies c ON c.id = ap.company_id
-LEFT JOIN affiliate_referrals ar ON ar.affiliate_id = ap.id
-GROUP BY ap.id, c.name;
+CREATE TABLE public.files (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id uuid NOT NULL,
+  name text NOT NULL,
+  path text NOT NULL,
+  provider text NOT NULL DEFAULT 'supabase',
+  file_type text NOT NULL DEFAULT 'documento',
+  size_bytes bigint NOT NULL DEFAULT 0,
+  mime_type text NOT NULL,
+  thumbnail_path text,
+  uploaded_by uuid NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 ```
+
+- `provider`: 'supabase' | 'r2' (text, sem enum para flexibilidade)
+- `file_type`: 'imagem' | 'video' | 'documento'
+- `thumbnail_path`: path da thumbnail gerada (null se não aplicável)
+
+### Índices
+- `company_id`
+- `uploaded_by`
+- `(company_id, file_type)` para filtrar por tipo
+
+### RLS
+- Members SELECT own company files
+- User INSERT own files (uploaded_by = auth.uid())
+- User DELETE own files
+- Admin DELETE company files
+- Super admin ALL
+
+### Storage Bucket
+
+```sql
+INSERT INTO storage.buckets (id, name, public, file_size_limit)
+VALUES ('company-files', 'company-files', false, 104857600);
+```
+
+- Bucket privado (URLs assinadas)
+- Limite padrão 100MB (controle real via Edge Function baseado no plano)
+- RLS no `storage.objects`: isolamento por company_id no path
+
+## 2. Edge Function: `generate-upload-url`
+
+### Responsabilidades
+1. Valida JWT do usuário
+2. Consulta `get_company_limits()` para verificar storage disponível
+3. Valida tipo e tamanho do arquivo contra o plano
+4. Gera signed upload URL via Supabase Storage API
+5. Insere registro na tabela `files`
+6. Retorna signed URL + file ID
+
+### Endpoint
+- POST: `{ fileName, mimeType, sizeBytes, companyId, fileType }`
+- Response: `{ fileId, signedUrl, path }`
+
+## 3. Edge Function: `process-upload` (webhook/trigger)
+
+### Para thumbnails
+- Recebe notificação após upload completo
+- Se imagem: redimensiona para 200x200 usando sharp/canvas
+- Salva thumbnail em `/{company_id}/thumbnails/...`
+- Atualiza `files.thumbnail_path`
+
+**Nota**: Thumbnails serão gerados via Edge Function invocada após o upload, não inline. Simplifica o fluxo e não bloqueia o upload.
+
+## 4. StorageService (Frontend)
+
+### Interface
+
+```typescript
+// src/services/storage/types.ts
+interface StorageProvider {
+  getUploadUrl(params: UploadParams): Promise<UploadUrlResult>;
+  getFileUrl(path: string): Promise<string>;
+  deleteFile(fileId: string): Promise<void>;
+}
+
+interface UploadParams {
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  companyId: string;
+  fileType: 'imagem' | 'video' | 'documento';
+}
+```
+
+### Providers
+
+```text
+src/services/storage/
+  types.ts              — interfaces
+  StorageService.ts     — factory que escolhe provider
+  providers/
+    supabase.ts         — SupabaseStorageProvider
+    r2.ts               — R2StorageProvider (stub)
+```
+
+### Factory
+
+```typescript
+// StorageService.ts
+const provider = import.meta.env.VITE_STORAGE_PROVIDER || 'supabase';
+
+export const storageService: StorageProvider =
+  provider === 'r2'
+    ? new R2StorageProvider()
+    : new SupabaseStorageProvider();
+```
+
+### SupabaseStorageProvider
+- `getUploadUrl()`: chama Edge Function `generate-upload-url`, faz upload direto via fetch para signed URL
+- `getFileUrl()`: gera URL assinada via `supabase.storage.createSignedUrl()`
+- `deleteFile()`: remove do storage + deleta registro `files`
+
+### R2StorageProvider (stub)
+- Métodos retornam `throw new Error('R2 not implemented yet')`
+- Estrutura pronta para implementar com S3-compatible SDK
+
+## 5. Componente FileUpload
+
+```text
+src/components/storage/
+  FileUpload.tsx        — drag-and-drop + click upload
+  FilePreview.tsx       — preview com thumbnail
+```
+
+### FileUpload.tsx
+- Aceita `companyId`, `fileType`, `onUploadComplete` como props
+- Drag-and-drop zone com feedback visual
+- Progress bar durante upload
+- Validação client-side de tipo e tamanho antes de enviar
+- Mobile-first: botões grandes (min 44px)
+- Usa `storageService.getUploadUrl()` + fetch PUT para signed URL
+
+### Hook: `useFileUpload`
+- Estado: uploading, progress, error
+- Lógica de upload com retry
+- Invalidação de cache React Query após sucesso
+
+## 6. Variáveis de Ambiente
+
+Adicionar ao `.env`:
+```
+VITE_STORAGE_PROVIDER=supabase
+```
+
+## Segurança
+
+- Bucket privado: sem acesso público, sempre via signed URLs
+- RLS na tabela `files`: isolamento por company_id
+- RLS no `storage.objects`: path deve conter company_id do usuário
+- Edge Function valida limites do plano antes de permitir upload
+- Signed URLs com expiração curta (1h upload, 1h download)
 
 ## Ordem de Execução
 
-1. Migração SQL (enums, tabelas, alterações, índices, RLS, função de limites)
-2. Hooks de dados (useSuperAdminStats, useSubscriptions, useSupportTickets)
-3. Componentes compartilhados (MetricCard, CompanyDetailSheet, TicketThread)
-4. Páginas do painel (Dashboard, Companies, Plans, Subscriptions, Affiliates, Tickets, Logs)
-5. Rotas + proteção isSuperAdmin
-6. Integração no sidebar
-7. Atualizar memória do projeto
+1. Migração SQL (tabela files + bucket + RLS)
+2. Edge Function `generate-upload-url`
+3. StorageService + providers (frontend)
+4. Hook `useFileUpload`
+5. Componente FileUpload
+6. Atualizar memória do projeto
 
