@@ -19,6 +19,7 @@ export function WhiteLabelSettings() {
   const queryClient = useQueryClient();
   const companyId = profile?.company_id;
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const faviconInputRef = useRef<HTMLInputElement>(null);
 
   const { data: company, isLoading } = useQuery({
     queryKey: ["company", companyId],
