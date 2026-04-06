@@ -40,6 +40,7 @@ const Signup = () => {
         options: {
           data: {
             name,
+            city: city || undefined,
             company_name: companyName,
             referral_code: referralCode || undefined,
           },
