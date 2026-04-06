@@ -8,9 +8,11 @@ export const useCompanyMembers = () => {
   const query = useQuery({
     queryKey: ["company_members", profile?.company_id],
     queryFn: async () => {
+      if (!profile?.company_id) return [];
       const { data, error } = await supabase
         .from("profiles")
         .select("id, name, email, avatar_url, status")
+        .eq("company_id", profile.company_id)
         .eq("status", "ativo")
         .order("name");
       if (error) throw error;

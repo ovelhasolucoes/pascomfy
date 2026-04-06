@@ -27,7 +27,63 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY") || "";
     const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY") || "";
+
+    // Validate JWT — only admins or service role can send notifications
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseAuth = createClient(supabaseUrl, Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || serviceKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: authData, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !authData?.user) {
+      return new Response(JSON.stringify({ error: "Invalid token" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const callerUserId = authData.user.id;
     const supabase = createClient(supabaseUrl, serviceKey);
+
+    // Check caller is admin or super_admin
+    const { data: callerRoles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", callerUserId);
+
+    const roles = (callerRoles || []).map((r: { role: string }) => r.role);
+    const isAdmin = roles.includes("admin") || roles.includes("super_admin");
+
+    if (!isAdmin) {
+      return new Response(JSON.stringify({ error: "Forbidden: admin role required" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // If admin (not super_admin), verify they belong to the target company
+    if (!roles.includes("super_admin")) {
+      const { data: callerProfile } = await supabase
+        .from("profiles")
+        .select("company_id")
+        .eq("id", callerUserId)
+        .single();
+
+      const payload: NotificationPayload = await req.clone().json();
+      if (!callerProfile || callerProfile.company_id !== payload.companyId) {
+        return new Response(JSON.stringify({ error: "Forbidden: company mismatch" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
 
     if (vapidPublicKey && vapidPrivateKey) {
       webpush.setVapidDetails(
