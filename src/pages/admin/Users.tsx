@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -163,7 +164,7 @@ const Users = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <AppLayout>
       <div className="mx-auto max-w-6xl space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -278,7 +279,7 @@ const Users = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 
