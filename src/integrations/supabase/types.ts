@@ -183,6 +183,200 @@ export type Database = {
           },
         ]
       }
+      automation_logs: {
+        Row: {
+          automation_id: string | null
+          channel: Database["public"]["Enums"]["automation_channel"]
+          company_id: string
+          created_at: string
+          gateway_response: string | null
+          id: string
+          message: string
+          queue_item_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          automation_id?: string | null
+          channel: Database["public"]["Enums"]["automation_channel"]
+          company_id: string
+          created_at?: string
+          gateway_response?: string | null
+          id?: string
+          message: string
+          queue_item_id?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          automation_id?: string | null
+          channel?: Database["public"]["Enums"]["automation_channel"]
+          company_id?: string
+          created_at?: string
+          gateway_response?: string | null
+          id?: string
+          message?: string
+          queue_item_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_logs_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "automations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_logs_queue_item_id_fkey"
+            columns: ["queue_item_id"]
+            isOneToOne: false
+            referencedRelation: "automation_queue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_queue: {
+        Row: {
+          attempts: number
+          automation_id: string | null
+          channel: Database["public"]["Enums"]["automation_channel"]
+          company_id: string
+          created_at: string
+          error_message: string | null
+          id: string
+          message: string
+          metadata: Json
+          processed_at: string | null
+          status: Database["public"]["Enums"]["queue_status"]
+          title: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          automation_id?: string | null
+          channel: Database["public"]["Enums"]["automation_channel"]
+          company_id: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message: string
+          metadata?: Json
+          processed_at?: string | null
+          status?: Database["public"]["Enums"]["queue_status"]
+          title: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          automation_id?: string | null
+          channel?: Database["public"]["Enums"]["automation_channel"]
+          company_id?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message?: string
+          metadata?: Json
+          processed_at?: string | null
+          status?: Database["public"]["Enums"]["queue_status"]
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_queue_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "automations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_queue_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_queue_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automations: {
+        Row: {
+          active: boolean
+          channel: Database["public"]["Enums"]["automation_channel"]
+          company_id: string
+          config_json: Json
+          created_at: string
+          id: string
+          message_template: string
+          name: string
+          title_template: string
+          trigger_event:
+            | Database["public"]["Enums"]["automation_trigger_type"]
+            | null
+          type: string
+        }
+        Insert: {
+          active?: boolean
+          channel?: Database["public"]["Enums"]["automation_channel"]
+          company_id: string
+          config_json?: Json
+          created_at?: string
+          id?: string
+          message_template: string
+          name: string
+          title_template: string
+          trigger_event?:
+            | Database["public"]["Enums"]["automation_trigger_type"]
+            | null
+          type?: string
+        }
+        Update: {
+          active?: boolean
+          channel?: Database["public"]["Enums"]["automation_channel"]
+          company_id?: string
+          config_json?: Json
+          created_at?: string
+          id?: string
+          message_template?: string
+          name?: string
+          title_template?: string
+          trigger_event?:
+            | Database["public"]["Enums"]["automation_trigger_type"]
+            | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       biolink_clicks: {
         Row: {
           biolink_item_id: string
@@ -2129,6 +2323,14 @@ export type Database = {
     Enums: {
       app_role: "colaborador" | "admin" | "super_admin"
       attendance_status: "presente" | "ausente"
+      automation_channel: "whatsapp" | "push" | "email" | "in_app"
+      automation_trigger_type:
+        | "usuario_escalado"
+        | "evento_proximo"
+        | "substituicao_solicitada"
+        | "substituicao_aprovada"
+        | "presenca_pendente"
+        | "evento_criado"
       biolink_item_type:
         | "link"
         | "whatsapp"
@@ -2146,6 +2348,7 @@ export type Database = {
       notification_type: "escala" | "evento" | "aviso" | "sistema"
       payment_status: "pago" | "pendente" | "falhou" | "estornado"
       permission_level: "basico" | "avancado"
+      queue_status: "pendente" | "processando" | "enviado" | "erro"
       referral_status: "pendente" | "convertido"
       reward_type: "dias_gratis" | "desconto" | "upgrade"
       subscription_status: "ativo" | "cancelado" | "trial" | "atrasado"
@@ -2282,6 +2485,15 @@ export const Constants = {
     Enums: {
       app_role: ["colaborador", "admin", "super_admin"],
       attendance_status: ["presente", "ausente"],
+      automation_channel: ["whatsapp", "push", "email", "in_app"],
+      automation_trigger_type: [
+        "usuario_escalado",
+        "evento_proximo",
+        "substituicao_solicitada",
+        "substituicao_aprovada",
+        "presenca_pendente",
+        "evento_criado",
+      ],
       biolink_item_type: [
         "link",
         "whatsapp",
@@ -2300,6 +2512,7 @@ export const Constants = {
       notification_type: ["escala", "evento", "aviso", "sistema"],
       payment_status: ["pago", "pendente", "falhou", "estornado"],
       permission_level: ["basico", "avancado"],
+      queue_status: ["pendente", "processando", "enviado", "erro"],
       referral_status: ["pendente", "convertido"],
       reward_type: ["dias_gratis", "desconto", "upgrade"],
       subscription_status: ["ativo", "cancelado", "trial", "atrasado"],
