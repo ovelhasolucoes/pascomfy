@@ -40,6 +40,7 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import DashboardPage from "./pages/DashboardPage";
 import ProfilePage from "./pages/ProfilePage";
+import AdminSubstitutions from "./pages/admin/AdminSubstitutions";
 
 const queryClient = new QueryClient();
 
