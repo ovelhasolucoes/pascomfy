@@ -37,6 +37,12 @@ export function AppSidebar() {
     { title: "Configurações", url: "/admin/settings", icon: Settings },
   ];
 
+  const socialItems = [
+    { title: "Posts", url: "/social/posts", icon: FileText },
+    { title: "Calendário", url: "/social/calendar", icon: CalendarCheck },
+    { title: "Contas", url: "/social/accounts", icon: UserCog },
+  ];
+
   const superAdminItems = [
     { title: "Dashboard", url: "/superadmin", icon: LayoutDashboard },
     { title: "Companies", url: "/superadmin/companies", icon: Building2 },
