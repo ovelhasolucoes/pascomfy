@@ -2,10 +2,12 @@ import { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useSocialPosts } from "@/hooks/useSocialPosts";
 import { useSocialAccounts } from "@/hooks/useSocialAccounts";
+import { useSocialMetrics } from "@/hooks/useSocialMetrics";
 import { PostForm } from "@/components/social/PostForm";
 import { PostCard } from "@/components/social/PostCard";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FileText, Clock, CheckCircle2, AlertCircle, LayoutGrid } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { FileText, Clock, CheckCircle2, AlertCircle, LayoutGrid, RefreshCw } from "lucide-react";
 
 const statusTabs = [
   { value: "todos", label: "Todos", icon: LayoutGrid, color: "" },
@@ -20,11 +22,8 @@ export default function SocialPosts() {
   const { posts, isLoading, createPost, publishPost, deletePost } = useSocialPosts(statusFilter);
   const { accounts } = useSocialAccounts();
 
-  const { posts: allPostsList } = useSocialPosts();
-  const counts: Record<string, number> = {};
-  allPostsList.forEach((p) => {
-    counts[p.status] = (counts[p.status] || 0) + 1;
-  });
+  const publishedPostIds = posts.filter((p) => p.status === "publicado").map((p) => p.id);
+  const { metricsMap, refreshMetrics } = useSocialMetrics(publishedPostIds);
 
   return (
     <AppLayout>
@@ -35,7 +34,20 @@ export default function SocialPosts() {
             <h1 className="text-2xl font-bold">Posts</h1>
             <p className="text-sm text-muted-foreground">Gerencie suas publicações no Facebook e Instagram</p>
           </div>
-          <PostForm accounts={accounts} onSubmit={(post) => createPost.mutate(post)} />
+          <div className="flex items-center gap-2">
+            {publishedPostIds.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refreshMetrics.mutate(undefined)}
+                disabled={refreshMetrics.isPending}
+              >
+                <RefreshCw className={`h-4 w-4 mr-1 ${refreshMetrics.isPending ? "animate-spin" : ""}`} />
+                Atualizar métricas
+              </Button>
+            )}
+            <PostForm accounts={accounts} onSubmit={(post) => createPost.mutate(post)} />
+          </div>
         </div>
 
         {/* Status tabs */}
@@ -82,6 +94,9 @@ export default function SocialPosts() {
                 onPublish={(id) => publishPost.mutate(id)}
                 onDelete={(id) => deletePost.mutate(id)}
                 isPublishing={publishPost.isPending}
+                metrics={metricsMap.get(post.id)}
+                onRefreshMetrics={(id) => refreshMetrics.mutate(id)}
+                isRefreshing={refreshMetrics.isPending}
               />
             ))}
           </div>

@@ -1,11 +1,12 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Send, Trash2, Clock, AlertCircle, CheckCircle2, FileEdit, Loader2, ChevronLeft, ChevronRight, Instagram, Facebook, MoreHorizontal } from "lucide-react";
+import { Send, Trash2, Clock, AlertCircle, CheckCircle2, FileEdit, Loader2, ChevronLeft, ChevronRight, Instagram, Facebook, MoreHorizontal, Heart, MessageCircle, Share2, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { SocialPost } from "@/hooks/useSocialPosts";
+import type { SocialPostMetrics } from "@/hooks/useSocialMetrics";
 import { useState } from "react";
 
 const statusConfig: Record<string, { label: string; className: string; icon: any }> = {
@@ -27,9 +28,12 @@ interface PostCardProps {
   onPublish: (id: string) => void;
   onDelete: (id: string) => void;
   isPublishing?: boolean;
+  metrics?: SocialPostMetrics;
+  onRefreshMetrics?: (postId: string) => void;
+  isRefreshing?: boolean;
 }
 
-export function PostCard({ post, onPublish, onDelete, isPublishing }: PostCardProps) {
+export function PostCard({ post, onPublish, onDelete, isPublishing, metrics, onRefreshMetrics, isRefreshing }: PostCardProps) {
   const config = statusConfig[post.status] || statusConfig.rascunho;
   const StatusIcon = config.icon;
   const pConfig = platformIcons[post.platform] || platformIcons.facebook;
@@ -136,6 +140,37 @@ export function PostCard({ post, onPublish, onDelete, isPublishing }: PostCardPr
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+
+        {/* Engagement metrics for published posts */}
+        {post.status === "publicado" && (
+          <div className="flex items-center justify-between pt-1 border-t">
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Heart className="h-3 w-3 text-red-500" />
+                {metrics?.likes ?? "—"}
+              </span>
+              <span className="flex items-center gap-1">
+                <MessageCircle className="h-3 w-3 text-blue-500" />
+                {metrics?.comments ?? "—"}
+              </span>
+              <span className="flex items-center gap-1">
+                <Share2 className="h-3 w-3 text-emerald-500" />
+                {metrics?.shares ?? "—"}
+              </span>
+            </div>
+            {onRefreshMetrics && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => onRefreshMetrics(post.id)}
+                disabled={isRefreshing}
+              >
+                <RefreshCw className={`h-3 w-3 ${isRefreshing ? "animate-spin" : ""}`} />
+              </Button>
+            )}
+          </div>
+        )}
 
         {post.error_message && (
           <p className="text-xs text-destructive bg-destructive/10 p-2 rounded">{post.error_message}</p>

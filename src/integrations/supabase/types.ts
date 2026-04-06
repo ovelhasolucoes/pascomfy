@@ -1190,6 +1190,54 @@ export type Database = {
           },
         ]
       }
+      social_post_metrics: {
+        Row: {
+          comments: number
+          company_id: string
+          created_at: string
+          fetched_at: string
+          id: string
+          likes: number
+          post_id: string
+          shares: number
+        }
+        Insert: {
+          comments?: number
+          company_id: string
+          created_at?: string
+          fetched_at?: string
+          id?: string
+          likes?: number
+          post_id: string
+          shares?: number
+        }
+        Update: {
+          comments?: number
+          company_id?: string
+          created_at?: string
+          fetched_at?: string
+          id?: string
+          likes?: number
+          post_id?: string
+          shares?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_post_metrics_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_post_metrics_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: true
+            referencedRelation: "social_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       social_posts: {
         Row: {
           caption: string | null
