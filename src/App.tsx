@@ -27,6 +27,7 @@ import AdminBiolink from "./pages/admin/AdminBiolink";
 import SocialPosts from "./pages/social/SocialPosts";
 import SocialCalendar from "./pages/social/SocialCalendar";
 import SocialAccounts from "./pages/social/SocialAccounts";
+import BioPublicPage from "./pages/BioPublicPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/invite/:token" element={<InviteAccept />} />
+            <Route path="/bio/:slug" element={<BioPublicPage />} />
             <Route path="/" element={<Navigate to="/events" replace />} />
             <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
             <Route path="/events/new" element={<ProtectedRoute><EventCreate /></ProtectedRoute>} />
