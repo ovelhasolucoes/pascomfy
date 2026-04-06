@@ -10,6 +10,7 @@ import InviteAccept from "./pages/InviteAccept";
 import Events from "./pages/Events";
 import EventCreate from "./pages/EventCreate";
 import EventDetailPage from "./pages/EventDetailPage";
+import EventLivePage from "./pages/EventLivePage";
 import MySchedulePage from "./pages/MySchedulePage";
 import Users from "./pages/admin/Users";
 import EventSettings from "./pages/admin/EventSettings";
