@@ -1,173 +1,196 @@
 
 
-# Pascomfy — Sistema de Notificações Multi-Canal
+# Pascomfy — Módulo Social Post (Meta Integration)
 
 ## Resumo
 
-Criar sistema completo de notificações com suporte a In-App (realtime), Push (Web Push) e WhatsApp (Meta/Evo configurável por company). Inclui disparo automático via triggers + edge functions, disparo manual por admin, e UI completa com sino/badge no header.
+Cada company configura seu proprio Meta App (App ID + App Secret), conecta suas Pages/Instagram via OAuth, e publica conteúdo diretamente pelo Pascomfy. Agendamento via `scheduled_publish_time` da API da Meta. UI como nova seção "Social" no sidebar.
 
 ## Arquitetura
 
 ```text
-┌───────────────────────────────────────────────────┐
-│  Frontend                                          │
-│  NotificationBell (header) ← Supabase Realtime     │
-│  NotificationPanel (dropdown com lista)             │
-│  AdminNotificationSend (disparo manual)             │
-│  NotificationSettings (preferências do usuário)     │
-└──────────┬────────────────────────────────────────┘
-           │
-     ┌─────┴─────┐
-     │            │
-  Triggers     Edge Functions
-  (INSERT em    (send-notification)
-  event_team    (scheduled: 24h reminder)
-  _members)
-     │            │
-     └─────┬──────┘
-           ▼
-┌──────────────────────────┐
-│  Edge Function:           │
-│  send-notification        │
-│  - insere notifications   │
-│  - envia push (web-push)  │
-│  - envia whatsapp         │
-│  - registra logs          │
-└──────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│  Frontend (React)                               │
+│  /social/posts — criar/listar posts             │
+│  /social/calendar — calendário visual           │
+│  /social/accounts — conectar contas Meta        │
+├─────────────────────────────────────────────────┤
+│  Edge Functions                                 │
+│  meta-oauth      — OAuth callback, troca code   │
+│  social-publish  — publica/agenda na Meta API   │
+├─────────────────────────────────────────────────┤
+│  Supabase DB                                    │
+│  social_accounts — tokens + page_id + ig_id     │
+│  social_posts    — posts + status + scheduling  │
+│  social_media    — mídia temporária (ref only)   │
+└─────────────────────────────────────────────────┘
 ```
 
-## 1. Migração SQL
+## Fase 1 — Database (Migration)
 
-### Tabelas
+### Tabela `social_accounts`
+| Coluna | Tipo | Notas |
+|--------|------|-------|
+| id | uuid PK | |
+| company_id | uuid NOT NULL | FK companies |
+| provider | text DEFAULT 'meta' | Extensível para futuro |
+| app_id | text NOT NULL | Meta App ID da company |
+| app_secret_encrypted | text NOT NULL | Armazenado encriptado |
+| access_token | text | Long-lived token |
+| token_expires_at | timestamptz | Expiração do token |
+| page_id | text | Facebook Page ID |
+| page_name | text | Nome da Page |
+| instagram_id | text | IG Business Account ID |
+| instagram_username | text | |
+| status | text DEFAULT 'ativo' | ativo/desconectado/erro |
+| created_at | timestamptz DEFAULT now() | |
 
-**notifications** — notificações in-app
-- `id`, `company_id`, `user_id`, `title`, `message`, `type` (escala/evento/aviso/sistema), `read` (boolean), `sent_at`, `created_at`, `metadata` (jsonb — event_id, etc.)
+RLS: admin da company gerencia, membros leem (sem tokens).
 
-**notification_logs** — log de envio por canal
-- `id`, `notification_id`, `channel` (push/whatsapp/in_app), `status` (enviado/erro), `gateway_response` (text), `created_at`
+### Tabela `social_posts`
+| Coluna | Tipo | Notas |
+|--------|------|-------|
+| id | uuid PK | |
+| company_id | uuid NOT NULL | |
+| social_account_id | uuid NOT NULL | FK social_accounts |
+| caption | text | Legenda do post |
+| media_type | text | imagem/video/carousel |
+| media_urls | jsonb DEFAULT '[]' | URLs temporárias para envio |
+| platform | text NOT NULL | facebook/instagram/ambos |
+| status | text DEFAULT 'rascunho' | rascunho/agendado/publicando/publicado/erro |
+| error_message | text | Detalhes do erro |
+| scheduled_at | timestamptz | Quando publicar |
+| published_at | timestamptz | Quando foi publicado |
+| meta_post_id | text | ID do post na Meta |
+| meta_ig_post_id | text | ID do post no Instagram |
+| created_by | uuid NOT NULL | |
+| created_at | timestamptz DEFAULT now() | |
 
-**user_notification_settings** — preferências por usuário
-- `id`, `user_id`, `company_id`, `push_enabled` (default true), `whatsapp_enabled` (default false), `email_enabled` (default false), `created_at`
-
-**push_subscriptions** — tokens de dispositivo Web Push
-- `id`, `user_id`, `endpoint` (text unique), `keys` (jsonb — p256dh, auth), `created_at`
-
-**whatsapp_configs** — config WhatsApp por company
-- `id`, `company_id`, `provider` (meta/evo), `config_json` (jsonb — token, phone_id, base_url), `active` (boolean), `created_at`
-
-**notification_templates** — templates reutilizáveis
-- `id`, `company_id` (nullable para globais), `type`, `title`, `message_template`, `created_at`
+RLS: admin/permission cria, membros da company leem.
 
 ### Índices
-- `notifications(user_id, read)` — listar não-lidas
-- `notifications(company_id, type)`
-- `notification_logs(notification_id)`
-- `push_subscriptions(user_id)`
-- `whatsapp_configs(company_id, active)`
+- `social_accounts(company_id)`
+- `social_posts(company_id, status)`
+- `social_posts(company_id, scheduled_at)` WHERE status = 'agendado'
 
-### RLS
-- **notifications**: user vê as suas; admin insere na company; super_admin ALL
-- **notification_logs**: mesmo que notifications (via join)
-- **user_notification_settings**: user gerencia as suas; admin vê da company
-- **push_subscriptions**: user gerencia as suas
-- **whatsapp_configs**: admin gerencia da company; super_admin ALL
-- **notification_templates**: admin gerencia da company; super_admin ALL
+### View segura para membros
+View `social_accounts_safe` que exclui `access_token`, `app_secret_encrypted` — membros consultam apenas essa view.
 
-### Trigger automático
-- `AFTER INSERT ON event_team_members` → chama `pg_net.http_post` para edge function `send-notification` com payload `{ type: 'escala', userId, eventId }`
-- Mesmo padrão para `AFTER UPDATE ON events` (status changed)
+## Fase 2 — Edge Functions
 
-## 2. Edge Function: `send-notification`
+### `meta-oauth` (nova)
+1. Recebe `company_id` + `code` do callback OAuth
+2. Busca `app_id` e `app_secret` de `social_accounts` (via service_role)
+3. Troca code por short-lived token, depois converte em long-lived token (60 dias)
+4. Busca Pages do usuário via `/me/accounts`
+5. Busca Instagram Business Account vinculado à Page
+6. Salva tudo em `social_accounts`
 
-Responsabilidades:
-1. Recebe `{ type, userId, companyId, title, message, metadata }`
-2. Insere na tabela `notifications` (in-app)
-3. Consulta `user_notification_settings` do destinatário
-4. Se `push_enabled`: busca `push_subscriptions`, envia via web-push
-5. Se `whatsapp_enabled`: busca `whatsapp_configs` da company, envia via provider ativo (Meta ou Evo)
-6. Registra tudo em `notification_logs`
-7. Suporta `bulk: true` para enviar para lista de userIds
+### `social-publish` (nova)
+1. Recebe `post_id`
+2. Busca post + social_account (com tokens, via service_role)
+3. Verifica token válido (se expirado, tenta refresh)
+4. Para Facebook:
+   - Upload foto via `/{page_id}/photos` ou post via `/{page_id}/feed`
+   - Se agendado: usa `scheduled_publish_time`
+5. Para Instagram:
+   - Cria container via `/{ig_id}/media` com `image_url` + `caption`
+   - Publica via `/{ig_id}/media_publish`
+   - Se agendado: usa `scheduled_publish_time` (IG não suporta nativo, então armazena como agendado e pg_cron dispara)
+6. Atualiza `social_posts` com `meta_post_id` e status
+7. Registra em `notification_logs` se houver erro
 
-### Secrets necessários
-- `VAPID_PUBLIC_KEY` e `VAPID_PRIVATE_KEY` (para Web Push)
-- WhatsApp: config_json na tabela, sem secrets globais
+### Nota sobre Instagram agendado
+Instagram Graph API não suporta `scheduled_publish_time`. Para posts agendados no IG, o sistema armazena com status `agendado` e um pg_cron job (reutilizando padrão existente) verifica a cada minuto e publica quando `scheduled_at <= now()`.
 
-## 3. Edge Function: `schedule-reminders`
+## Fase 3 — Frontend
 
-- Chamada via pg_cron a cada hora
-- Busca eventos nas próximas 24h com membros escalados
-- Envia notificação de lembrete para cada membro
-- Evita duplicidade com campo `metadata.reminder_sent`
+### Nova seção "Social" no sidebar
+Visível para admin. 3 itens:
+- Posts (`/social/posts`) — lista + criação
+- Calendário (`/social/calendar`) — visualização mensal
+- Contas (`/social/accounts`) — conexão Meta
 
-## 4. Frontend — Componentes
+### Página Contas (`/social/accounts`)
+- Admin insere App ID + App Secret da company
+- Botão "Conectar com Facebook" inicia OAuth
+- Após callback, mostra Page + IG vinculados
+- Status da conexão (token válido/expirado)
+- Botão reconectar se token expirado
 
-### NotificationBell (no AppLayout header)
-- Ícone de sino com badge de contagem de não-lidas
-- Realtime subscription em `notifications` filtrado por `user_id`
-- Click abre dropdown/panel
+### Página Posts (`/social/posts`)
+- Lista de posts com filtros por status
+- Botão "Novo Post" abre formulário:
+  - Upload de mídia (temporário, não persiste)
+  - Legenda
+  - Plataforma (Facebook, Instagram, Ambos)
+  - Publicar agora ou Agendar (date picker)
+- Preview do post
+- Status badges coloridos
 
-### NotificationPanel
-- Lista de notificações com scroll
-- Cada item: título, mensagem, tempo relativo, badge de tipo
-- Click marca como lida
-- Botão "marcar todas como lidas"
+### Página Calendário (`/social/calendar`)
+- Reutiliza padrão do `EventCalendar` existente
+- Mostra posts agendados/publicados por data
+- Click em dia mostra posts daquele dia
 
-### NotificationSettings (página ou dialog)
-- Toggles: push_enabled, whatsapp_enabled
-- Registro de Push Subscription (botão "Ativar notificações push")
+## Fase 4 — Segurança
 
-### AdminNotificationSend (página admin)
-- Formulário: título, mensagem, tipo
-- Destinatários: todos da company, equipe específica, usuários selecionados
-- Preview antes de enviar
+- `app_secret_encrypted`: encriptado via `pgcrypto` com chave em secret do Supabase
+- `access_token`: acessível apenas via service_role (Edge Functions)
+- RLS isola tudo por company_id
+- View `social_accounts_safe` para frontend (sem tokens)
+- OAuth state parameter para prevenir CSRF
+- Validação de input com Zod nas Edge Functions
 
-### WhatsAppConfig (página admin)
-- Formulário: provider (meta/evo), config_json fields, toggle ativo
-- Apenas 1 config ativa por company
+## Fase 5 — Tratamento de Erros
 
-## 5. Web Push — Service Worker
+- Token expirado: Edge Function tenta refresh automático, se falhar marca conta como `erro` e notifica admin
+- API da Meta retorna erro: salva `error_message` no post, status `erro`, notifica admin
+- Rate limiting da Meta: retry com backoff exponencial
+- Conta desconectada: marca status e alerta via notificação in-app
 
-Seguindo as regras de PWA:
-- **Sem service worker no preview** — guard contra iframe e hosts lovable
-- `navigateFallbackDenylist: [/^\/~oauth/]`
-- Registro condicional apenas em produção
-- Edge function usa biblioteca `web-push` (Deno) para enviar
+## Fluxo de Publicação
 
-### Fluxo de registro
-1. Usuário clica "Ativar Push" nas configurações
-2. Frontend pede permissão do browser
-3. `PushManager.subscribe()` com VAPID public key
-4. Salva subscription em `push_subscriptions`
+```text
+1. Admin cria post (legenda + mídia + plataforma)
+2. Upload temporário da mídia para URL pública (Supabase Storage temp bucket, TTL 1h)
+3. Se "publicar agora":
+   → chama social-publish imediatamente
+   → Edge Function envia para Meta API
+   → Atualiza status para "publicado" ou "erro"
+4. Se "agendar":
+   → Para Facebook: usa scheduled_publish_time nativo
+   → Para Instagram: salva como "agendado", pg_cron publica no horário
+5. Após publicação bem-sucedida:
+   → Remove mídia temporária
+   → Salva meta_post_id
+```
 
-## 6. Hooks
+## Arquivos a criar/editar
 
-- `useNotifications()` — lista com realtime, marcar lida, contagem
-- `useNotificationSettings()` — CRUD preferências do usuário
-- `usePushSubscription()` — registro/remoção de push
-- `useAdminNotifications()` — envio manual (admin)
-
-## 7. Rotas novas
-
-- Nenhuma rota nova necessária — NotificationBell fica no header global
-- Admin: adicionar aba "Notificações" nas configurações existentes ou nova rota `/admin/notifications`
-
-## Ordem de Execução
-
-1. Migração SQL (6 tabelas + índices + RLS + trigger)
-2. Edge Function `send-notification`
-3. Hook `useNotifications` + componentes NotificationBell/Panel
-4. Hook `useNotificationSettings` + UI de preferências
-5. Web Push (service worker + registro + VAPID keys)
-6. Admin: envio manual + config WhatsApp
-7. Edge Function `schedule-reminders` + pg_cron
-8. Atualizar memória do projeto
+| Arquivo | Ação |
+|---------|------|
+| Migration SQL | Criar tabelas, view, índices, RLS |
+| `supabase/functions/meta-oauth/index.ts` | Criar |
+| `supabase/functions/social-publish/index.ts` | Criar |
+| `src/pages/social/SocialPosts.tsx` | Criar |
+| `src/pages/social/SocialCalendar.tsx` | Criar |
+| `src/pages/social/SocialAccounts.tsx` | Criar |
+| `src/hooks/useSocialAccounts.ts` | Criar |
+| `src/hooks/useSocialPosts.ts` | Criar |
+| `src/components/social/PostForm.tsx` | Criar |
+| `src/components/social/PostCard.tsx` | Criar |
+| `src/components/social/PostCalendarView.tsx` | Criar |
+| `src/components/social/MetaConnectButton.tsx` | Criar |
+| `src/components/layout/AppSidebar.tsx` | Adicionar seção Social |
+| `src/App.tsx` | Adicionar rotas /social/* |
 
 ## Detalhes Técnicos
 
-- Realtime via `supabase.channel('notifications').on('postgres_changes', ...)` filtrado por user_id
-- Web Push: VAPID keys geradas e armazenadas como secrets no Supabase
-- WhatsApp Meta: POST para `graph.facebook.com/v18.0/{phone_id}/messages`
-- WhatsApp Evo: POST para `{base_url}/message/sendText/{instance}`
-- pg_cron para lembretes de 24h (INSERT via supabase--read_query, não migração)
-- Trigger usa `pg_net` extension para HTTP POST assíncrono à edge function
+- OAuth redirect URI: `https://cchovdurprjtefisautg.supabase.co/functions/v1/meta-oauth`
+- Meta Graph API v21.0
+- Permissões OAuth necessárias: `pages_manage_posts`, `pages_read_engagement`, `instagram_basic`, `instagram_content_publish`
+- Long-lived tokens duram ~60 dias, depois precisam de re-auth
+- Mídia temporária: bucket `social-temp` com lifecycle policy ou cleanup via Edge Function
+- pg_cron para IG scheduled: `*/1 * * * *` verifica posts com `status = 'agendado'` e `scheduled_at <= now()`
 
