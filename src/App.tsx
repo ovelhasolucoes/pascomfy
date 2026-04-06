@@ -10,6 +10,7 @@ import InviteAccept from "./pages/InviteAccept";
 import Events from "./pages/Events";
 import EventCreate from "./pages/EventCreate";
 import EventDetailPage from "./pages/EventDetailPage";
+import EventLivePage from "./pages/EventLivePage";
 import MySchedulePage from "./pages/MySchedulePage";
 import Users from "./pages/admin/Users";
 import EventSettings from "./pages/admin/EventSettings";
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
             <Route path="/events/new" element={<ProtectedRoute><EventCreate /></ProtectedRoute>} />
             <Route path="/events/:id" element={<ProtectedRoute><EventDetailPage /></ProtectedRoute>} />
+            <Route path="/events/:id/live" element={<ProtectedRoute><EventLivePage /></ProtectedRoute>} />
             <Route path="/my-schedule" element={<ProtectedRoute><MySchedulePage /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
             <Route path="/admin/event-settings" element={<ProtectedRoute><EventSettings /></ProtectedRoute>} />

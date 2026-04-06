@@ -2,17 +2,21 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowLeft, MapPin, Clock, Plus } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Plus, Zap } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EventTeamCard } from "@/components/events/EventTeamCard";
 import { AddTeamDialog } from "@/components/events/AddTeamDialog";
 import { AddMemberDialog } from "@/components/events/AddMemberDialog";
+import { ChecklistSection } from "@/components/checklist/ChecklistSection";
+import { AttendanceButton } from "@/components/attendance/AttendanceButton";
+import { AttendanceList } from "@/components/attendance/AttendanceList";
 import { useEvents } from "@/hooks/useEvents";
 import { useEventTeams } from "@/hooks/useEventTeams";
 import { useEventMembers } from "@/hooks/useEventMembers";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useRealtimeChecklist } from "@/hooks/useRealtimeChecklist";
 import { toast } from "sonner";
 
 const EventDetailPage = () => {
@@ -26,6 +30,18 @@ const EventDetailPage = () => {
 
   const { teams, loading: teamsLoading, createTeam, deleteTeam } = useEventTeams(id);
   const { addMember, updateMember, removeMember } = useEventMembers(id);
+  useRealtimeChecklist(id);
+
+  // Collect scaled user info for admin attendance view
+  const scaledUserIds = teams.flatMap((t) =>
+    t.event_team_members?.map((m: any) => m.user_id) ?? []
+  );
+  const scaledUserNames: Record<string, string> = {};
+  teams.forEach((t) =>
+    t.event_team_members?.forEach((m: any) => {
+      if (m.profiles?.name) scaledUserNames[m.user_id] = m.profiles.name;
+    })
+  );
 
   const [addTeamOpen, setAddTeamOpen] = useState(false);
   const [addMemberTeamId, setAddMemberTeamId] = useState<string | null>(null);
@@ -161,6 +177,35 @@ const EventDetailPage = () => {
             </div>
           )}
         </div>
+
+        {/* Presença */}
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold text-foreground">Presença</h2>
+          <AttendanceButton eventId={id!} eventStartDate={event.start_date} />
+          {canEditScale && scaledUserIds.length > 0 && (
+            <AttendanceList
+              eventId={id!}
+              eventStartDate={event.start_date}
+              scaledUserIds={[...new Set(scaledUserIds)]}
+              scaledUserNames={scaledUserNames}
+            />
+          )}
+        </div>
+
+        {/* Checklist */}
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold text-foreground">Checklist</h2>
+          <ChecklistSection eventId={id!} />
+        </div>
+
+        {/* Modo Foco */}
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => navigate(`/events/${id}/live`)}
+        >
+          <Zap className="h-4 w-4 mr-2" /> Modo Foco
+        </Button>
 
         <AddTeamDialog open={addTeamOpen} onClose={() => setAddTeamOpen(false)} onAdd={handleAddTeam} />
         <AddMemberDialog

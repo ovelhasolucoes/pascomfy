@@ -237,6 +237,7 @@ export type Database = {
           event_checklist_id: string
           id: string
           is_required: boolean
+          scope: string
           title: string
         }
         Insert: {
@@ -247,6 +248,7 @@ export type Database = {
           event_checklist_id: string
           id?: string
           is_required?: boolean
+          scope?: string
           title: string
         }
         Update: {
@@ -257,6 +259,7 @@ export type Database = {
           event_checklist_id?: string
           id?: string
           is_required?: boolean
+          scope?: string
           title?: string
         }
         Relationships: [
