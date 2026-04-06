@@ -681,6 +681,91 @@ export type Database = {
           },
         ]
       }
+      event_substitutions: {
+        Row: {
+          company_id: string
+          created_at: string
+          event_id: string
+          event_team_member_id: string
+          id: string
+          reason: string
+          replacement_user_id: string | null
+          responded_at: string | null
+          responded_by: string | null
+          status: Database["public"]["Enums"]["substitution_status"]
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          event_id: string
+          event_team_member_id: string
+          id?: string
+          reason: string
+          replacement_user_id?: string | null
+          responded_at?: string | null
+          responded_by?: string | null
+          status?: Database["public"]["Enums"]["substitution_status"]
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          event_id?: string
+          event_team_member_id?: string
+          id?: string
+          reason?: string
+          replacement_user_id?: string | null
+          responded_at?: string | null
+          responded_by?: string | null
+          status?: Database["public"]["Enums"]["substitution_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_substitutions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_substitutions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_substitutions_event_team_member_id_fkey"
+            columns: ["event_team_member_id"]
+            isOneToOne: false
+            referencedRelation: "event_team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_substitutions_replacement_user_id_fkey"
+            columns: ["replacement_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_substitutions_responded_by_fkey"
+            columns: ["responded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_substitutions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_team_members: {
         Row: {
           company_id: string
@@ -935,6 +1020,86 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gamification_levels: {
+        Row: {
+          company_id: string
+          created_at: string
+          icon: string | null
+          id: string
+          min_points: number
+          name: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          min_points?: number
+          name: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          min_points?: number
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gamification_levels_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gamification_points: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          points: number
+          source: string
+          source_id: string | null
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          points?: number
+          source: string
+          source_id?: string | null
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          points?: number
+          source?: string
+          source_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gamification_points_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gamification_points_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1255,6 +1420,7 @@ export type Database = {
         Row: {
           availability: Json
           avatar_url: string | null
+          bio: string | null
           company_id: string | null
           created_at: string
           created_by: string | null
@@ -1264,13 +1430,16 @@ export type Database = {
           name: string
           permission_level: Database["public"]["Enums"]["permission_level"]
           phone: string | null
+          preferred_roles: Json
           reliability_score: number
           settings: Json
+          skills: Json
           status: Database["public"]["Enums"]["user_status"]
         }
         Insert: {
           availability?: Json
           avatar_url?: string | null
+          bio?: string | null
           company_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -1280,13 +1449,16 @@ export type Database = {
           name: string
           permission_level?: Database["public"]["Enums"]["permission_level"]
           phone?: string | null
+          preferred_roles?: Json
           reliability_score?: number
           settings?: Json
+          skills?: Json
           status?: Database["public"]["Enums"]["user_status"]
         }
         Update: {
           availability?: Json
           avatar_url?: string | null
+          bio?: string | null
           company_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -1296,8 +1468,10 @@ export type Database = {
           name?: string
           permission_level?: Database["public"]["Enums"]["permission_level"]
           phone?: string | null
+          preferred_roles?: Json
           reliability_score?: number
           settings?: Json
+          skills?: Json
           status?: Database["public"]["Enums"]["user_status"]
         }
         Relationships: [
@@ -1975,6 +2149,7 @@ export type Database = {
       referral_status: "pendente" | "convertido"
       reward_type: "dias_gratis" | "desconto" | "upgrade"
       subscription_status: "ativo" | "cancelado" | "trial" | "atrasado"
+      substitution_status: "pendente" | "aprovado" | "rejeitado"
       ticket_status: "aberto" | "respondido" | "fechado"
       user_status: "ativo" | "inativo" | "bloqueado"
       whatsapp_provider: "meta" | "evo"
@@ -2128,6 +2303,7 @@ export const Constants = {
       referral_status: ["pendente", "convertido"],
       reward_type: ["dias_gratis", "desconto", "upgrade"],
       subscription_status: ["ativo", "cancelado", "trial", "atrasado"],
+      substitution_status: ["pendente", "aprovado", "rejeitado"],
       ticket_status: ["aberto", "respondido", "fechado"],
       user_status: ["ativo", "inativo", "bloqueado"],
       whatsapp_provider: ["meta", "evo"],
