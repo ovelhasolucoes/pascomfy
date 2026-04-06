@@ -1,202 +1,151 @@
 
 
-# Automações Multi-Canal — Pascomfy
+# Refinamento UX/UI Completo — Fase 1
 
 ## Resumo
 
-Criar sistema de automações dentro da tela `/admin/notifications` com novas abas: Automações (CRUD de regras), Disparo Manual (com montagem de mensagem de grupo), e Logs. Backend: tabela de fila (`automation_queue`) processada via trigger pg_net chamando edge function, tabelas de automações/logs, e edge function orquestradora.
+Refinar Layout + Sidebar + Header, Dashboard + Perfil, e Eventos + Escala + Checklist. Adicionar dark mode com toggle, animacoes ricas, skeleton loaders, e padronizacao visual moderna.
 
-## Arquitetura
+## Escopo (3 grupos priorizados)
 
-```text
-┌─────────────────────────────────────────────────┐
-│  Admin cria automação (gatilho + template)       │
-│  Ex: "usuario_escalado" → WhatsApp + Push        │
-│                                                   │
-│  Gatilho dispara (trigger SQL ou cron):           │
-│  ├─ INSERT em automation_queue                    │
-│  └─ trigger pg_net chama edge function            │
-│       process-automation-queue                    │
-│                                                   │
-│  Edge function:                                   │
-│  ├─ Lê item da fila                              │
-│  ├─ Resolve template com variáveis               │
-│  ├─ Envia via send-notification (push/in_app)    │
-│  ├─ Envia via WhatsApp (Meta/Evo)                │
-│  ├─ Loga em automation_logs                      │
-│  └─ Marca item como processado                   │
-│                                                   │
-│  Disparo manual:                                  │
-│  ├─ Admin seleciona destinatários                │
-│  ├─ Preview de mensagem de grupo editável        │
-│  └─ Insere em automation_queue → mesmo fluxo     │
-└─────────────────────────────────────────────────┘
-```
+### Grupo 1: Fundacao (Layout, Theme, Animacoes)
+### Grupo 2: Dashboard + Perfil
+### Grupo 3: Eventos + Escala + Agenda
+
+---
 
 ## Etapas
 
-### 1. Migração SQL
+### 1. Sistema de Tema (Dark Mode + Cores Refinadas)
 
-**Enum** `automation_trigger_type`:
-`usuario_escalado`, `evento_proximo`, `substituicao_solicitada`, `substituicao_aprovada`, `presenca_pendente`, `evento_criado`
+**`src/index.css`**: Refinar paleta light e dark. Adicionar variaveis `--success`, `--warning`, `--chart-1..5` para consistencia visual. Cores mais vibrantes e modernas (inspiracao Linear/Notion).
 
-**Enum** `automation_channel`:
-`whatsapp`, `push`, `email`, `in_app`
+**`src/components/ThemeToggle.tsx`**: Novo componente com icone sol/lua, persiste em `localStorage`, aplica classe `dark` no `<html>`.
 
-**Enum** `queue_status`:
-`pendente`, `processando`, `enviado`, `erro`
+**`tailwind.config.ts`**: Adicionar keyframes para `fade-in`, `slide-up`, `scale-in`, `slide-in-right`. Adicionar cores `success` e `warning` no extend.
 
-**Tabela `automations`**:
-- `id` uuid PK
-- `company_id` uuid NOT NULL
-- `name` text NOT NULL
-- `type` text NOT NULL default 'automatica' (automatica/manual)
-- `channel` automation_channel NOT NULL
-- `trigger_event` automation_trigger_type nullable (null para manual)
-- `active` boolean default true
-- `message_template` text NOT NULL (com placeholders {{variavel}})
-- `title_template` text NOT NULL
-- `config_json` jsonb default '{}' (ex: horas_antes, filtros)
-- `created_at` timestamptz
+### 2. Layout Global Refinado
 
-RLS: admin da company + super_admin
+**`src/components/layout/AppLayout.tsx`**:
+- Header com blur mais forte, sombra sutil
+- Adicionar `ThemeToggle` ao header
+- Breadcrumb simples baseado na rota atual
+- Animacao fade-in no `<main>` ao trocar de pagina
 
-**Tabela `automation_queue`**:
-- `id` uuid PK
-- `company_id` uuid NOT NULL
-- `automation_id` uuid nullable (null para disparo manual direto)
-- `user_id` uuid NOT NULL (destinatário)
-- `channel` automation_channel NOT NULL
-- `title` text NOT NULL (já resolvido)
-- `message` text NOT NULL (já resolvido)
-- `metadata` jsonb default '{}'
-- `status` queue_status default 'pendente'
-- `error_message` text nullable
-- `attempts` int default 0
-- `created_at` timestamptz
-- `processed_at` timestamptz nullable
+**`src/components/layout/AppSidebar.tsx`**:
+- Refinar espacamentos e hover states
+- Adicionar badge de contagem no item "Notificacoes" (notificacoes nao lidas)
+- Footer com card do usuario mais polido
+- Transicao suave no collapse/expand
 
-RLS: admin da company SELECT, service_role ALL
-Índice: `(status, created_at)` para processar pendentes
+### 3. Componentes Base Melhorados
 
-**Tabela `automation_logs`**:
-- `id` uuid PK
-- `company_id` uuid NOT NULL
-- `automation_id` uuid nullable
-- `queue_item_id` uuid nullable
-- `user_id` uuid NOT NULL
-- `channel` automation_channel NOT NULL
-- `status` text NOT NULL (enviado/erro)
-- `message` text NOT NULL
-- `gateway_response` text nullable
-- `created_at` timestamptz
+**`src/components/ui/skeleton-card.tsx`** (novo): Componente reutilizavel de skeleton para cards do dashboard, listas de eventos, etc.
 
-RLS: admin da company SELECT + super_admin ALL
+**`src/components/ui/page-header.tsx`** (novo): Componente padrao para header de pagina (titulo, descricao, acoes). Substitui os `<div>` repetidos em todas as paginas. Inclui animacao `fade-in`.
 
-**Trigger `trg_process_automation_queue`**: AFTER INSERT on `automation_queue` chama `pg_net.http_post` para edge function `process-automation-queue` (habilitar extensão pg_net).
+**`src/components/ui/empty-state.tsx`** (novo): Componente para estados vazios com icone, titulo, descricao e CTA. Substitui os `<p>` simples.
 
-**Triggers de gatilho automático** (expandir existentes):
-- `on_event_team_member_added` → além da notificação atual, inserir na `automation_queue` para automações com trigger `usuario_escalado`
-- Novo trigger `on_event_created` → inserir na fila para trigger `evento_criado`
-- Novo trigger `on_substitution_approved` → AFTER UPDATE em `event_substitutions` quando status muda para 'aprovado'
+**`src/components/ui/stat-card.tsx`** (novo): Card de estatistica padronizado com icone, valor, label, trend indicator opcional, animacao `scale-in` no mount.
 
-O trigger `schedule-reminders` existente será adaptado para também consultar automações com trigger `evento_proximo`.
+### 4. Dashboard Refinado
 
-### 2. Edge Function `process-automation-queue`
+**`src/pages/DashboardPage.tsx`**:
+- Usar `PageHeader` com saudacao contextual (bom dia/boa tarde/boa noite)
+- Usar `StatCard` para os cards de metricas (com animacao staggered)
+- Usar `SkeletonCard` durante loading
+- Usar `EmptyState` para listas vazias
+- Cards com hover sutil (`hover:shadow-md transition-shadow`)
+- Ranking com animacao de entrada por item (stagger 50ms)
+- Grafico com cores do tema (usar variaveis CSS)
 
-- Recebe webhook do pg_net (ou processa batch)
-- Busca itens pendentes da fila (limit 50)
-- Para cada item:
-  - Marca como 'processando'
-  - Envia conforme canal (reusa lógica do `send-notification` para push/in_app, WhatsApp direto)
-  - Insere log em `automation_logs`
-  - Marca como 'enviado' ou 'erro'
-  - Incrementa attempts, max 3 retries
+### 5. Perfil Refinado
 
-### 3. Função de resolução de template
+**`src/pages/ProfilePage.tsx`**:
+- Usar `PageHeader`
+- Avatar maior com overlay de upload mais elegante (gradiente semi-transparente)
+- Cards com bordas mais suaves
+- Disponibilidade: botoes maiores em mobile (min-h-10), com cores verde/cinza mais claras
+- Animacao fade-in nos cards ao scroll
+- Skeleton loader durante carregamento
+- Botao salvar fixo no bottom em mobile (`sticky bottom-0`)
 
-Utilitário no edge function:
-```
-resolveTemplate(template, vars) → string
-```
-Substitui `{{evento_nome}}`, `{{data}}`, `{{hora}}`, `{{usuario_nome}}`, `{{funcao}}`, `{{equipe}}`.
+### 6. Eventos Refinados
 
-### 4. Função de montagem de mensagem de grupo
+**`src/components/events/EventCalendar.tsx`**:
+- Calendario desktop: hover nos dias com sombra sutil
+- Eventos com tooltip ao hover (titulo + hora completa)
+- Mobile: cards com mais destaque visual, sombra, e badge de tipo
+- Transicao suave ao trocar de mes (fade)
+- Skeleton grid durante loading
 
-Edge function ou utilitário que:
-- Recebe `event_id`
-- Busca teams + members agrupados
-- Monta texto formatado:
-```
-📋 Evento: Missa Domingo 19h
+**`src/pages/EventDetailPage.tsx`**:
+- Header do evento como banner com cor do tipo como accent
+- Secoes com separadores visuais e icones
+- Cards de equipe com animacao ao expandir membros
+- Botao "Modo Foco" mais destacado (gradient, icone animado)
+- Skeleton durante loading
 
-📸 Foto:
-- João
-- Pedro
+**`src/pages/EventCreate.tsx`** / **`EventForm.tsx`**:
+- Formulario em steps visuais ou com secoes colapsaveis
+- Feedback visual nos campos obrigatorios
+- Botao submit com loading spinner e texto dinamico
 
-🎥 Vídeo:
-- Lucas
-```
-- Retorna texto editável pelo admin antes do envio
+**`src/pages/MySchedulePage.tsx`**:
+- Cards com animacao staggered de entrada
+- Indicador visual mais forte para eventos urgentes (borda + pulse)
+- Usar `EmptyState` para lista vazia
+- Badge de status com cores mais distintas
 
-### 5. Frontend — Expandir AdminNotifications
+### 7. Animacoes Ricas
 
-**Nova aba "Automações"**:
-- Lista automações da company (nome, gatilho, canal, ativo)
-- Toggle ativar/desativar
-- Dialog criar/editar com: nome, tipo, canal, gatilho, template de título, template de mensagem, config (horas_antes etc)
-- Preview do template com variáveis de exemplo
+Adicionar ao `tailwind.config.ts`:
+- `fade-in`: translateY(10px) + opacity 0 -> 1, 300ms
+- `slide-up`: translateY(20px) -> 0, 400ms
+- `scale-in`: scale(0.95) + opacity -> 1, 200ms
+- `slide-in-right`: translateX(100%) -> 0, 300ms
+- `stagger-fade`: classe utilitaria com `animation-delay` via CSS custom property
 
-**Nova aba "Disparo Manual"** (expandir a existente "Enviar"):
-- Seletor de destinatários: todos, por evento, por equipe, específicos
-- Ao selecionar evento: botão "Montar mensagem de grupo" que chama a função e preenche o textarea
-- Seletor de canal: in_app, push, whatsapp, todos
-- Preview da mensagem
-- Envia inserindo na `automation_queue`
+Uso:
+- `<main>` do layout: `animate-fade-in`
+- Cards do dashboard: `animate-fade-in` com delay incrementado via `style`
+- Modais: ja usam Radix animations
+- Sidebar collapse: transition no width (ja suportado)
+- Listas: cada item com delay `i * 50ms`
 
-**Nova aba "Logs"**:
-- Tabela com: data, automação, destinatário, canal, status, mensagem
-- Filtros: por canal, status, data
+## Detalhes Tecnicos
 
-### 6. Hooks
-
-- `useAutomations()` — CRUD de automações da company
-- `useAutomationQueue()` — inserir na fila (disparo manual)
-- `useAutomationLogs()` — listar logs com filtros
-
-### 7. Trigger automático para mensagem de grupo
-
-Novo trigger `on_event_teams_finalized` ou adaptar `on_event_team_member_added`:
-- Quando membro é escalado, se existe automação `usuario_escalado` ativa, insere na fila com mensagem resolvida
-
-## Detalhes Técnicos
-
-| Arquivo | Ação |
+| Arquivo | Acao |
 |---------|------|
-| Migration SQL | automations + automation_queue + automation_logs + triggers + pg_net |
-| `supabase/functions/process-automation-queue/index.ts` | Edge function processadora da fila |
-| `src/hooks/useAutomations.ts` | CRUD automações |
-| `src/hooks/useAutomationQueue.ts` | Disparo manual + montagem grupo |
-| `src/hooks/useAutomationLogs.ts` | Logs com filtros |
-| `src/pages/admin/AdminNotifications.tsx` | + abas Automações, Logs, expandir Enviar |
-| `src/components/notifications/AutomationList.tsx` | Lista + CRUD automações |
-| `src/components/notifications/ManualDispatch.tsx` | Disparo manual com mensagem de grupo |
-| `src/components/notifications/AutomationLogs.tsx` | Tabela de logs |
+| `src/index.css` | Refinar paleta light/dark, adicionar success/warning vars |
+| `tailwind.config.ts` | Keyframes ricos, cores success/warning |
+| `src/components/ThemeToggle.tsx` | Novo: toggle dark mode |
+| `src/components/layout/AppLayout.tsx` | Header refinado, ThemeToggle, fade-in main |
+| `src/components/layout/AppSidebar.tsx` | Hover states, badge notificacoes, footer polido |
+| `src/components/ui/page-header.tsx` | Novo: header padrao de pagina |
+| `src/components/ui/skeleton-card.tsx` | Novo: skeleton reutilizavel |
+| `src/components/ui/empty-state.tsx` | Novo: estado vazio elegante |
+| `src/components/ui/stat-card.tsx` | Novo: card de metrica |
+| `src/pages/DashboardPage.tsx` | Refinar com novos componentes |
+| `src/pages/ProfilePage.tsx` | Avatar, disponibilidade, sticky save |
+| `src/pages/Events.tsx` | Skeleton, page-header |
+| `src/pages/EventDetailPage.tsx` | Banner, secoes visuais |
+| `src/pages/EventCreate.tsx` | Page-header |
+| `src/components/events/EventCalendar.tsx` | Hover, tooltip, transicoes |
+| `src/components/events/EventForm.tsx` | Loading states |
+| `src/pages/MySchedulePage.tsx` | Stagger, empty-state, urgencia visual |
 
-## Segurança
+## Seguranca
 
-- Todas tabelas com RLS por company_id
-- automation_queue: insert via trigger (SECURITY DEFINER) ou admin, processamento via service_role
-- Deduplicação: unique constraint `(automation_id, user_id, channel, date_trunc('hour', created_at))` para evitar duplicatas na mesma hora
-- Templates sanitizados (sem HTML/script injection)
+- Nenhuma alteracao em logica de negocio, queries ou RLS
+- Apenas mudancas visuais e de UX
 
-## Ordem de implementação
+## Ordem de implementacao
 
-1. Migração SQL (tabelas + enums + triggers pg_net)
-2. Edge function `process-automation-queue`
-3. Hooks (useAutomations, useAutomationQueue, useAutomationLogs)
-4. UI: aba Automações (lista + CRUD)
-5. UI: aba Disparo Manual (com montagem de grupo)
-6. UI: aba Logs
-7. Triggers automáticos nos eventos existentes
+1. Theme system (CSS vars + ThemeToggle + tailwind keyframes)
+2. Componentes base (PageHeader, SkeletonCard, EmptyState, StatCard)
+3. AppLayout + AppSidebar refinados
+4. DashboardPage com novos componentes
+5. ProfilePage refinado
+6. Eventos (Calendar, Detail, Create, MySchedule)
 
