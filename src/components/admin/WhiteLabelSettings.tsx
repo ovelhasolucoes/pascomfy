@@ -19,6 +19,7 @@ export function WhiteLabelSettings() {
   const queryClient = useQueryClient();
   const companyId = profile?.company_id;
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const faviconInputRef = useRef<HTMLInputElement>(null);
 
   const { data: company, isLoading } = useQuery({
     queryKey: ["company", companyId],
@@ -41,6 +42,7 @@ export function WhiteLabelSettings() {
   const [theme, setTheme] = useState<string>("light");
   const [faviconUrl, setFaviconUrl] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [uploadingFavicon, setUploadingFavicon] = useState(false);
   const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
 
   useEffect(() => {
@@ -88,6 +90,43 @@ export function WhiteLabelSettings() {
       toast.error(err instanceof Error ? err.message : "Erro ao enviar logo");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleFaviconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !companyId) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Selecione um arquivo de imagem");
+      return;
+    }
+    if (file.size > 512 * 1024) {
+      toast.error("Favicon deve ter no máximo 512KB");
+      return;
+    }
+
+    setUploadingFavicon(true);
+    try {
+      const ext = file.name.split(".").pop() || "ico";
+      const path = `${companyId}/favicon.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("company-files")
+        .upload(path, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("company-files")
+        .getPublicUrl(path);
+
+      setFaviconUrl(urlData.publicUrl + "?t=" + Date.now());
+      toast.success("Favicon enviado com sucesso!");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Erro ao enviar favicon");
+    } finally {
+      setUploadingFavicon(false);
     }
   };
 
@@ -271,20 +310,57 @@ export function WhiteLabelSettings() {
 
             <Separator />
 
-            <div className="space-y-2">
-              <Label className="text-sm">URL do Favicon</Label>
-              <Input
-                value={faviconUrl}
-                onChange={(e) => setFaviconUrl(e.target.value)}
-                placeholder="https://exemplo.com/favicon.ico"
-                className="text-sm"
-              />
-              {faviconUrl && (
-                <div className="flex items-center gap-2 mt-1">
-                  <img src={faviconUrl} alt="Favicon" className="h-5 w-5 rounded object-contain" />
-                  <span className="text-xs text-muted-foreground">Preview</span>
+            <div className="space-y-3">
+              <Label className="text-sm">Favicon</Label>
+              <div className="flex items-start gap-3">
+                <div
+                  className="relative group h-12 w-12 rounded-lg border-2 border-dashed border-border flex items-center justify-center overflow-hidden shrink-0 transition-colors hover:border-primary/50 cursor-pointer"
+                  onClick={() => faviconInputRef.current?.click()}
+                >
+                  {faviconUrl ? (
+                    <>
+                      <img src={faviconUrl} alt="Favicon" className="h-full w-full object-contain p-1" />
+                      <div className="absolute inset-0 bg-foreground/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Upload className="h-3.5 w-3.5 text-background" />
+                      </div>
+                    </>
+                  ) : (
+                    <Upload className="h-4 w-4 text-muted-foreground" />
+                  )}
+                  {uploadingFavicon && (
+                    <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    </div>
+                  )}
                 </div>
-              )}
+                <input
+                  ref={faviconInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFaviconUpload}
+                  className="hidden"
+                />
+                <div className="flex-1 space-y-1.5">
+                  <Input
+                    value={faviconUrl}
+                    onChange={(e) => setFaviconUrl(e.target.value)}
+                    placeholder="Ou cole a URL..."
+                    className="text-sm"
+                  />
+                  {faviconUrl && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 text-[10px] text-destructive hover:text-destructive px-2"
+                      onClick={() => setFaviconUrl("")}
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Remover
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <p className="text-[10px] text-muted-foreground">Recomendado: 32×32 ou 64×64 px, máx 512KB</p>
             </div>
           </CardContent>
         </Card>
