@@ -1,68 +1,114 @@
 
 
-# Pascomfy — Arquitetura Multi-Tenant SaaS
+# Pascomfy — Evolução do Sistema de Usuários e Permissões
 
-## Visão Geral da Arquitetura
+## Resumo
 
-Sistema multi-tenant onde cada paróquia (company) tem dados completamente isolados via RLS. Um `super_admin` global pode acessar tudo.
+Expansão do banco de dados com novos campos em profiles, sistema híbrido de permissões (role + granular), convites, logs de atividade, e UI de gestão de usuários para admins. Dividido em 3 migrações e ajustes no frontend.
 
+## Migração 1: Esquema expandido
+
+### ALTER profiles — novos campos
+- `phone` text nullable
+- `avatar_url` text nullable
+- `status` enum `user_status` (ativo, inativo, bloqueado) default 'ativo'
+- `last_access_at` timestamptz nullable
+- `created_by` uuid nullable (ref auth.users)
+- `permission_level` enum `permission_level` (basico, avancado) default 'basico'
+- `reliability_score` float default 0
+- `availability` jsonb default '{}'
+- `settings` jsonb default '{}'
+
+### Tabela `permissions`
+- `id` uuid PK, `name` text unique, `description` text, `created_at`
+- RLS: authenticated SELECT; super_admin ALL
+
+### Tabela `role_permissions`
+- `id` uuid PK, `role` app_role, `permission_id` FK→permissions, unique(role, permission_id)
+- RLS: authenticated SELECT; super_admin ALL
+
+### Tabela `user_permissions`
+- `id` uuid PK, `user_id` FK→auth.users, `permission_id` FK→permissions, `allowed` boolean default true, `company_id` uuid FK→companies
+- unique(user_id, permission_id)
+- RLS: isolamento por company_id + super_admin
+
+### Tabela `invites`
+- `id` uuid PK, `email` text, `company_id` FK→companies, `role` app_role default 'colaborador', `token` uuid unique default gen_random_uuid(), `status` enum `invite_status` (pendente, aceito, expirado) default 'pendente', `created_by` FK→auth.users, `expires_at` timestamptz, `created_at`
+- RLS: admin da company ou super_admin
+
+### Tabela `activity_logs`
+- `id` uuid PK, `user_id` FK→auth.users, `company_id` FK→companies, `action` text, `entity` text, `entity_id` uuid nullable, `metadata` jsonb default '{}', `created_at`
+- RLS: admin da company (SELECT) + super_admin (ALL)
+- Index em (company_id, created_at)
+
+## Migração 2: Funções e RLS avançado
+
+### Função `check_user_permission(user_id, permission_name)`
+- SECURITY DEFINER
+- Lógica: super_admin → true; verifica override em user_permissions; fallback para role_permissions
+- Retorna boolean
+
+### Função `is_active_user(user_id)`
+- SECURITY DEFINER
+- Retorna true se profiles.status = 'ativo'
+
+### Atualização de RLS em todas as tabelas
+- Adicionar verificação `is_active_user(auth.uid())` nas policies existentes de companies, profiles, user_roles
+- Bloquear usuários inativos/bloqueados automaticamente
+
+### Atualizar trigger `handle_new_user`
+- Verificar se existe convite para o email → usar company_id e role do convite
+- Marcar convite como 'aceito'
+- Fallback: usar metadata como hoje
+
+## Frontend — Páginas e componentes
+
+### Hook `usePermissions`
+- Busca roles e permissões do usuário logado
+- Expõe `hasPermission(name)`, `hasRole(role)`, `isAdmin`, `isSuperAdmin`
+
+### Página de Gestão de Usuários (`/admin/users`)
+- Lista usuários da company (profiles + roles)
+- Ações: ativar/desativar, alterar role, editar permissões
+- Criar convite (email + role)
+- Protegida por role admin
+
+### Página de Aceitar Convite (`/invite/:token`)
+- Valida token, mostra info da company
+- Formulário de signup vinculado ao convite
+
+### Atualizar AuthContext
+- Incluir profile, role e permissões no contexto
+- Atualizar `last_access_at` no login
+
+### Seed de permissões iniciais
+- Inserir permissões padrão: `criar_evento`, `editar_escala`, `aprovar_video`, `gerenciar_usuarios`, `ver_relatorios`, `editar_company`
+- Vincular permissões às roles via role_permissions
+
+## Detalhes Técnicos
+
+```text
+Fluxo de permissão:
+  Request → is_active_user? → has_role(super_admin)? → bypass
+                                    ↓ não
+                            user_permissions override?
+                                    ↓ não encontrado
+                            role_permissions default
 ```
-auth.users → profiles (1:1) → company (N:1)
-                ↓
-          user_roles (1:N) — roles: colaborador, admin, super_admin
+
+Estrutura do availability JSON:
+```json
+{
+  "segunda": ["manha", "noite"],
+  "quarta": ["noite"],
+  "domingo": ["manha", "tarde"]
+}
 ```
 
-## 1. Estrutura do Banco de Dados
-
-### Tabela `plans`
-- `id`, `name` (free, basic, premium), `max_users`, `max_storage_mb`, `created_at`
-- Preparação para limites futuros por company
-
-### Tabela `companies`
-- `id`, `name`, `logo_url`, `primary_color`, `secondary_color`, `plan_id` (FK → plans), `created_at`
-
-### Tabela `profiles`
-- `id` (FK → auth.users ON DELETE CASCADE), `company_id` (FK → companies, NOT NULL), `name`, `email`, `created_at`
-- **Sem campo role** — roles ficam em tabela separada por segurança
-
-### Tabela `user_roles`
-- `id`, `user_id` (FK → auth.users), `role` (enum: colaborador, admin, super_admin), unique(user_id, role)
-- Separada para evitar privilege escalation
-
-### Funções de Segurança (SECURITY DEFINER)
-- `has_role(user_id, role)` — verifica se usuário tem um role específico
-- `get_user_company_id(user_id)` — retorna o company_id do usuário
-- Ambas com `SECURITY DEFINER` para evitar recursão infinita no RLS
-
-### Trigger automático
-- Ao criar usuário no auth.users → cria profile automaticamente com dados do metadata (company_id, name)
-
-## 2. Políticas RLS (Row Level Security)
-
-Todas as tabelas terão RLS ativado. Lógica base:
-
-- **SELECT**: usuário vê apenas dados da sua company OU é super_admin
-- **INSERT**: usuário só insere com seu próprio company_id OU é super_admin
-- **UPDATE**: admin da company pode atualizar dados da company OU super_admin
-- **DELETE**: apenas admin da company ou super_admin
-
-### Tabelas afetadas:
-- `companies` — admin vê/edita sua company, super_admin vê todas
-- `profiles` — usuário vê colegas da mesma company
-- `user_roles` — apenas admin/super_admin gerencia roles
-
-## 3. Autenticação
-- Login com email/senha via Supabase Auth
-- No signup, `company_id` é passado via metadata e o trigger cria o profile automaticamente
-- Role padrão: `colaborador`
-
-## 4. Página de Login
-- Tela de login com email e senha
-- Estilo clean com branding "Pascomfy"
-- Redirecionamento pós-login para página inicial (placeholder)
-
-## 5. Preparação SaaS
-- Tabela `plans` com campos de limites (max_users, max_storage)
-- `companies.plan_id` para associar planos
-- Seeds iniciais com 3 planos: Free, Basic, Premium
+### Ordem de execução
+1. Migração SQL (enums, tabelas, funções, RLS, trigger atualizado)
+2. Seed de permissões via insert tool
+3. Hook `usePermissions` + atualização do AuthContext
+4. Páginas admin e convite
+5. Atualizar memória do projeto
 
