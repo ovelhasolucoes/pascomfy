@@ -126,6 +126,7 @@ export function AppSidebar() {
 
   const adminItems: MenuItem[] = [
     { title: "Usuários", url: "/admin/users", icon: Users },
+    { title: "Substituições", url: "/admin/substitutions", icon: RefreshCw },
     { title: "Notificações", url: "/admin/notifications", icon: Bell },
     { title: "Biolink", url: "/admin/biolink", icon: Link2 },
     { title: "Indicações", url: "/admin/referrals", icon: Gift },
