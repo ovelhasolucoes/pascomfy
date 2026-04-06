@@ -2,10 +2,12 @@ import { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useSocialPosts } from "@/hooks/useSocialPosts";
 import { useSocialAccounts } from "@/hooks/useSocialAccounts";
+import { useSocialMetrics } from "@/hooks/useSocialMetrics";
 import { PostForm } from "@/components/social/PostForm";
 import { PostCard } from "@/components/social/PostCard";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FileText, Clock, CheckCircle2, AlertCircle, LayoutGrid } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { FileText, Clock, CheckCircle2, AlertCircle, LayoutGrid, RefreshCw } from "lucide-react";
 
 const statusTabs = [
   { value: "todos", label: "Todos", icon: LayoutGrid, color: "" },
@@ -20,11 +22,8 @@ export default function SocialPosts() {
   const { posts, isLoading, createPost, publishPost, deletePost } = useSocialPosts(statusFilter);
   const { accounts } = useSocialAccounts();
 
-  const { posts: allPostsList } = useSocialPosts();
-  const counts: Record<string, number> = {};
-  allPostsList.forEach((p) => {
-    counts[p.status] = (counts[p.status] || 0) + 1;
-  });
+  const publishedPostIds = posts.filter((p) => p.status === "publicado").map((p) => p.id);
+  const { metricsMap, refreshMetrics } = useSocialMetrics(publishedPostIds);
 
   return (
     <AppLayout>
