@@ -29,6 +29,7 @@ export function AppSidebar() {
   const mainItems = [
     { title: "Eventos", url: "/events", icon: Calendar },
     { title: "Minha Agenda", url: "/my-schedule", icon: CalendarDays },
+    { title: "Minha Assinatura", url: "/my-subscription", icon: CreditCard },
   ];
 
   const adminItems = [
