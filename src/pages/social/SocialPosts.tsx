@@ -4,15 +4,15 @@ import { useSocialPosts } from "@/hooks/useSocialPosts";
 import { useSocialAccounts } from "@/hooks/useSocialAccounts";
 import { PostForm } from "@/components/social/PostForm";
 import { PostCard } from "@/components/social/PostCard";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { FileText, Clock, CheckCircle2, AlertCircle, LayoutGrid } from "lucide-react";
 
-const statusOptions = [
-  { value: "todos", label: "Todos" },
-  { value: "rascunho", label: "Rascunho" },
-  { value: "agendado", label: "Agendado" },
-  { value: "publicado", label: "Publicado" },
-  { value: "erro", label: "Erro" },
+const statusTabs = [
+  { value: "todos", label: "Todos", icon: LayoutGrid, color: "" },
+  { value: "rascunho", label: "Rascunhos", icon: FileText, color: "text-slate-600" },
+  { value: "agendado", label: "Agendados", icon: Clock, color: "text-amber-600" },
+  { value: "publicado", label: "Publicados", icon: CheckCircle2, color: "text-emerald-600" },
+  { value: "erro", label: "Erros", icon: AlertCircle, color: "text-red-600" },
 ];
 
 export default function SocialPosts() {
@@ -20,37 +20,62 @@ export default function SocialPosts() {
   const { posts, isLoading, createPost, publishPost, deletePost } = useSocialPosts(statusFilter);
   const { accounts } = useSocialAccounts();
 
+  // Count by status for badges
+  const { data: allPosts = [] } = useSocialPosts();
+  const counts: Record<string, number> = {};
+  allPosts.posts?.forEach((p: any) => {
+    counts[p.status] = (counts[p.status] || 0) + 1;
+  });
+
   return (
     <AppLayout>
-      <div className="container mx-auto py-6 space-y-6">
+      <div className="container mx-auto py-6 space-y-6 px-4">
+        {/* Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Posts</h1>
-          <div className="flex items-center gap-3">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-36">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {statusOptions.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <PostForm
-              accounts={accounts}
-              onSubmit={(post) => createPost.mutate(post)}
-            />
+          <div>
+            <h1 className="text-2xl font-bold">Posts</h1>
+            <p className="text-sm text-muted-foreground">Gerencie suas publicações no Facebook e Instagram</p>
           </div>
+          <PostForm accounts={accounts} onSubmit={(post) => createPost.mutate(post)} />
         </div>
 
+        {/* Status tabs */}
+        <div className="flex gap-1 overflow-x-auto pb-1">
+          {statusTabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = statusFilter === tab.value;
+            return (
+              <button
+                key={tab.value}
+                onClick={() => setStatusFilter(tab.value)}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                <Icon className={`h-3.5 w-3.5 ${!isActive ? tab.color : ""}`} />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-56" />)}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="aspect-square rounded-xl" />)}
           </div>
         ) : posts.length === 0 ? (
-          <p className="text-muted-foreground text-center py-12">Nenhum post encontrado.</p>
+          <div className="text-center py-16">
+            <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
+              <FileText className="h-8 w-8 text-muted-foreground/50" />
+            </div>
+            <p className="text-muted-foreground">Nenhum post encontrado</p>
+            <p className="text-xs text-muted-foreground mt-1">Crie seu primeiro post clicando em "Novo Post"</p>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {posts.map((post) => (
               <PostCard
                 key={post.id}
