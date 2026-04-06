@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { CompanyThemeProvider } from "@/contexts/CompanyThemeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminRoute from "@/components/AdminRoute";
+import SuperAdminRoute from "@/components/SuperAdminRoute";
 import Login from "./pages/Login";
 import InviteAccept from "./pages/InviteAccept";
 import Events from "./pages/Events";
@@ -78,14 +79,14 @@ const App = () => (
             <Route path="/social/posts" element={<ProtectedRoute><SocialPosts /></ProtectedRoute>} />
             <Route path="/social/calendar" element={<ProtectedRoute><SocialCalendar /></ProtectedRoute>} />
             <Route path="/social/accounts" element={<AdminRoute><SocialAccounts /></AdminRoute>} />
-            <Route path="/superadmin" element={<ProtectedRoute><SuperAdminDashboard /></ProtectedRoute>} />
-            <Route path="/superadmin/companies" element={<ProtectedRoute><SuperAdminCompanies /></ProtectedRoute>} />
-            <Route path="/superadmin/plans" element={<ProtectedRoute><SuperAdminPlans /></ProtectedRoute>} />
-            <Route path="/superadmin/subscriptions" element={<ProtectedRoute><SuperAdminSubscriptions /></ProtectedRoute>} />
-            <Route path="/superadmin/affiliates" element={<ProtectedRoute><SuperAdminAffiliates /></ProtectedRoute>} />
-            <Route path="/superadmin/tickets" element={<ProtectedRoute><SuperAdminTickets /></ProtectedRoute>} />
-            <Route path="/superadmin/logs" element={<ProtectedRoute><SuperAdminLogs /></ProtectedRoute>} />
-            <Route path="/superadmin/payments" element={<ProtectedRoute><SuperAdminPayments /></ProtectedRoute>} />
+            <Route path="/superadmin" element={<SuperAdminRoute><SuperAdminDashboard /></SuperAdminRoute>} />
+            <Route path="/superadmin/companies" element={<SuperAdminRoute><SuperAdminCompanies /></SuperAdminRoute>} />
+            <Route path="/superadmin/plans" element={<SuperAdminRoute><SuperAdminPlans /></SuperAdminRoute>} />
+            <Route path="/superadmin/subscriptions" element={<SuperAdminRoute><SuperAdminSubscriptions /></SuperAdminRoute>} />
+            <Route path="/superadmin/affiliates" element={<SuperAdminRoute><SuperAdminAffiliates /></SuperAdminRoute>} />
+            <Route path="/superadmin/tickets" element={<SuperAdminRoute><SuperAdminTickets /></SuperAdminRoute>} />
+            <Route path="/superadmin/logs" element={<SuperAdminRoute><SuperAdminLogs /></SuperAdminRoute>} />
+            <Route path="/superadmin/payments" element={<SuperAdminRoute><SuperAdminPayments /></SuperAdminRoute>} />
             <Route path="/account-blocked" element={<AccountBlocked />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -62,6 +62,30 @@ Deno.serve(async (req) => {
       });
     }
 
+    // SECURITY: Verify user belongs to the target company
+    const { data: userProfile, error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .select("company_id")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError || !userProfile || userProfile.company_id !== companyId) {
+      // Check if super_admin (they can upload to any company)
+      const { data: superRole } = await supabaseAdmin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "super_admin")
+        .maybeSingle();
+
+      if (!superRole) {
+        return new Response(JSON.stringify({ error: "Unauthorized: company mismatch" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     // Check company limits
     const { data: limits, error: limitsError } = await supabaseAdmin.rpc("get_company_limits", {
       _company_id: companyId,
@@ -126,7 +150,6 @@ Deno.serve(async (req) => {
     }
 
     // Update company storage usage
-    await supabaseAdmin.rpc("get_company_limits", { _company_id: companyId }); // no-op, actual update below
     await supabaseAdmin
       .from("companies")
       .update({ storage_used_mb: Math.ceil(limitsData.current_storage + fileSizeMb) })
