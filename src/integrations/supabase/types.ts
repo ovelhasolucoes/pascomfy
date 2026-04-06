@@ -703,6 +703,56 @@ export type Database = {
           },
         ]
       }
+      files: {
+        Row: {
+          company_id: string
+          created_at: string
+          file_type: string
+          id: string
+          mime_type: string
+          name: string
+          path: string
+          provider: string
+          size_bytes: number
+          thumbnail_path: string | null
+          uploaded_by: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          file_type?: string
+          id?: string
+          mime_type: string
+          name: string
+          path: string
+          provider?: string
+          size_bytes?: number
+          thumbnail_path?: string | null
+          uploaded_by: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          file_type?: string
+          id?: string
+          mime_type?: string
+          name?: string
+          path?: string
+          provider?: string
+          size_bytes?: number
+          thumbnail_path?: string | null
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "files_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       global_logs: {
         Row: {
           action: string
