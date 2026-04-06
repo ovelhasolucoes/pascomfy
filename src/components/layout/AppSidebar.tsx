@@ -1,4 +1,4 @@
-import { Calendar, CalendarDays, Users, Settings, LogOut, UserCircle, LayoutDashboard, Building2, CreditCard, Receipt, Link2, MessageSquare, ScrollText, Bell } from "lucide-react";
+import { Calendar, CalendarDays, Users, Settings, LogOut, UserCircle, LayoutDashboard, Building2, CreditCard, Receipt, Link2, MessageSquare, ScrollText, Bell, Share2, FileText, CalendarCheck, UserCog } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -35,6 +35,12 @@ export function AppSidebar() {
     { title: "Usuários", url: "/admin/users", icon: Users },
     { title: "Notificações", url: "/admin/notifications", icon: Bell },
     { title: "Configurações", url: "/admin/settings", icon: Settings },
+  ];
+
+  const socialItems = [
+    { title: "Posts", url: "/social/posts", icon: FileText },
+    { title: "Calendário", url: "/social/calendar", icon: CalendarCheck },
+    { title: "Contas", url: "/social/accounts", icon: UserCog },
   ];
 
   const superAdminItems = [
@@ -74,6 +80,26 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {adminItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink to={item.url} className="hover:bg-sidebar-accent" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
+                        <item.icon className="h-4 w-4" />
+                        {!collapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {isAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>{collapsed ? "S" : "Social"}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {socialItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
                       <NavLink to={item.url} className="hover:bg-sidebar-accent" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
