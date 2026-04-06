@@ -94,6 +94,9 @@ export default function SocialPosts() {
                 onPublish={(id) => publishPost.mutate(id)}
                 onDelete={(id) => deletePost.mutate(id)}
                 isPublishing={publishPost.isPending}
+                metrics={metricsMap.get(post.id)}
+                onRefreshMetrics={(id) => refreshMetrics.mutate(id)}
+                isRefreshing={refreshMetrics.isPending}
               />
             ))}
           </div>
