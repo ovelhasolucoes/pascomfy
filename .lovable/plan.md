@@ -1,130 +1,188 @@
 
 
-# White Label + Domínio Customizado
+# Perfil, Substituição, Gamificação e Dashboard Unificado
 
 ## Resumo
 
-Implementar personalização visual por empresa (cores, logo, tema light/dark, favicon), domínio customizado com verificação DNS, e vincular tudo aos flags `allows_whitelabel` e `allows_custom_domain` dos planos.
+Implementar 6 módulos: expansão do perfil do usuário, sistema de substituição com aprovação, gamificação automática via triggers, ranking, dashboard unificado (colaborador + admin na mesma rota), e configurações da company via `companies.settings`.
 
 ## Arquitetura
 
 ```text
-┌─────────────────────────────────────────────┐
-│  Navegador acessa domínio                   │
-│  ↓                                          │
-│  CompanyThemeProvider (context)              │
-│  ├─ detecta hostname                        │
-│  ├─ busca company por custom_domain         │
-│  ├─ fallback: usa company do user logado    │
-│  ├─ aplica CSS vars (cores, tema)           │
-│  └─ expõe logo, nome, favicon, whitelabel   │
-│                                             │
-│  AppLayout / BioPublicPage consomem context │
-│  ├─ Sidebar: logo/nome da company ou "P"    │
-│  ├─ Header: sem mudanças                    │
-│  └─ Biolink: usa cores/logo da company      │
-│                                             │
-│  Admin Settings > aba "White Label"         │
-│  ├─ só aparece se plano allows_whitelabel   │
-│  ├─ tema (light/dark), favicon_url          │
-│  └─ preview em tempo real                   │
-│                                             │
-│  Admin Settings > aba "Domínio"             │
-│  ├─ só aparece se allows_custom_domain      │
-│  ├─ input domínio, status verificação       │
-│  └─ botão verificar DNS (edge function)     │
-└─────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│  / (home) → Dashboard Unificado                │
+│  ├─ Colaborador: próximos eventos, pontos,      │
+│  │   ranking, tarefas pendentes                 │
+│  └─ Admin: + equipe incompleta, mais ativos,    │
+│       mais faltas, status geral                 │
+│                                                 │
+│  /profile → Edição de perfil expandido          │
+│  /my-schedule → + botão "Solicitar substituição"│
+│                                                 │
+│  Triggers automáticos no banco:                 │
+│  ├─ checkin → +pontos presença                  │
+│  ├─ checklist completo → +pontos checklist      │
+│  └─ falta registrada → penalidade               │
+│                                                 │
+│  companies.settings (jsonb) armazena:           │
+│  ├─ tempo_limite_substituicao (horas)           │
+│  ├─ gamificacao_ativa (boolean)                 │
+│  ├─ pontos_presenca, pontos_checklist           │
+│  └─ penalidade_falta                            │
+└─────────────────────────────────────────────────┘
 ```
 
 ## Etapas
 
-### 1. Migração SQL
+### 1. Migração SQL — Perfil + Substituições + Gamificação
 
-Expandir tabela `companies`:
-- `theme` text default 'light' (light | dark)
-- `favicon_url` text nullable
-- `domain_verified` boolean default false
+**Perfil** — adicionar colunas à `profiles`:
+- `bio` text nullable
+- `skills` jsonb default '[]' (habilidades)
+- `preferred_roles` jsonb default '[]' (funções preferidas)
 
-Nota: `custom_domain`, `logo_url`, `primary_color`, `secondary_color` já existem.
+Reaproveitar: `phone` como whatsapp, `avatar_url` como foto, `availability` como disponibilidade, `settings` como preferências.
 
-Adicionar constraint unique em `custom_domain` (parcial, onde não nulo).
+**Substituições** — nova tabela `event_substitutions`:
+- `id` uuid PK
+- `company_id` uuid NOT NULL
+- `event_id` uuid NOT NULL
+- `event_team_member_id` uuid NOT NULL (quem pediu)
+- `user_id` uuid NOT NULL (quem pediu)
+- `reason` text NOT NULL
+- `status` enum `substitution_status` (pendente, aprovado, rejeitado)
+- `responded_by` uuid nullable
+- `responded_at` timestamptz nullable
+- `replacement_user_id` uuid nullable (quem substituiu)
+- `created_at` timestamptz default now()
 
-### 2. Edge Function `verify-domain`
+RLS: user vê/cria as próprias, admin gerencia da company, super_admin tudo.
 
-- Recebe `company_id` + `custom_domain`
-- Valida que o domínio não pertence a outra company
-- Faz lookup DNS (CNAME ou TXT) para verificar apontamento
-- Marca `domain_verified = true` se OK
-- Usa `service_role` para update
+**Gamificação** — novas tabelas:
 
-### 3. CompanyThemeProvider (Context)
+`gamification_points`:
+- `id`, `company_id`, `user_id`, `points` int, `source` text (presenca/checklist/falta), `source_id` uuid nullable, `created_at`
 
-Novo contexto React que:
-- Detecta `window.location.hostname`
-- Se hostname diferente do padrão, busca company por `custom_domain` (query pública, anon)
-- Se user logado, busca company pelo `company_id` do profile
-- Cacheia com React Query (staleTime longo)
-- Aplica CSS custom properties no `<html>`:
-  - `--company-primary`, `--company-secondary`
-  - classe `dark` se tema = dark
-- Expõe: `companyName`, `logoUrl`, `faviconUrl`, `isWhitelabel`, `allowsCustomDomain`, `theme`
-- Atualiza `<link rel="icon">` dinamicamente se `faviconUrl` existe
+`gamification_levels`:
+- `id`, `company_id`, `name` text, `min_points` int, `icon` text nullable, `created_at`
 
-### 4. Aplicar tema no layout
+RLS: members veem da company, admin gerencia, super_admin tudo.
 
-- **AppSidebar**: se `isWhitelabel` e tem logo, mostra logo da company no lugar do "P" / "Pascomfy". Caso contrário, mantém "Pascomfy" (marca visível).
-- **BioPublicPage**: se whitelabel ativo, esconde footer "PASCOMFY" (ou troca pelo nome da company).
-- **AppLayout**: sem mudanças significativas.
+**Triggers automáticos**:
+- `on_attendance_insert` → insere +pontos (lê `companies.settings->pontos_presenca`, default 10)
+- `on_checklist_complete` → insere +pontos ao marcar item como concluído (default 5)
+- Penalidade de falta: via cron ou edge function (não trigger, pois falta é ausência)
 
-### 5. Tela White Label (aba em AdminSettings)
+**Índices**: `event_substitutions(event_id, user_id)`, `gamification_points(company_id, user_id)`, `gamification_points(source, source_id)`
 
-Nova aba "Identidade" que só aparece se o plano `allows_whitelabel`:
-- Seletor de tema (light/dark) com toggle
-- Input favicon URL com preview
-- Preview card com as cores/logo/tema aplicados
-- Salva em `companies`
+### 2. Tela de Perfil (`/profile`)
 
-### 6. Tela Domínio Customizado (aba em AdminSettings)
+Nova página `src/pages/ProfilePage.tsx`:
+- Avatar com upload (reusa lógica do WhiteLabelSettings)
+- Nome, e-mail (readonly), telefone/whatsapp, bio
+- Habilidades como tags editáveis
+- Funções preferidas como tags
+- Disponibilidade semanal (grid de dias/turnos) — reusa `availability` jsonb
+- Salva em `profiles`
 
-Nova aba "Domínio" que só aparece se o plano `allows_custom_domain`:
-- Input do domínio
-- Status atual (não configurado / pendente / verificado)
-- Instrução: "Aponte um CNAME para app.pascomfy.com"
-- Botão "Verificar DNS" que chama edge function
-- Badge verde se verificado
+Adicionar link "Meu Perfil" no sidebar (seção Principal) e no footer do sidebar (clique no avatar).
 
-### 7. Vincular aos planos (funcional)
+### 3. Sistema de Substituição
 
-A tabela `plans` já tem `allows_whitelabel` e `allows_custom_domain`. O SuperAdminPlans já edita esses campos. No frontend:
-- `CompanyThemeProvider` verifica o plano via subscription para decidir se aplica whitelabel
-- Abas de White Label e Domínio só aparecem se plano permite
-- Se plano não permite, cores/logo continuam funcionando (já existem), mas tema/favicon/remoção de marca não
+**Hook** `useSubstitutions.ts`:
+- Solicitar substituição (verifica tempo limite via `companies.settings`)
+- Listar substituições do user
+- Admin: listar da company, aprovar/rejeitar, atribuir substituto
 
-### 8. RLS
+**UI** — Botão "Pedir substituição" na `MySchedulePage` ao lado de cada evento:
+- Só aparece se faltam > X horas (configurável)
+- Modal com campo motivo
+- Badge de status (pendente/aprovado/rejeitado)
 
-- Nenhuma nova tabela, apenas colunas em `companies` (RLS já cobre)
-- Edge function `verify-domain` usa `service_role`
-- Nova RLS policy para anon SELECT em `companies` filtrando por `custom_domain` (para resolver domínio sem login)
+**Admin** — Nova seção em `/events/:id` ou lista em `/admin/substitutions`:
+- Lista de pedidos pendentes
+- Ações: aprovar + selecionar substituto, rejeitar
+
+### 4. Gamificação + Ranking
+
+**Hook** `useGamification.ts`:
+- Pontos do user atual
+- Ranking da company (top N)
+- Level atual do user
+
+**Componentes**:
+- `PointsBadge` — mostra pontos + level do user
+- `RankingList` — lista com posição, nome, pontos, level
+- Usado no dashboard
+
+**Admin Settings** — Nova aba "Gamificação" em `/admin/settings`:
+- Toggle gamificação ativa
+- Inputs: pontos por presença, por checklist, penalidade falta
+- Gerenciar níveis (nome + pontos mínimos)
+- Tudo salvo em `companies.settings`
+
+### 5. Dashboard Unificado (`/`)
+
+Substituir a rota `/` que hoje redireciona para `/events`.
+
+Nova página `src/pages/DashboardPage.tsx`:
+
+**Para todos (colaborador)**:
+- Card: próximos eventos (query `useMySchedule`)
+- Card: tarefas pendentes (checklists não concluídos)
+- Card: meus pontos + level (se gamificação ativa)
+- Card: ranking top 5 (se gamificação ativa)
+- Card: substituições pendentes
+
+**Adicional para admin**:
+- Card: eventos próximos sem equipe completa
+- Card: top 5 mais ativos
+- Card: top 5 mais faltas
+- Card: resumo geral (total users, eventos mês, etc)
+
+Layout responsivo com grid de cards.
+
+### 6. Configurações da Company (via settings jsonb)
+
+Adicionar aba "Geral" ou expandir aba "Empresa" em AdminSettings com:
+- `tempo_limite_substituicao`: input numérico (default 24h)
+- `gamificacao_ativa`: toggle
+- `pontos_presenca`: input (default 10)
+- `pontos_checklist`: input (default 5)
+- `penalidade_falta`: input (default -15)
+- `notificacoes_ativas`: toggle (já existe parcialmente)
+
+Salva no campo `companies.settings` via update.
 
 ## Detalhes Técnicos
 
 | Arquivo | Ação |
 |---------|------|
-| Migration SQL | Adicionar `theme`, `favicon_url`, `domain_verified`, unique constraint |
-| `supabase/functions/verify-domain/index.ts` | Nova edge function |
-| `src/contexts/CompanyThemeContext.tsx` | Novo contexto |
-| `src/App.tsx` | Wrapper com CompanyThemeProvider |
-| `src/components/admin/CompanySettings.tsx` | Mover para tab "Empresa" (já é) |
-| `src/components/admin/WhiteLabelSettings.tsx` | Novo: tema + favicon |
-| `src/components/admin/CustomDomainSettings.tsx` | Novo: domínio + verificação |
-| `src/pages/admin/AdminSettings.tsx` | Adicionar abas condicionais |
-| `src/components/layout/AppSidebar.tsx` | Consumir theme context para logo |
-| `src/pages/BioPublicPage.tsx` | Consumir theme context para footer |
+| Migration SQL | profiles + event_substitutions + gamification_* + triggers |
+| `src/pages/DashboardPage.tsx` | Dashboard unificado (novo) |
+| `src/pages/ProfilePage.tsx` | Edição de perfil (novo) |
+| `src/hooks/useSubstitutions.ts` | Hook substituições (novo) |
+| `src/hooks/useGamification.ts` | Hook gamificação + ranking (novo) |
+| `src/hooks/useDashboardStats.ts` | Hook stats do dashboard (novo) |
+| `src/pages/MySchedulePage.tsx` | + botão substituição |
+| `src/pages/admin/AdminSettings.tsx` | + aba Gamificação |
+| `src/components/layout/AppSidebar.tsx` | + links Dashboard, Perfil |
+| `src/App.tsx` | Rotas: /, /profile, ajustes |
 
 ## Segurança
 
-- Domínio unique constraint impede conflitos
-- Edge function valida DNS antes de marcar verificado
-- Anti-hijack: verifica que domínio não pertence a outra company
-- RLS anon em companies limitado a SELECT de `id, name, logo_url, primary_color, secondary_color, theme, favicon_url, custom_domain` onde `custom_domain = hostname`
+- Todas novas tabelas com RLS por `company_id` usando `get_user_company_id()`
+- Substituição: user só cria/vê as próprias; admin da company gerencia
+- Gamification points: insert apenas via trigger (SECURITY DEFINER), user só lê
+- Ranking público dentro da company (members veem)
+- Settings da company: só admin atualiza
+
+## Ordem de implementação sugerida
+
+1. Migração SQL (tudo junto)
+2. Perfil do usuário
+3. Configurações da company (settings jsonb)
+4. Gamificação + triggers + ranking
+5. Sistema de substituição
+6. Dashboard unificado
 
