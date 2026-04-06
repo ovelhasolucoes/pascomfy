@@ -22,6 +22,7 @@ import SuperAdminSubscriptions from "./pages/superadmin/SuperAdminSubscriptions"
 import SuperAdminAffiliates from "./pages/superadmin/SuperAdminAffiliates";
 import SuperAdminTickets from "./pages/superadmin/SuperAdminTickets";
 import SuperAdminLogs from "./pages/superadmin/SuperAdminLogs";
+import SuperAdminPayments from "./pages/superadmin/SuperAdminPayments";
 import AdminNotifications from "./pages/admin/AdminNotifications";
 import AdminBiolink from "./pages/admin/AdminBiolink";
 import SocialPosts from "./pages/social/SocialPosts";
