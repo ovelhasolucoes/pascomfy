@@ -35,6 +35,7 @@ export function AppSidebar() {
     { title: "Usuários", url: "/admin/users", icon: Users },
     { title: "Notificações", url: "/admin/notifications", icon: Bell },
     { title: "Biolink", url: "/admin/biolink", icon: Link2 },
+    { title: "Assinatura", url: "/admin/my-subscription", icon: CreditCard },
     { title: "Configurações", url: "/admin/settings", icon: Settings },
   ];
 
