@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          action: string
+          company_id: string
+          created_at: string
+          entity: string
+          entity_id: string | null
+          id: string
+          metadata: Json
+          user_id: string
+        }
+        Insert: {
+          action: string
+          company_id: string
+          created_at?: string
+          entity: string
+          entity_id?: string | null
+          id?: string
+          metadata?: Json
+          user_id: string
+        }
+        Update: {
+          action?: string
+          company_id?: string
+          created_at?: string
+          entity?: string
+          entity_id?: string | null
+          id?: string
+          metadata?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           created_at: string
@@ -52,6 +93,71 @@ export type Database = {
           },
         ]
       }
+      invites: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string
+          email: string
+          expires_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          status: Database["public"]["Enums"]["invite_status"]
+          token: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by: string
+          email: string
+          expires_at: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: Database["public"]["Enums"]["invite_status"]
+          token?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: Database["public"]["Enums"]["invite_status"]
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invites_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      permissions: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       plans: {
         Row: {
           created_at: string
@@ -78,25 +184,52 @@ export type Database = {
       }
       profiles: {
         Row: {
+          availability: Json
+          avatar_url: string | null
           company_id: string
           created_at: string
+          created_by: string | null
           email: string
           id: string
+          last_access_at: string | null
           name: string
+          permission_level: Database["public"]["Enums"]["permission_level"]
+          phone: string | null
+          reliability_score: number
+          settings: Json
+          status: Database["public"]["Enums"]["user_status"]
         }
         Insert: {
+          availability?: Json
+          avatar_url?: string | null
           company_id: string
           created_at?: string
+          created_by?: string | null
           email: string
           id: string
+          last_access_at?: string | null
           name: string
+          permission_level?: Database["public"]["Enums"]["permission_level"]
+          phone?: string | null
+          reliability_score?: number
+          settings?: Json
+          status?: Database["public"]["Enums"]["user_status"]
         }
         Update: {
+          availability?: Json
+          avatar_url?: string | null
           company_id?: string
           created_at?: string
+          created_by?: string | null
           email?: string
           id?: string
+          last_access_at?: string | null
           name?: string
+          permission_level?: Database["public"]["Enums"]["permission_level"]
+          phone?: string | null
+          reliability_score?: number
+          settings?: Json
+          status?: Database["public"]["Enums"]["user_status"]
         }
         Relationships: [
           {
@@ -104,6 +237,77 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_permissions: {
+        Row: {
+          created_at: string
+          id: string
+          permission_id: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          permission_id: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          permission_id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_permission_id_fkey"
+            columns: ["permission_id"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_permissions: {
+        Row: {
+          allowed: boolean
+          company_id: string
+          created_at: string
+          id: string
+          permission_id: string
+          user_id: string
+        }
+        Insert: {
+          allowed?: boolean
+          company_id: string
+          created_at?: string
+          id?: string
+          permission_id: string
+          user_id: string
+        }
+        Update: {
+          allowed?: boolean
+          company_id?: string
+          created_at?: string
+          id?: string
+          permission_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_permissions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_permissions_permission_id_fkey"
+            columns: ["permission_id"]
+            isOneToOne: false
+            referencedRelation: "permissions"
             referencedColumns: ["id"]
           },
         ]
@@ -134,6 +338,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_user_permission: {
+        Args: { _permission_name: string; _user_id: string }
+        Returns: boolean
+      }
       get_user_company_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
@@ -142,9 +350,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_active_user: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "colaborador" | "admin" | "super_admin"
+      invite_status: "pendente" | "aceito" | "expirado"
+      permission_level: "basico" | "avancado"
+      user_status: "ativo" | "inativo" | "bloqueado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -273,6 +485,9 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["colaborador", "admin", "super_admin"],
+      invite_status: ["pendente", "aceito", "expirado"],
+      permission_level: ["basico", "avancado"],
+      user_status: ["ativo", "inativo", "bloqueado"],
     },
   },
 } as const
