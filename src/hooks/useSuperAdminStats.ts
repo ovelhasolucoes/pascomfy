@@ -48,7 +48,7 @@ export const useSuperAdminCompanies = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("companies")
-        .select("*, subscriptions!companies_subscription_id_fkey(id, status, plan_id, plans(name, price_monthly))")
+        .select("*, subscriptions!companies_subscription_id_fkey(id, status, plan_id, trial_until, gateway, asaas_customer_id, plans(name, price_monthly))")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data || [];

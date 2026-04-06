@@ -43,7 +43,7 @@ const SuperAdminCompanies = () => {
               </TableHeader>
               <TableBody>
                 {(companies || []).map((c: any) => {
-                  const sub = c.subscriptions?.[0];
+                  const sub = Array.isArray(c.subscriptions) ? c.subscriptions?.[0] : c.subscriptions;
                   return (
                     <TableRow key={c.id}>
                       <TableCell className="font-medium">{c.name}</TableCell>

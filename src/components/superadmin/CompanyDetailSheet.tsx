@@ -51,7 +51,7 @@ export function CompanyDetailSheet({ company, open, onClose }: CompanyDetailShee
       setBlockMode(company.block_mode || "soft");
       setTrialUntil(company.trial_until ? company.trial_until.substring(0, 10) : "");
 
-      const sub = company.subscriptions?.[0];
+      const sub = Array.isArray(company.subscriptions) ? company.subscriptions?.[0] : company.subscriptions;
       if (sub) {
         setSubStatus(sub.status || "");
         setPlanId(sub.plan_id || "");
@@ -62,7 +62,7 @@ export function CompanyDetailSheet({ company, open, onClose }: CompanyDetailShee
 
   if (!company) return null;
 
-  const sub = company.subscriptions?.[0];
+  const sub = Array.isArray(company.subscriptions) ? company.subscriptions?.[0] : company.subscriptions;
 
   const handleSave = async () => {
     setSaving(true);
