@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useSuperAdminCompanies } from "@/hooks/useSuperAdminStats";
 import { CompanyDetailSheet } from "@/components/superadmin/CompanyDetailSheet";
+import { CreateCompanyDialog } from "@/components/superadmin/CreateCompanyDialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
