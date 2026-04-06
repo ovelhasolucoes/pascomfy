@@ -9,7 +9,7 @@ export const useSubscriptions = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("subscriptions")
-        .select("*, companies(name), plans(name, price_monthly)")
+        .select("*, companies!subscriptions_company_id_fkey(name), plans!subscriptions_plan_id_fkey(name, price_monthly)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data || [];
