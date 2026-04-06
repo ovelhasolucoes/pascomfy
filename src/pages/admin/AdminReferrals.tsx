@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Copy, Gift, Loader2, Users, Share2, TrendingUp, CheckCircle2, Clock, Link2 } from "lucide-react";
+import { Copy, Gift, Loader2, Users, Share2, TrendingUp, CheckCircle2, Clock, Link2, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 
 const rewardTypeLabel: Record<string, string> = {
@@ -44,6 +44,11 @@ const AdminReferrals = () => {
       navigator.clipboard.writeText(program.code);
       toast.success("Código copiado!");
     }
+  };
+
+  const shareWhatsApp = () => {
+    const text = `Conheça o Pascomfy! Cadastre sua paróquia com meu link e ganhe um trial de 14 dias grátis:\n${shareLink}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   };
 
   const totalReferrals = referrals.length;
@@ -161,6 +166,10 @@ const AdminReferrals = () => {
                     <Button onClick={copyLink} className="shrink-0 gap-2">
                       <Link2 className="h-4 w-4" />
                       Copiar
+                    </Button>
+                    <Button onClick={shareWhatsApp} variant="outline" className="shrink-0 gap-2 text-green-600 border-green-200 hover:bg-green-50">
+                      <MessageCircle className="h-4 w-4" />
+                      WhatsApp
                     </Button>
                   </div>
                 </div>
