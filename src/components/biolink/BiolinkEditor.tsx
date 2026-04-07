@@ -150,9 +150,26 @@ export function BiolinkEditor({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base">Links</CardTitle>
-            <Button size="sm" onClick={() => setAddOpen(true)}>
-              <Plus className="h-4 w-4 mr-1" /> Adicionar
-            </Button>
+            <div className="flex gap-2">
+              {onApplyTemplate && (
+                <ApplyTemplateDialog
+                  onApply={(templateItems) =>
+                    onApplyTemplate(
+                      templateItems.map((i) => ({
+                        titulo: i.titulo,
+                        url: i.url_placeholder,
+                        tipo: i.tipo,
+                        icone: i.icone || undefined,
+                      }))
+                    )
+                  }
+                  isPending={applyingTemplate}
+                />
+              )}
+              <Button size="sm" onClick={() => setAddOpen(true)}>
+                <Plus className="h-4 w-4 mr-1" /> Adicionar
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <BiolinkItemList
