@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowLeft, MapPin, Clock, Plus, Zap, Users, ClipboardList, UserCheck, Trash2, Pencil } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Plus, Zap, Users, ClipboardList, UserCheck, Trash2, Pencil, QrCode, ScanLine } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,7 @@ import { ChecklistSection } from "@/components/checklist/ChecklistSection";
 import { AddChecklistDialog } from "@/components/checklist/AddChecklistDialog";
 import { EditEventDialog } from "@/components/events/EditEventDialog";
 import { AttendanceButton } from "@/components/attendance/AttendanceButton";
+import { EventQRCode } from "@/components/checkin/EventQRCode";
 import { AttendanceList } from "@/components/attendance/AttendanceList";
 import { useEvents } from "@/hooks/useEvents";
 import { useEventTeams } from "@/hooks/useEventTeams";
@@ -236,10 +237,26 @@ const EventDetailPage = () => {
 
         {/* Attendance */}
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <UserCheck className="h-5 w-5 text-primary" />
-            Presença
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <UserCheck className="h-5 w-5 text-primary" />
+              Presença
+            </h2>
+            <div className="flex gap-2">
+              {(event as any).checkin_token && (
+                <EventQRCode
+                  eventId={event.id}
+                  eventTitle={event.title}
+                  checkinToken={(event as any).checkin_token}
+                />
+              )}
+              {canEditScale && (
+                <Button variant="outline" size="sm" onClick={() => navigate(`/events/${id}/scan`)}>
+                  <ScanLine className="h-4 w-4 mr-1" /> Scanner
+                </Button>
+              )}
+            </div>
+          </div>
           <AttendanceButton eventId={id!} eventStartDate={event.start_date} />
           {canEditScale && scaledUserIds.length > 0 && (
             <AttendanceList

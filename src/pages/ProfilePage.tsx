@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/ui/page-header";
 import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { Camera, Plus, X, Save, Loader2 } from "lucide-react";
+import { VolunteerQRCode } from "@/components/checkin/VolunteerQRCode";
 import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -288,6 +289,14 @@ const ProfilePage = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* QR Code pessoal */}
+        {(profile as any)?.checkin_code && (
+          <VolunteerQRCode
+            checkinCode={(profile as any).checkin_code}
+            userName={profile?.name ?? ""}
+          />
+        )}
 
         {/* Sticky save button on mobile */}
         <div className="flex justify-end sticky bottom-4 z-10">

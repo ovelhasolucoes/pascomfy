@@ -27,6 +27,8 @@ const EventLivePage = lazy(() => import("./pages/EventLivePage"));
 const MySchedulePage = lazy(() => import("./pages/MySchedulePage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
+const CheckinPage = lazy(() => import("./pages/CheckinPage"));
+const AdminScanPage = lazy(() => import("./pages/AdminScanPage"));
 const AccountBlocked = lazy(() => import("./pages/AccountBlocked"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -94,6 +96,8 @@ const App = () => (
             <Route path="/events/:id/live" element={<ProtectedRoute><SuspenseRoute><EventLivePage /></SuspenseRoute></ProtectedRoute>} />
             <Route path="/my-schedule" element={<ProtectedRoute><SuspenseRoute><MySchedulePage /></SuspenseRoute></ProtectedRoute>} />
             <Route path="/checkout/:planId" element={<ProtectedRoute><SuspenseRoute><CheckoutPage /></SuspenseRoute></ProtectedRoute>} />
+            <Route path="/checkin/:type/:token" element={<ProtectedRoute><SuspenseRoute><CheckinPage /></SuspenseRoute></ProtectedRoute>} />
+            <Route path="/events/:id/scan" element={<ProtectedRoute><SuspenseRoute><AdminScanPage /></SuspenseRoute></ProtectedRoute>} />
             <Route path="/admin/my-subscription" element={<AdminRoute><SuspenseRoute><MySubscriptionPage /></SuspenseRoute></AdminRoute>} />
             <Route path="/admin/users" element={<AdminRoute><SuspenseRoute><Users /></SuspenseRoute></AdminRoute>} />
             <Route path="/admin/settings" element={<AdminRoute><SuspenseRoute><AdminSettings /></SuspenseRoute></AdminRoute>} />
