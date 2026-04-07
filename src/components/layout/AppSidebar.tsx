@@ -164,6 +164,7 @@ export function AppSidebar() {
     { title: "Afiliados", url: "/superadmin/affiliates", icon: Gift },
     { title: "Tickets", url: "/superadmin/tickets", icon: MessageSquare },
     { title: "Logs", url: "/superadmin/logs", icon: ScrollText },
+    { title: "Configurações", url: "/superadmin/settings", icon: Settings },
   ];
 
   const initials = profile?.name
