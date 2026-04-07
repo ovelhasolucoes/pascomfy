@@ -96,9 +96,10 @@ const DashboardPage = () => {
           </div>
         )}
 
+        {/* Quick Actions - all users */}
+        <QuickActions />
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* My Next Events */}
-          {loading ? (
             <SkeletonCard lines={4} />
           ) : (
             <Card className="transition-shadow hover:shadow-md">
