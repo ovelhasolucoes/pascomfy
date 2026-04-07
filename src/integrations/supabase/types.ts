@@ -1195,6 +1195,8 @@ export type Database = {
       }
       events: {
         Row: {
+          checkin_token: string | null
+          checkin_window_minutes: number | null
           company_id: string
           created_at: string
           created_by: string
@@ -1208,6 +1210,8 @@ export type Database = {
           title: string
         }
         Insert: {
+          checkin_token?: string | null
+          checkin_window_minutes?: number | null
           company_id: string
           created_at?: string
           created_by: string
@@ -1221,6 +1225,8 @@ export type Database = {
           title: string
         }
         Update: {
+          checkin_token?: string | null
+          checkin_window_minutes?: number | null
           company_id?: string
           created_at?: string
           created_by?: string
@@ -1700,6 +1706,7 @@ export type Database = {
           availability: Json
           avatar_url: string | null
           bio: string | null
+          checkin_code: string | null
           company_id: string | null
           created_at: string
           created_by: string | null
@@ -1719,6 +1726,7 @@ export type Database = {
           availability?: Json
           avatar_url?: string | null
           bio?: string | null
+          checkin_code?: string | null
           company_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -1738,6 +1746,7 @@ export type Database = {
           availability?: Json
           avatar_url?: string | null
           bio?: string | null
+          checkin_code?: string | null
           company_id?: string | null
           created_at?: string
           created_by?: string | null
