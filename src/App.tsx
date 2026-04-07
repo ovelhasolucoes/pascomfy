@@ -56,6 +56,7 @@ const SuperAdminAffiliates = lazy(() => import("./pages/superadmin/SuperAdminAff
 const SuperAdminTickets = lazy(() => import("./pages/superadmin/SuperAdminTickets"));
 const SuperAdminLogs = lazy(() => import("./pages/superadmin/SuperAdminLogs"));
 const SuperAdminPayments = lazy(() => import("./pages/superadmin/SuperAdminPayments"));
+const SuperAdminSettings = lazy(() => import("./pages/superadmin/SuperAdminSettings"));
 
 const queryClient = new QueryClient();
 
