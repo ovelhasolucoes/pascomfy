@@ -20,9 +20,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { PageHeader } from "@/components/ui/page-header";
 import { useToast } from "@/hooks/use-toast";
 import { Navigate, useNavigate } from "react-router-dom";
-import { UserPlus, Shield, Ban, CheckCircle, Mail, Phone } from "lucide-react";
+import { UserPlus, Shield, Ban, CheckCircle, Mail, Phone, Copy, Clock, Trash2, Link2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 import type { Database } from "@/integrations/supabase/types";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -37,6 +38,16 @@ interface UserWithRole {
   roles: AppRole[];
 }
 
+interface PendingInvite {
+  id: string;
+  email: string;
+  role: AppRole;
+  status: string;
+  token: string;
+  created_at: string;
+  expires_at: string;
+}
+
 const Users = () => {
   const { user } = useAuth();
   const { isAdmin, isSuperAdmin, loading: permLoading } = usePermissions();
@@ -44,6 +55,7 @@ const Users = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [users, setUsers] = useState<UserWithRole[]>([]);
+  const [invites, setInvites] = useState<PendingInvite[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<AppRole>("colaborador");
@@ -81,6 +93,15 @@ const Users = () => {
         roles: rolesMap.get(p.id) || [],
       }))
     );
+
+    // Fetch pending invites
+    const { data: pendingInvites } = await supabase
+      .from("invites")
+      .select("id, email, role, status, token, created_at, expires_at")
+      .eq("status", "pendente")
+      .order("created_at", { ascending: false });
+
+    setInvites(pendingInvites || []);
     setLoading(false);
   };
 
@@ -145,22 +166,41 @@ const Users = () => {
       return;
     }
 
-    const { error } = await supabase.from("invites").insert({
+    const { data: invite, error } = await supabase.from("invites").insert({
       email: inviteEmail,
       company_id: profile.company_id,
       role: inviteRole,
       created_by: user!.id,
       expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    });
+    }).select("token").single();
 
     if (error) {
       toast({ variant: "destructive", title: "Erro ao enviar convite", description: error.message });
     } else {
-      toast({ title: "Convite criado com sucesso!" });
+      const inviteLink = `${window.location.origin}/invite/${invite.token}`;
+      await navigator.clipboard.writeText(inviteLink);
+      toast({ title: "Convite criado!", description: "Link copiado para a área de transferência. Envie ao usuário." });
       setInviteEmail("");
       setInviteOpen(false);
+      fetchUsers();
     }
     setSending(false);
+  };
+
+  const handleCopyInviteLink = async (token: string) => {
+    const link = `${window.location.origin}/invite/${token}`;
+    await navigator.clipboard.writeText(link);
+    toast({ title: "Link copiado!", description: "Envie este link ao usuário convidado." });
+  };
+
+  const handleDeleteInvite = async (id: string) => {
+    const { error } = await supabase.from("invites").delete().eq("id", id);
+    if (error) {
+      toast({ variant: "destructive", title: "Erro", description: error.message });
+    } else {
+      toast({ title: "Convite removido" });
+      fetchUsers();
+    }
   };
 
   const statusBadge = (status: string) => {
@@ -174,6 +214,8 @@ const Users = () => {
 
   const getInitials = (name: string) =>
     name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
+
+  const isExpired = (expiresAt: string) => new Date(expiresAt) < new Date();
 
   return (
     <AppLayout>
@@ -214,12 +256,64 @@ const Users = () => {
                   </Select>
                 </div>
                 <Button onClick={handleInvite} disabled={sending} className="w-full">
-                  {sending ? "Enviando..." : "Enviar Convite"}
+                  {sending ? "Criando..." : "Criar Convite e Copiar Link"}
                 </Button>
+                <p className="text-xs text-muted-foreground text-center">
+                  O link será copiado automaticamente para você enviar ao usuário.
+                </p>
               </div>
             </DialogContent>
           </Dialog>
         </PageHeader>
+
+        {/* Pending Invites */}
+        {invites.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                Convites Pendentes ({invites.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {invites.map((inv) => (
+                <div
+                  key={inv.id}
+                  className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{inv.email}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <Badge variant="secondary" className="text-xs">{inv.role}</Badge>
+                      {isExpired(inv.expires_at) && (
+                        <Badge variant="destructive" className="text-xs">Expirado</Badge>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleCopyInviteLink(inv.token)}
+                      title="Copiar link"
+                    >
+                      <Link2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteInvite(inv.id)}
+                      title="Remover convite"
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         {loading ? (
           <p className="text-muted-foreground text-center py-10">Carregando...</p>
