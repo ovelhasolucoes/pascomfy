@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Link2 } from "lucide-react";
 import { useBiolink } from "@/hooks/useBiolink";
 import { BiolinkEditor } from "@/components/biolink/BiolinkEditor";
-import { useMemo } from "react";
+import { TemplateGallery } from "@/components/biolink/TemplateGallery";
+import type { BiolinkTemplate, BiolinkTemplateItem } from "@/hooks/useBiolinkTemplates";
 
 export default function AdminBiolink() {
   const {
@@ -26,10 +27,42 @@ export default function AdminBiolink() {
 
   const [newSlug, setNewSlug] = useState("");
   const [newTitulo, setNewTitulo] = useState("");
+  const [selectedTemplate, setSelectedTemplate] = useState<{ template: BiolinkTemplate; items: BiolinkTemplateItem[] } | null>(null);
+  const [showForm, setShowForm] = useState(false);
 
-  // Debounced update
   const handleUpdate = (values: any) => {
     updateBiolink.mutate(values);
+  };
+
+  const handleSelectTemplate = (template: BiolinkTemplate, templateItems: BiolinkTemplateItem[]) => {
+    setSelectedTemplate({ template, items: templateItems });
+    setShowForm(true);
+  };
+
+  const handleSkipTemplate = () => {
+    setSelectedTemplate(null);
+    setShowForm(true);
+  };
+
+  const handleCreateWithTemplate = async () => {
+    createBiolink.mutate(
+      { slug: newSlug, titulo: newTitulo },
+      {
+        onSuccess: async (data) => {
+          if (selectedTemplate && data) {
+            // Copy template items to the new biolink
+            for (const tItem of selectedTemplate.items) {
+              await addItem.mutateAsync({
+                titulo: tItem.titulo,
+                url: tItem.url_placeholder,
+                tipo: tItem.tipo as any,
+                icone: tItem.icone || undefined,
+              });
+            }
+          }
+        },
+      }
+    );
   };
 
   if (isLoading) {
@@ -43,6 +76,17 @@ export default function AdminBiolink() {
   }
 
   if (!biolink) {
+    // Step 1: Template gallery, Step 2: Slug/name form
+    if (!showForm) {
+      return (
+        <AppLayout>
+          <div className="p-4 md:p-6 max-w-4xl mx-auto">
+            <TemplateGallery onSelect={handleSelectTemplate} onSkip={handleSkipTemplate} />
+          </div>
+        </AppLayout>
+      );
+    }
+
     return (
       <AppLayout>
         <div className="max-w-lg mx-auto py-12 px-4">
@@ -51,16 +95,20 @@ export default function AdminBiolink() {
               <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
                 <Link2 className="h-6 w-6 text-primary" />
               </div>
-              <CardTitle>Criar Biolink</CardTitle>
+              <CardTitle>
+                {selectedTemplate ? `Criar com "${selectedTemplate.template.nome}"` : "Criar Biolink"}
+              </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Crie uma página pública de links para sua paróquia
+                {selectedTemplate
+                  ? `${selectedTemplate.items.length} links serão adicionados automaticamente`
+                  : "Crie uma página pública de links para sua paróquia"}
               </p>
             </CardHeader>
             <CardContent>
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  createBiolink.mutate({ slug: newSlug, titulo: newTitulo });
+                  handleCreateWithTemplate();
                 }}
                 className="space-y-4"
               >
@@ -85,9 +133,22 @@ export default function AdminBiolink() {
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={createBiolink.isPending}>
-                  Criar Biolink
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setShowForm(false);
+                      setSelectedTemplate(null);
+                    }}
+                  >
+                    Voltar
+                  </Button>
+                  <Button type="submit" className="flex-1" disabled={createBiolink.isPending}>
+                    {createBiolink.isPending ? "Criando..." : "Criar Biolink"}
+                  </Button>
+                </div>
               </form>
             </CardContent>
           </Card>
