@@ -453,6 +453,88 @@ export type Database = {
           },
         ]
       }
+      biolink_template_items: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          icone: string | null
+          id: string
+          ordem: number
+          template_id: string
+          tipo: string
+          titulo: string
+          url_placeholder: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          icone?: string | null
+          id?: string
+          ordem?: number
+          template_id: string
+          tipo?: string
+          titulo: string
+          url_placeholder?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          icone?: string | null
+          id?: string
+          ordem?: number
+          template_id?: string
+          tipo?: string
+          titulo?: string
+          url_placeholder?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "biolink_template_items_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "biolink_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      biolink_templates: {
+        Row: {
+          categoria: string
+          company_id: string | null
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          preview_config: Json
+        }
+        Insert: {
+          categoria?: string
+          company_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          preview_config?: Json
+        }
+        Update: {
+          categoria?: string
+          company_id?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          preview_config?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "biolink_templates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       biolinks: {
         Row: {
           ativo: boolean
