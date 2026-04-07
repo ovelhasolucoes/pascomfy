@@ -300,6 +300,9 @@ const EventDetailPage = () => {
             toast.success("Checklist criado!");
           }}
         />
+        {event && (
+          <EditEventDialog open={editEventOpen} onClose={() => setEditEventOpen(false)} event={event} />
+        )}
       </div>
     </AppLayout>
   );
