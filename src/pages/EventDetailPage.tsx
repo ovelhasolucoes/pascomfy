@@ -237,10 +237,26 @@ const EventDetailPage = () => {
 
         {/* Attendance */}
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <UserCheck className="h-5 w-5 text-primary" />
-            Presença
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <UserCheck className="h-5 w-5 text-primary" />
+              Presença
+            </h2>
+            <div className="flex gap-2">
+              {(event as any).checkin_token && (
+                <EventQRCode
+                  eventId={event.id}
+                  eventTitle={event.title}
+                  checkinToken={(event as any).checkin_token}
+                />
+              )}
+              {canEditScale && (
+                <Button variant="outline" size="sm" onClick={() => navigate(`/events/${id}/scan`)}>
+                  <ScanLine className="h-4 w-4 mr-1" /> Scanner
+                </Button>
+              )}
+            </div>
+          </div>
           <AttendanceButton eventId={id!} eventStartDate={event.start_date} />
           {canEditScale && scaledUserIds.length > 0 && (
             <AttendanceList
