@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/ui/page-header";
 import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { Camera, Plus, X, Save, Loader2 } from "lucide-react";
+import { VolunteerQRCode } from "@/components/checkin/VolunteerQRCode";
 import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
