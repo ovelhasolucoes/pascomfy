@@ -40,6 +40,8 @@ export function BiolinkEditor({
   onUpdateItem,
   onDeleteItem,
   onReorder,
+  onApplyTemplate,
+  applyingTemplate,
   saving,
 }: Props) {
   const [addOpen, setAddOpen] = useState(false);
