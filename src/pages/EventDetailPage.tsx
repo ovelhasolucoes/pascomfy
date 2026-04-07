@@ -16,6 +16,7 @@ import { AddTeamDialog } from "@/components/events/AddTeamDialog";
 import { AddMemberDialog } from "@/components/events/AddMemberDialog";
 import { ChecklistSection } from "@/components/checklist/ChecklistSection";
 import { AddChecklistDialog } from "@/components/checklist/AddChecklistDialog";
+import { EditEventDialog } from "@/components/events/EditEventDialog";
 import { AttendanceButton } from "@/components/attendance/AttendanceButton";
 import { AttendanceList } from "@/components/attendance/AttendanceList";
 import { useEvents } from "@/hooks/useEvents";
