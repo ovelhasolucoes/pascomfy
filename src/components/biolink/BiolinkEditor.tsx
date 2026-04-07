@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ExternalLink, Copy, Plus, Eye } from "lucide-react";
+import { ExternalLink, Copy, Plus, Eye, LayoutTemplate } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import type { Biolink, BiolinkItem } from "@/hooks/useBiolink";
@@ -13,6 +13,7 @@ import { BiolinkPreview } from "./BiolinkPreview";
 import { BiolinkItemList } from "./BiolinkItemList";
 import { BiolinkItemDialog } from "./BiolinkItemDialog";
 import { BiolinkLogoUpload } from "./BiolinkLogoUpload";
+import { ApplyTemplateDialog } from "./ApplyTemplateDialog";
 
 interface Props {
   biolink: Biolink;
@@ -24,6 +25,8 @@ interface Props {
   onUpdateItem: (values: Partial<BiolinkItem> & { id: string }) => void;
   onDeleteItem: (id: string) => void;
   onReorder: (items: { id: string; ordem: number }[]) => void;
+  onApplyTemplate?: (items: { titulo: string; url: string; tipo: string; icone?: string }[]) => void;
+  applyingTemplate?: boolean;
   saving?: boolean;
 }
 
@@ -37,6 +40,8 @@ export function BiolinkEditor({
   onUpdateItem,
   onDeleteItem,
   onReorder,
+  onApplyTemplate,
+  applyingTemplate,
   saving,
 }: Props) {
   const [addOpen, setAddOpen] = useState(false);
@@ -145,9 +150,26 @@ export function BiolinkEditor({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base">Links</CardTitle>
-            <Button size="sm" onClick={() => setAddOpen(true)}>
-              <Plus className="h-4 w-4 mr-1" /> Adicionar
-            </Button>
+            <div className="flex gap-2">
+              {onApplyTemplate && (
+                <ApplyTemplateDialog
+                  onApply={(templateItems) =>
+                    onApplyTemplate(
+                      templateItems.map((i) => ({
+                        titulo: i.titulo,
+                        url: i.url_placeholder,
+                        tipo: i.tipo,
+                        icone: i.icone || undefined,
+                      }))
+                    )
+                  }
+                  isPending={applyingTemplate}
+                />
+              )}
+              <Button size="sm" onClick={() => setAddOpen(true)}>
+                <Plus className="h-4 w-4 mr-1" /> Adicionar
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <BiolinkItemList
