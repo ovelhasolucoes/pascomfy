@@ -27,6 +27,8 @@ const EventLivePage = lazy(() => import("./pages/EventLivePage"));
 const MySchedulePage = lazy(() => import("./pages/MySchedulePage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
+const CheckinPage = lazy(() => import("./pages/CheckinPage"));
+const AdminScanPage = lazy(() => import("./pages/AdminScanPage"));
 const AccountBlocked = lazy(() => import("./pages/AccountBlocked"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
