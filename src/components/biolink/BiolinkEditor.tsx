@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ExternalLink, Copy, Plus, Eye } from "lucide-react";
+import { ExternalLink, Copy, Plus, Eye, LayoutTemplate } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import type { Biolink, BiolinkItem } from "@/hooks/useBiolink";
@@ -13,6 +13,7 @@ import { BiolinkPreview } from "./BiolinkPreview";
 import { BiolinkItemList } from "./BiolinkItemList";
 import { BiolinkItemDialog } from "./BiolinkItemDialog";
 import { BiolinkLogoUpload } from "./BiolinkLogoUpload";
+import { ApplyTemplateDialog } from "./ApplyTemplateDialog";
 
 interface Props {
   biolink: Biolink;
