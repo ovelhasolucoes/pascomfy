@@ -31,7 +31,8 @@ import { toast } from "sonner";
 const EventDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { hasPermission } = usePermissions();
+  const { hasPermission, isAdmin } = usePermissions();
+  const { profile } = useProfile();
   const canEditScale = hasPermission("editar_escala");
 
   const { events, loading: eventsLoading } = useEvents();
