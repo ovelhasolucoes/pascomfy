@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowLeft, MapPin, Clock, Plus, Zap, Users, ClipboardList, UserCheck, Trash2 } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Plus, Zap, Users, ClipboardList, UserCheck, Trash2, Pencil } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
