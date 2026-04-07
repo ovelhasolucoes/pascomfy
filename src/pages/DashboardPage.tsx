@@ -23,6 +23,8 @@ import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useProfile } from "@/hooks/useProfile";
 import { Link, useNavigate } from "react-router-dom";
+import { QuickActions } from "@/components/dashboard/QuickActions";
+import { AttendanceHistory } from "@/components/dashboard/AttendanceHistory";
 
 const MEDAL_STYLES = [
   "bg-primary/20 text-primary border-primary/30",
