@@ -104,7 +104,6 @@ const AdminScanPage = () => {
         <PageHeader
           title="Scanner de Presença"
           description={event?.title || "Escaneie o QR dos voluntários"}
-          icon={<UserCheck className="h-5 w-5 text-primary" />}
         />
 
         <QRScanner onScan={handleScan} scanning={processing} />
