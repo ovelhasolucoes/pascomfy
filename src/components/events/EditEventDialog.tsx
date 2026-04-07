@@ -188,7 +188,7 @@ export function EditEventDialog({ open, onClose, event }: EditEventDialogProps) 
               </Button>
             </div>
           </div>
-        </ResponsiveDialogBody>
+        </div>
       </ResponsiveDialogContent>
     </ResponsiveDialog>
   );
