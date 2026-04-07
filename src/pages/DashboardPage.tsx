@@ -271,6 +271,9 @@ const DashboardPage = () => {
             </Card>
           )}
 
+          {/* Attendance History - all users */}
+          <AttendanceHistory />
+
           {/* Admin: Attendance Chart */}
           {isAdmin && attendanceChart.length > 0 && (
             <Card className="lg:col-span-2 transition-shadow hover:shadow-md">
