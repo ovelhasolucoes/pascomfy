@@ -95,7 +95,7 @@ export function EditEventDialog({ open, onClose, event }: EditEventDialogProps) 
         <ResponsiveDialogHeader>
           <ResponsiveDialogTitle>Editar Evento</ResponsiveDialogTitle>
         </ResponsiveDialogHeader>
-        <ResponsiveDialogBody>
+        <div className="px-4 pb-4 md:px-6 md:pb-6 overflow-y-auto max-h-[70vh]">
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Título *</Label>
