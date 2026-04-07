@@ -174,6 +174,12 @@ export default function AdminBiolink() {
           onUpdateItem={(v) => updateItem.mutate(v)}
           onDeleteItem={(id) => deleteItem.mutate(id)}
           onReorder={(items) => reorderItems.mutate(items)}
+          onApplyTemplate={async (templateItems) => {
+            for (const item of templateItems) {
+              await addItem.mutateAsync(item as any);
+            }
+          }}
+          applyingTemplate={addItem.isPending}
           saving={updateBiolink.isPending}
         />
       </div>
