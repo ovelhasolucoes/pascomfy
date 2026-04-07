@@ -56,6 +56,7 @@ const SuperAdminAffiliates = lazy(() => import("./pages/superadmin/SuperAdminAff
 const SuperAdminTickets = lazy(() => import("./pages/superadmin/SuperAdminTickets"));
 const SuperAdminLogs = lazy(() => import("./pages/superadmin/SuperAdminLogs"));
 const SuperAdminPayments = lazy(() => import("./pages/superadmin/SuperAdminPayments"));
+const SuperAdminSettings = lazy(() => import("./pages/superadmin/SuperAdminSettings"));
 
 const queryClient = new QueryClient();
 
@@ -119,6 +120,7 @@ const App = () => (
             <Route path="/superadmin/tickets" element={<SuperAdminRoute><SuspenseRoute><SuperAdminTickets /></SuspenseRoute></SuperAdminRoute>} />
             <Route path="/superadmin/logs" element={<SuperAdminRoute><SuspenseRoute><SuperAdminLogs /></SuspenseRoute></SuperAdminRoute>} />
             <Route path="/superadmin/payments" element={<SuperAdminRoute><SuspenseRoute><SuperAdminPayments /></SuspenseRoute></SuperAdminRoute>} />
+            <Route path="/superadmin/settings" element={<SuperAdminRoute><SuspenseRoute><SuperAdminSettings /></SuspenseRoute></SuperAdminRoute>} />
             <Route path="/account-blocked" element={<SuspenseRoute><AccountBlocked /></SuspenseRoute>} />
             <Route path="*" element={<SuspenseRoute><NotFound /></SuspenseRoute>} />
           </Routes>
