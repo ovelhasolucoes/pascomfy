@@ -290,6 +290,14 @@ const ProfilePage = () => {
           </CardContent>
         </Card>
 
+        {/* QR Code pessoal */}
+        {(profile as any)?.checkin_code && (
+          <VolunteerQRCode
+            checkinCode={(profile as any).checkin_code}
+            userName={profile?.name ?? ""}
+          />
+        )}
+
         {/* Sticky save button on mobile */}
         <div className="flex justify-end sticky bottom-4 z-10">
           <Button onClick={handleSave} disabled={saving} size="lg" className="shadow-lg">
