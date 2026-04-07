@@ -30,7 +30,7 @@ export const useEventMembers = (eventId?: string) => {
 
   const updateMember = useMutation({
     mutationFn: async (params: { id: string; roleName?: string; status?: string }) => {
-      const updates: Record<string, unknown> = {};
+      const updates: { role_name?: string; status?: string; confirmed_at?: string } = {};
       if (params.roleName !== undefined) updates.role_name = params.roleName;
       if (params.status !== undefined) {
         updates.status = params.status;
