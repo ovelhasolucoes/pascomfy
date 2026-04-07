@@ -18,6 +18,7 @@ import { ChecklistSection } from "@/components/checklist/ChecklistSection";
 import { AddChecklistDialog } from "@/components/checklist/AddChecklistDialog";
 import { EditEventDialog } from "@/components/events/EditEventDialog";
 import { AttendanceButton } from "@/components/attendance/AttendanceButton";
+import { EventQRCode } from "@/components/checkin/EventQRCode";
 import { AttendanceList } from "@/components/attendance/AttendanceList";
 import { useEvents } from "@/hooks/useEvents";
 import { useEventTeams } from "@/hooks/useEventTeams";
