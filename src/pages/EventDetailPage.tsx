@@ -156,6 +156,11 @@ const EventDetailPage = () => {
               </div>
             )}
           </div>
+          {(isAdmin || event.created_by === profile?.id) && (
+            <Button variant="ghost" size="icon" onClick={() => setEditEventOpen(true)} className="mt-0.5 shrink-0">
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
         </div>
 
         {/* Info Cards */}
