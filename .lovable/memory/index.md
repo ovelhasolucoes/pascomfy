@@ -26,3 +26,4 @@ Mobile-first: bottom nav (Home/Eventos/Agenda/Perfil/Mais), sidebar só desktop,
 - [Checklist/Attendance](mem://features/checklist-attendance) — Checklist por evento com progresso e presença
 - [Automações](mem://features/automations) — Sistema multi-canal com fila, triggers automáticos, disparo manual, montagem de mensagem de grupo
 - [Mobile UX](mem://features/mobile-ux) — Bottom nav, more sheet, safe areas, fases de melhoria mobile
+- [QR Check-in](mem://features/qr-checkin) — Check-in via QR code (evento + voluntário), câmera + link, janela de tempo
