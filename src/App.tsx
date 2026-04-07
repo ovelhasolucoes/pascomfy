@@ -9,6 +9,7 @@ import { CompanyThemeProvider } from "@/contexts/CompanyThemeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminRoute from "@/components/AdminRoute";
 import SuperAdminRoute from "@/components/SuperAdminRoute";
+import { OfflineIndicator } from "@/components/offline/OfflineIndicator";
 
 // Eager: critical routes
 import Login from "./pages/Login";
