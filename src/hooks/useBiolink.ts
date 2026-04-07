@@ -130,7 +130,7 @@ export function useBiolink() {
   });
 
   const updateItem = useMutation({
-    mutationFn: async ({ id, ...values }: Partial<BiolinkItem> & { id: string }) => {
+    mutationFn: async ({ id, click_count, ...values }: Partial<BiolinkItem> & { id: string }) => {
       const { error } = await supabase
         .from("biolink_items")
         .update(values)

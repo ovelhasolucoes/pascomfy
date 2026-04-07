@@ -30,10 +30,10 @@ export const useEventMembers = (eventId?: string) => {
 
   const updateMember = useMutation({
     mutationFn: async (params: { id: string; roleName?: string; status?: string }) => {
-      const updates: Record<string, unknown> = {};
+      const updates: { role_name?: string; status?: "ausente" | "confirmado" | "pendente" | "substituido"; confirmed_at?: string } = {};
       if (params.roleName !== undefined) updates.role_name = params.roleName;
       if (params.status !== undefined) {
-        updates.status = params.status;
+        updates.status = params.status as "ausente" | "confirmado" | "pendente" | "substituido";
         if (params.status === "confirmado") updates.confirmed_at = new Date().toISOString();
       }
       const { error } = await supabase.from("event_team_members").update(updates).eq("id", params.id);

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowLeft, MapPin, Clock, Plus, Zap, Users, ClipboardList, UserCheck, Trash2 } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Plus, Zap, Users, ClipboardList, UserCheck, Trash2, Pencil } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,7 @@ import { AddTeamDialog } from "@/components/events/AddTeamDialog";
 import { AddMemberDialog } from "@/components/events/AddMemberDialog";
 import { ChecklistSection } from "@/components/checklist/ChecklistSection";
 import { AddChecklistDialog } from "@/components/checklist/AddChecklistDialog";
+import { EditEventDialog } from "@/components/events/EditEventDialog";
 import { AttendanceButton } from "@/components/attendance/AttendanceButton";
 import { AttendanceList } from "@/components/attendance/AttendanceList";
 import { useEvents } from "@/hooks/useEvents";
@@ -24,12 +25,14 @@ import { useEventMembers } from "@/hooks/useEventMembers";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useRealtimeChecklist } from "@/hooks/useRealtimeChecklist";
 import { useEventChecklistManage } from "@/hooks/useEventChecklistManage";
+import { useProfile } from "@/hooks/useProfile";
 import { toast } from "sonner";
 
 const EventDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { hasPermission } = usePermissions();
+  const { hasPermission, isAdmin } = usePermissions();
+  const { profile } = useProfile();
   const canEditScale = hasPermission("editar_escala");
 
   const { events, loading: eventsLoading } = useEvents();
@@ -41,6 +44,7 @@ const EventDetailPage = () => {
   useRealtimeChecklist(id);
 
   const [addChecklistOpen, setAddChecklistOpen] = useState(false);
+  const [editEventOpen, setEditEventOpen] = useState(false);
 
   const scaledUserIds = teams.flatMap((t) =>
     t.event_team_members?.map((m: any) => m.user_id) ?? []
@@ -152,6 +156,11 @@ const EventDetailPage = () => {
               </div>
             )}
           </div>
+          {(isAdmin || event.created_by === profile?.id) && (
+            <Button variant="ghost" size="icon" onClick={() => setEditEventOpen(true)} className="mt-0.5 shrink-0">
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
         </div>
 
         {/* Info Cards */}
@@ -291,6 +300,9 @@ const EventDetailPage = () => {
             toast.success("Checklist criado!");
           }}
         />
+        {event && (
+          <EditEventDialog open={editEventOpen} onClose={() => setEditEventOpen(false)} event={event} />
+        )}
       </div>
     </AppLayout>
   );
