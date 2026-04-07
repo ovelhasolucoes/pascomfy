@@ -25,6 +25,8 @@ interface Props {
   onUpdateItem: (values: Partial<BiolinkItem> & { id: string }) => void;
   onDeleteItem: (id: string) => void;
   onReorder: (items: { id: string; ordem: number }[]) => void;
+  onApplyTemplate?: (items: { titulo: string; url: string; tipo: string; icone?: string }[]) => void;
+  applyingTemplate?: boolean;
   saving?: boolean;
 }
 
