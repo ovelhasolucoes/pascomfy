@@ -44,6 +44,7 @@ const EventDetailPage = () => {
   useRealtimeChecklist(id);
 
   const [addChecklistOpen, setAddChecklistOpen] = useState(false);
+  const [editEventOpen, setEditEventOpen] = useState(false);
 
   const scaledUserIds = teams.flatMap((t) =>
     t.event_team_members?.map((m: any) => m.user_id) ?? []
