@@ -25,6 +25,7 @@ import { useEventMembers } from "@/hooks/useEventMembers";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useRealtimeChecklist } from "@/hooks/useRealtimeChecklist";
 import { useEventChecklistManage } from "@/hooks/useEventChecklistManage";
+import { useProfile } from "@/hooks/useProfile";
 import { toast } from "sonner";
 
 const EventDetailPage = () => {
