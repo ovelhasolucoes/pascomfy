@@ -64,14 +64,9 @@ export function MoreSheet({ open, onOpenChange }: MoreSheetProps) {
     { title: "Configurações", url: "/admin/settings", icon: Settings },
   ];
 
+  // Super Admin: single link to the dedicated panel
   const superAdminItems: NavItem[] = [
-    { title: "Dashboard", url: "/superadmin", icon: LayoutDashboard },
-    { title: "Empresas", url: "/superadmin/companies", icon: Building2 },
-    { title: "Planos", url: "/superadmin/plans", icon: CreditCard },
-    { title: "Pagamentos", url: "/superadmin/payments", icon: Receipt },
-    { title: "Tickets", url: "/superadmin/tickets", icon: MessageSquare },
-    { title: "Logs", url: "/superadmin/logs", icon: ScrollText },
-    { title: "Configurações", url: "/superadmin/settings", icon: Settings },
+    { title: "Painel Super Admin", url: "/superadmin", icon: LayoutDashboard },
   ];
 
   return (
