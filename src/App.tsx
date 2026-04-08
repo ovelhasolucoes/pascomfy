@@ -83,6 +83,7 @@ const App = () => (
       <Sonner />
       <OfflineIndicator />
       <BrowserRouter>
+        <PlatformBrandingProvider>
         <AuthProvider>
           <CompanyThemeProvider>
           <Routes>
