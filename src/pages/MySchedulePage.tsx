@@ -3,7 +3,6 @@ import { format, differenceInHours } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   ResponsiveDialog as Dialog,
@@ -22,18 +21,13 @@ import { useEventMembers } from "@/hooks/useEventMembers";
 import { useSubstitutions } from "@/hooks/useSubstitutions";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-
-const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  pendente: { label: "Pendente", variant: "outline" },
-  confirmado: { label: "Confirmado", variant: "default" },
-  ausente: { label: "Ausente", variant: "destructive" },
-  substituido: { label: "Substituído", variant: "secondary" },
-};
+import { useNavigate } from "react-router-dom";
 
 const MySchedulePage = () => {
   const { schedule, loading } = useMySchedule();
   const { confirmPresence } = useEventMembers();
   const { mySubstitutions, requestSubstitution } = useSubstitutions();
+  const navigate = useNavigate();
 
   const [subDialog, setSubDialog] = useState<{ eventId: string; memberId: string } | null>(null);
   const [reason, setReason] = useState("");
@@ -42,9 +36,7 @@ const MySchedulePage = () => {
     try {
       await confirmPresence.mutateAsync(memberId);
       toast.success("Presença confirmada!");
-    } catch (err: any) {
-      toast.error(err.message);
-    }
+    } catch (err: any) { toast.error(err.message); }
   };
 
   const handleRequestSub = async () => {
@@ -58,117 +50,84 @@ const MySchedulePage = () => {
       toast.success("Substituição solicitada!");
       setSubDialog(null);
       setReason("");
-    } catch (err: any) {
-      toast.error(err.message);
-    }
+    } catch (err: any) { toast.error(err.message); }
   };
 
-  const getSubStatus = (memberId: string) => {
-    return mySubstitutions.find((s) => s.event_team_member_id === memberId);
-  };
+  const getSubStatus = (memberId: string) => mySubstitutions.find((s) => s.event_team_member_id === memberId);
 
   return (
     <AppLayout>
       <div className="space-y-6">
-        <PageHeader title="Minha Agenda" description="Eventos em que você está escalado" />
+        <PageHeader title="Minha Agenda" />
 
         {loading ? (
-          <div className="grid gap-3">
-            {[1, 2, 3].map((i) => <SkeletonCard key={i} hasHeader={false} lines={3} />)}
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => <SkeletonCard key={i} hasHeader={false} lines={2} />)}
           </div>
         ) : schedule.length === 0 ? (
           <EmptyState
             icon={CalendarDays}
-            title="Nenhum evento na sua agenda"
-            description="Você não está escalado em nenhum evento futuro."
+            title="Nenhum evento na agenda"
+            description="Você será notificado quando for escalado."
           />
         ) : (
-          <div className="grid gap-3 stagger-fade">
+          <div className="space-y-3">
             {schedule.map((item: any) => {
               const event = item.event_teams?.events;
               if (!event) return null;
               const hoursUntil = differenceInHours(new Date(event.start_date), new Date());
-              const isUrgent = hoursUntil <= 48 && hoursUntil > 0;
-              const sc = statusConfig[item.status] || statusConfig.pendente;
               const existingSub = getSubStatus(item.id);
+              const isPending = item.status === "pendente";
+              const canRequestSub = !existingSub && item.status !== "substituido" && hoursUntil > 0;
 
               return (
-                <Card key={item.id} className={cn(
-                  "transition-all duration-200 hover:shadow-md",
-                  isUrgent && "border-primary shadow-sm ring-1 ring-primary/20"
-                )}>
+                <Card
+                  key={item.id}
+                  className={cn(
+                    "cursor-pointer active:scale-[0.99] transition-transform",
+                    hoursUntil <= 48 && hoursUntil > 0 && "border-primary/40"
+                  )}
+                  onClick={() => navigate(`/events/${event.id}`)}
+                >
                   <CardContent className="p-4">
                     <div className="space-y-3">
-                      {/* Title */}
-                      <div className="min-w-0">
-                        <div className="flex items-start gap-2">
-                          {event.event_types?.color && (
-                            <div className="w-2.5 h-2.5 rounded-full shrink-0 mt-1.5" style={{ backgroundColor: event.event_types.color }} />
-                          )}
-                          <h3 className="font-semibold text-foreground break-words line-clamp-2 flex-1 min-w-0">{event.title}</h3>
+                      <div className="flex items-start gap-3">
+                        {event.event_types?.color && (
+                          <div className="w-1 h-10 rounded-full shrink-0" style={{ backgroundColor: event.event_types.color }} />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-foreground line-clamp-1">{event.title}</p>
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground mt-0.5">
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3.5 w-3.5" />
+                              {format(new Date(event.start_date), "dd/MM · HH:mm", { locale: ptBR })}
+                            </span>
+                            {event.location && (
+                              <span className="flex items-center gap-1 truncate">
+                                <MapPin className="h-3.5 w-3.5" />
+                                {event.location}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
 
-                      {/* Date & Location */}
-                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3.5 w-3.5 shrink-0" />
-                          {format(new Date(event.start_date), "dd/MM · HH:mm", { locale: ptBR })}
-                        </span>
-                        {event.location && (
-                          <span className="flex items-center gap-1 min-w-0">
-                            <MapPin className="h-3.5 w-3.5 shrink-0" />
-                            <span className="truncate">{event.location}</span>
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Team */}
-                      <div className="flex flex-wrap items-center gap-2 text-sm">
-                        <span className="text-muted-foreground">Equipe:</span>
-                        <span className="font-medium text-foreground">{item.event_teams?.name}</span>
-                        {item.role_name && (
-                          <>
-                            <span className="text-muted-foreground">·</span>
-                            <span className="text-foreground">{item.role_name}</span>
-                          </>
-                        )}
-                      </div>
-
-                      {/* Badges */}
-                      <div className="flex flex-wrap gap-2">
-                        <Badge variant={sc.variant}>{sc.label}</Badge>
-                        {isUrgent && (
-                          <Badge variant="destructive" className="text-xs animate-pulse">
-                            Em breve
-                          </Badge>
-                        )}
-                        {existingSub && (
-                          <Badge variant={
-                            existingSub.status === "aprovado" ? "default" :
-                            existingSub.status === "rejeitado" ? "destructive" : "outline"
-                          } className="text-xs">
-                            Substituição: {existingSub.status}
-                          </Badge>
-                        )}
-                      </div>
-
-                      {/* Actions */}
-                      {(item.status === "pendente" || (!existingSub && item.status !== "substituido" && hoursUntil > 0)) && (
-                        <div className="flex flex-col sm:flex-row gap-2 pt-1">
-                          {item.status === "pendente" && (
-                            <Button size="sm" className="w-full sm:w-auto shadow-sm" onClick={() => handleConfirm(item.id)}>
-                              <Check className="h-3 w-3 mr-1" /> Confirmar
+                      {/* Action buttons */}
+                      {(isPending || canRequestSub) && (
+                        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                          {isPending && (
+                            <Button size="sm" className="flex-1" onClick={() => handleConfirm(item.id)}>
+                              <Check className="h-3.5 w-3.5 mr-1" /> Confirmar presença
                             </Button>
                           )}
-                          {!existingSub && item.status !== "substituido" && hoursUntil > 0 && (
+                          {canRequestSub && (
                             <Button
                               size="sm"
-                              variant="outline"
-                              className="w-full sm:w-auto"
+                              variant="ghost"
+                              className="text-muted-foreground"
                               onClick={() => setSubDialog({ eventId: event.id, memberId: item.id })}
                             >
-                              <RefreshCw className="h-3 w-3 mr-1" /> Substituir
+                              <RefreshCw className="h-3.5 w-3.5 mr-1" /> Não posso ir
                             </Button>
                           )}
                         </div>
@@ -185,22 +144,17 @@ const MySchedulePage = () => {
       <Dialog open={!!subDialog} onOpenChange={() => { setSubDialog(null); setReason(""); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Solicitar Substituição</DialogTitle>
+            <DialogTitle>Não posso ir</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">Informe o motivo da substituição. O admin será notificado.</p>
-            <Textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Motivo..."
-              rows={3}
-            />
+            <p className="text-sm text-muted-foreground">Conte o motivo. O admin será avisado.</p>
+            <Textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Motivo..." rows={3} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setSubDialog(null); setReason(""); }}>Cancelar</Button>
             <Button onClick={handleRequestSub} disabled={!reason.trim() || requestSubstitution.isPending}>
               {requestSubstitution.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Solicitar
+              Enviar
             </Button>
           </DialogFooter>
         </DialogContent>
