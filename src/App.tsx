@@ -107,10 +107,9 @@ const App = () => (
             <Route path="/admin/users" element={<AdminRoute><SuspenseRoute><Users /></SuspenseRoute></AdminRoute>} />
             <Route path="/admin/settings" element={<AdminRoute><SuspenseRoute><AdminSettings /></SuspenseRoute></AdminRoute>} />
             <Route path="/admin/event-settings" element={<Navigate to="/admin/settings" replace />} />
-            <Route path="/admin/notifications" element={<AdminRoute><SuspenseRoute><AdminNotifications /></SuspenseRoute></AdminRoute>} />
-            <Route path="/admin/biolink" element={<AdminRoute><SuspenseRoute><AdminBiolink /></SuspenseRoute></AdminRoute>} />
-            <Route path="/admin/referrals" element={<AdminRoute><SuspenseRoute><AdminReferrals /></SuspenseRoute></AdminRoute>} />
-            <Route path="/admin/substitutions" element={<AdminRoute><SuspenseRoute><AdminSubstitutions /></SuspenseRoute></AdminRoute>} />
+            <Route path="/admin/biolink" element={<Navigate to="/admin/settings?tab=biolink" replace />} />
+            <Route path="/admin/referrals" element={<Navigate to="/admin/settings?tab=referrals" replace />} />
+            <Route path="/admin/substitutions" element={<Navigate to="/admin/settings?tab=substitutions" replace />} />
             <Route path="/social/posts" element={<ProtectedRoute><SuspenseRoute><SocialPosts /></SuspenseRoute></ProtectedRoute>} />
             <Route path="/social/calendar" element={<ProtectedRoute><SuspenseRoute><SocialCalendar /></SuspenseRoute></ProtectedRoute>} />
             <Route path="/social/accounts" element={<AdminRoute><SuspenseRoute><SocialAccounts /></SuspenseRoute></AdminRoute>} />
