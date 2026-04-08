@@ -37,7 +37,6 @@ const DashboardPage = () => {
       navigate("/superadmin", { replace: true });
     }
   }, [permLoading, isSuperAdmin, navigate]);
-  const navigate = useNavigate();
 
   const nextEvents = schedule.slice(0, 3);
   const loading = scheduleLoading || statsLoading;
