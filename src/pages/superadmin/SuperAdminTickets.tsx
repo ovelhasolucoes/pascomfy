@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AppLayout } from "@/components/layout/AppLayout";
+import { SuperAdminLayout } from "@/components/superadmin/SuperAdminLayout";
 import { useSupportTickets } from "@/hooks/useSupportTickets";
 import { TicketThread } from "@/components/superadmin/TicketThread";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
