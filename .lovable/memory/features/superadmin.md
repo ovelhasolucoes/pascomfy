@@ -1,31 +1,31 @@
 ---
 name: Super Admin SaaS Core
-description: Subscriptions, affiliates, support tickets, global logs, company limits, super admin panel
+description: Isolated SA panel with own layout/sidebar, company detail page with tabs, impersonation stub, domains, integrations, SA users
 type: feature
 ---
 
-## Tabelas Novas
-- `subscriptions`: company_id, plan_id, status (ativo/cancelado/trial/atrasado), gateway, external_id
-- `affiliate_program`: company_id, code (unique), commission_pct, active
-- `affiliate_referrals`: affiliate_id, referred_company_id, status (pendente/convertido), reward_applied
-- `support_tickets`: company_id, user_id, title, description, status (aberto/respondido/fechado)
-- `support_messages`: ticket_id, user_id, message (CASCADE on ticket delete)
-- `global_logs`: user_id, action, entity, entity_id, metadata, ip_address (super_admin only)
+## Layout
+- `SuperAdminLayout` + `SuperAdminSidebar` — layout completamente separado do AppLayout
+- Sidebar tem seções: Visão Geral, Gestão, Financeiro, Suporte, Sistema
+- Badge "Super Admin" no header
+- AppSidebar/MoreSheet mostram apenas link "Painel Super Admin" para SA
 
-## Tabelas Expandidas
-- `plans`: price_monthly, max_uploads, allows_whitelabel, allows_custom_domain, description
-- `companies`: status (ativa/suspensa/cancelada), storage_used_mb, active_users_count, trial_until, custom_domain, settings, subscription_id
+## Rotas
+- `/superadmin` → Dashboard
+- `/superadmin/companies` → Lista (navega para detalhe)
+- `/superadmin/companies/:id` → Detalhe com 6 abas (Geral, Plano, Usuários, Domínio, Uso, Ações)
+- `/superadmin/users` → Apenas super_admins
+- `/superadmin/plans`, `/subscriptions`, `/payments`, `/affiliates`, `/tickets`, `/logs`
+- `/superadmin/domains` → Domínios custom das companies
+- `/superadmin/integrations` → WhatsApp + Meta API global
+- `/superadmin/settings` → Branding, Login, Gateways, Notificações, Avisos
 
-## Funções
-- `get_company_limits(company_id)` → jsonb com max_users, max_storage_mb, max_uploads, current_users, current_storage
+## Dashboard Métricas
+- activeCompanies, mrr, totalUsers, openTickets, trialCompanies, delinquentCompanies, crescimento mensal
 
-## RLS
-- Super admin bypass em todas as tabelas novas
-- Companies veem apenas seus dados (subscriptions, tickets, affiliates)
-- global_logs exclusivo para super_admin
+## Impersonação
+- Stub na aba "Ações" do company detail — Edge Function `impersonate-company` pendente
 
-## Frontend
-- 7 páginas em /superadmin/* (Dashboard, Companies, Plans, Subscriptions, Affiliates, Tickets, Logs)
-- Hooks: useSuperAdminStats, useSubscriptions, useSupportTickets
-- Componentes: MetricCard, CompanyDetailSheet, TicketThread
-- Sidebar com seção "Super Admin" condicional (isSuperAdmin)
+## Tabelas (já existentes)
+- subscriptions, affiliate_program, affiliate_referrals, support_tickets, support_messages, global_logs
+- plans, companies (status, storage_used_mb, active_users_count, trial_until, custom_domain)
