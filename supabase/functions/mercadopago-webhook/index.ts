@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { HmacSha256 } from "https://deno.land/std@0.224.0/crypto/mod.ts";
 
 const MP_BASE_URL = "https://api.mercadopago.com";
 
@@ -12,8 +13,45 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const body = await req.json();
+    // SECURITY: Validate x-signature header from MercadoPago
+    const mpWebhookSecret = Deno.env.get("MERCADOPAGO_WEBHOOK_SECRET");
+    const xSignature = req.headers.get("x-signature");
+    const xRequestId = req.headers.get("x-request-id");
+
+    const rawBody = await req.text();
+    let body: any;
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      return new Response("Invalid JSON", { status: 400 });
+    }
+
     const { type, data } = body;
+
+    // If webhook secret is configured, validate signature
+    if (mpWebhookSecret && xSignature) {
+      // MercadoPago v2 signature: x-signature contains ts=...,v1=...
+      const parts = Object.fromEntries(
+        xSignature.split(",").map((p: string) => {
+          const [k, ...v] = p.trim().split("=");
+          return [k, v.join("=")];
+        })
+      );
+
+      if (parts.ts && parts.v1 && data?.id) {
+        const manifest = `id:${data.id};request-id:${xRequestId};ts:${parts.ts};`;
+        const hmac = new HmacSha256(mpWebhookSecret);
+        hmac.update(manifest);
+        const computed = Array.from(new Uint8Array(hmac.digest()))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+
+        if (computed !== parts.v1) {
+          console.warn("MP webhook: invalid signature");
+          return new Response("Invalid signature", { status: 401 });
+        }
+      }
+    }
 
     if (type !== "payment" || !data?.id) {
       return new Response(JSON.stringify({ received: true }), {
@@ -27,6 +65,7 @@ Deno.serve(async (req) => {
       return new Response("Config error", { status: 500 });
     }
 
+    // SECURITY: Verify payment directly with MercadoPago API (server-side validation)
     const mpRes = await fetch(`${MP_BASE_URL}/v1/payments/${data.id}`, {
       headers: { Authorization: `Bearer ${MP_ACCESS_TOKEN}` },
     });
@@ -60,7 +99,6 @@ Deno.serve(async (req) => {
         await supabase.from("subscriptions").update({ status: "ativo" }).eq("id", dbPayment.subscription_id);
         await supabase.from("companies").update({ status: "ativa" }).eq("id", dbPayment.company_id);
 
-        // Affiliate conversion
         await processAffiliateConversion(supabase, dbPayment.company_id);
       }
     } else if (payment.status === "rejected" || payment.status === "cancelled") {
