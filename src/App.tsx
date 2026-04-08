@@ -110,6 +110,7 @@ const App = () => (
             <Route path="/admin/biolink" element={<Navigate to="/admin/settings?tab=biolink" replace />} />
             <Route path="/admin/referrals" element={<Navigate to="/admin/settings?tab=referrals" replace />} />
             <Route path="/admin/substitutions" element={<Navigate to="/admin/settings?tab=substitutions" replace />} />
+            <Route path="/admin/notifications" element={<AdminRoute><SuspenseRoute><AdminNotifications /></SuspenseRoute></AdminRoute>} />
             <Route path="/social/posts" element={<ProtectedRoute><SuspenseRoute><SocialPosts /></SuspenseRoute></ProtectedRoute>} />
             <Route path="/social/calendar" element={<ProtectedRoute><SuspenseRoute><SocialCalendar /></SuspenseRoute></ProtectedRoute>} />
             <Route path="/social/accounts" element={<AdminRoute><SuspenseRoute><SocialAccounts /></SuspenseRoute></AdminRoute>} />
