@@ -174,13 +174,21 @@ function BrandingTab({ getSetting, onSave }: {
               <Label>Nome do App</Label>
               <Input value={form.app_name} onChange={(e) => setForm({ ...form, app_name: e.target.value })} />
             </div>
-            <div className="space-y-2">
-              <Label>URL do Logo</Label>
-              <Input placeholder="https://..." value={form.logo_url} onChange={(e) => setForm({ ...form, logo_url: e.target.value })} />
+            <div className="sm:col-span-2">
+              <ImageUploadField
+                label="Logo"
+                value={form.logo_url}
+                onChange={(url) => setForm({ ...form, logo_url: url })}
+                folder="branding"
+              />
             </div>
-            <div className="space-y-2">
-              <Label>URL do Favicon</Label>
-              <Input placeholder="https://..." value={form.favicon_url} onChange={(e) => setForm({ ...form, favicon_url: e.target.value })} />
+            <div className="sm:col-span-2">
+              <ImageUploadField
+                label="Favicon"
+                value={form.favicon_url}
+                onChange={(url) => setForm({ ...form, favicon_url: url })}
+                folder="branding"
+              />
             </div>
             <div className="space-y-2">
               <Label>Cor Primária</Label>
