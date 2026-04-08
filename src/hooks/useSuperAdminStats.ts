@@ -20,7 +20,7 @@ export const useSuperAdminStats = () => {
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
       const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
 
-      const [companiesRes, usersRes, subsRes, ticketsRes, thisMonthRes, lastMonthRes] =
+      const [companiesRes, usersRes, subsRes, ticketsRes, thisMonthRes, lastMonthRes, trialRes, delinquentRes] =
         await Promise.all([
           supabase.from("companies").select("id", { count: "exact", head: true }).eq("status", "ativa"),
           supabase.from("profiles").select("id", { count: "exact", head: true }),
@@ -28,6 +28,8 @@ export const useSuperAdminStats = () => {
           supabase.from("support_tickets").select("id", { count: "exact", head: true }).eq("status", "aberto"),
           supabase.from("companies").select("id", { count: "exact", head: true }).gte("created_at", startOfMonth),
           supabase.from("companies").select("id", { count: "exact", head: true }).gte("created_at", startOfLastMonth).lt("created_at", startOfMonth),
+          supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("status", "trial"),
+          supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("status", "atrasado"),
         ]);
 
       const mrr = (subsRes.data || []).reduce((sum, s: any) => sum + (Number(s.plans?.price_monthly) || 0), 0);
