@@ -18,7 +18,7 @@ const SuperAdminPayments = () => {
   const { data: payments, isLoading } = usePayments();
 
   return (
-    <AppLayout>
+    <SuperAdminLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-foreground">Pagamentos</h1>
