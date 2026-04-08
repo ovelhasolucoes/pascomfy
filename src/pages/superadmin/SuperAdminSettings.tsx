@@ -110,9 +110,8 @@ function ImageUploadField({
         onChange={handleUpload}
       />
     </div>
-  );
+}
 
-function SettingsSkeleton() {
   return (
     <div className="space-y-4">
       {[1, 2, 3].map((i) => (
