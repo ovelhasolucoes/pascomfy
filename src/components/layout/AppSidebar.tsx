@@ -1,7 +1,7 @@
 import {
   Calendar, CalendarDays, Users, Settings, LogOut,
-  Home, User, Bell, CreditCard, Shield, LayoutDashboard,
-  Building2, Receipt, MessageSquare, ScrollText, Gift,
+  Home, User, Bell, CreditCard, LayoutDashboard,
+  Building2, Receipt, MessageSquare, ScrollText, Gift, Share2,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -81,6 +81,7 @@ export function AppSidebar() {
     { title: "Início", url: "/", icon: Home },
     { title: "Eventos", url: "/events", icon: Calendar },
     { title: "Minha Agenda", url: "/my-schedule", icon: CalendarDays },
+    { title: "Social", url: "/social/posts", icon: Share2 },
     { title: "Perfil", url: "/profile", icon: User },
   ];
 
