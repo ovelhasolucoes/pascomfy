@@ -608,7 +608,7 @@ export default function SuperAdminSettings() {
   };
 
   return (
-    <AppLayout>
+    <SuperAdminLayout>
       <div className="container max-w-4xl py-6 space-y-6">
         <PageHeader
           title="Configurações Globais"
