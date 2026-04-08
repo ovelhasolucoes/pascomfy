@@ -91,8 +91,8 @@ export function CompanyThemeProvider({ children }: { children: ReactNode }) {
     const root = document.documentElement;
 
     if (allowsWhitelabel) {
-      root.style.setProperty("--company-primary", company.primary_color || "#6366f1");
-      root.style.setProperty("--company-secondary", company.secondary_color || "#8b5cf6");
+      root.style.setProperty("--company-primary", company.primary_color || "#c4a983");
+      root.style.setProperty("--company-secondary", company.secondary_color || "#8b7355");
 
       if (company.theme === "dark") {
         root.classList.add("dark");
