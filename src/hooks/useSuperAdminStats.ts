@@ -41,6 +41,8 @@ export const useSuperAdminStats = () => {
         openTickets: ticketsRes.count || 0,
         companiesThisMonth: thisMonthRes.count || 0,
         companiesLastMonth: lastMonthRes.count || 0,
+        trialCompanies: trialRes.count || 0,
+        delinquentCompanies: delinquentRes.count || 0,
       };
     },
   });
