@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { usePlatformBrandingContext } from "@/contexts/PlatformBrandingContext";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
 const Login = () => {
@@ -17,6 +18,7 @@ const Login = () => {
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { branding, login } = usePlatformBrandingContext();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,17 +61,39 @@ const Login = () => {
     }
   };
 
+  const bgStyle = login.background_url
+    ? { backgroundImage: `url(${login.background_url})`, backgroundSize: "cover", backgroundPosition: "center" }
+    : undefined;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-muted px-4">
-      <div className="w-full max-w-sm space-y-8">
+    <div
+      className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-muted px-4"
+      style={bgStyle}
+    >
+      {login.background_url && (
+        <div className="absolute inset-0 bg-background/70 backdrop-blur-sm" />
+      )}
+      <div className="relative w-full max-w-sm space-y-8">
         {/* Brand */}
         <div className="text-center space-y-2">
-          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground text-2xl font-bold shadow-sm">
-            P
-          </div>
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Pascomfy</h1>
+          {branding.logo_url ? (
+            <img
+              src={branding.logo_url}
+              alt={branding.app_name}
+              className="h-14 w-14 rounded-2xl object-contain mx-auto shadow-sm"
+            />
+          ) : (
+            <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground text-2xl font-bold shadow-sm">
+              {branding.app_name.charAt(0)}
+            </div>
+          )}
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+            {branding.app_name}
+          </h1>
           <p className="text-muted-foreground text-sm">
-            {forgotMode ? "Recuperar senha" : "Bem-vindo de volta"}
+            {forgotMode
+              ? "Recuperar senha"
+              : login.welcome_subtitle || login.welcome_title}
           </p>
         </div>
 
