@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { AppLayout } from "@/components/layout/AppLayout";
+import { SuperAdminLayout } from "@/components/superadmin/SuperAdminLayout";
 import { PageHeader } from "@/components/ui/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
