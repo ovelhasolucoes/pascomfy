@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -20,15 +21,22 @@ import { StatCard } from "@/components/ui/stat-card";
 import { toast } from "sonner";
 
 const DashboardPage = () => {
+  const navigate = useNavigate();
   const { schedule, loading: scheduleLoading } = useMySchedule();
   const { isActive: gamActive, myPoints, currentLevel } = useGamification();
   const {
     eventsThisMonth, pendingSubstitutions,
     loading: statsLoading,
   } = useDashboardStats();
-  const { isAdmin } = usePermissions();
+  const { isAdmin, isSuperAdmin, loading: permLoading } = usePermissions();
   const { profile } = useProfile();
-  const navigate = useNavigate();
+
+  // Super Admin é redirecionado direto para o painel dedicado
+  useEffect(() => {
+    if (!permLoading && isSuperAdmin) {
+      navigate("/superadmin", { replace: true });
+    }
+  }, [permLoading, isSuperAdmin, navigate]);
 
   const nextEvents = schedule.slice(0, 3);
   const loading = scheduleLoading || statsLoading;
