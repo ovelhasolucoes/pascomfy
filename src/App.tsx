@@ -44,9 +44,7 @@ const AdminReferrals = lazy(() => import("./pages/admin/AdminReferrals"));
 const AdminSubstitutions = lazy(() => import("./pages/admin/AdminSubstitutions"));
 
 // Lazy: social routes
-const SocialPosts = lazy(() => import("./pages/social/SocialPosts"));
-const SocialCalendar = lazy(() => import("./pages/social/SocialCalendar"));
-const SocialAccounts = lazy(() => import("./pages/social/SocialAccounts"));
+const SocialPage = lazy(() => import("./pages/social/SocialPage"));
 
 // Lazy: superadmin routes
 const SuperAdminDashboard = lazy(() => import("./pages/superadmin/SuperAdminDashboard"));
