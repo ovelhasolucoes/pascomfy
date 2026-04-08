@@ -119,12 +119,16 @@ const App = () => (
             <Route path="/social/accounts" element={<Navigate to="/social?tab=accounts" replace />} />
             <Route path="/superadmin" element={<SuperAdminRoute><SuspenseRoute><SuperAdminDashboard /></SuspenseRoute></SuperAdminRoute>} />
             <Route path="/superadmin/companies" element={<SuperAdminRoute><SuspenseRoute><SuperAdminCompanies /></SuspenseRoute></SuperAdminRoute>} />
+            <Route path="/superadmin/companies/:id" element={<SuperAdminRoute><SuspenseRoute><SuperAdminCompanyDetail /></SuspenseRoute></SuperAdminRoute>} />
+            <Route path="/superadmin/users" element={<SuperAdminRoute><SuspenseRoute><SuperAdminUsers /></SuspenseRoute></SuperAdminRoute>} />
             <Route path="/superadmin/plans" element={<SuperAdminRoute><SuspenseRoute><SuperAdminPlans /></SuspenseRoute></SuperAdminRoute>} />
             <Route path="/superadmin/subscriptions" element={<SuperAdminRoute><SuspenseRoute><SuperAdminSubscriptions /></SuspenseRoute></SuperAdminRoute>} />
             <Route path="/superadmin/affiliates" element={<SuperAdminRoute><SuspenseRoute><SuperAdminAffiliates /></SuspenseRoute></SuperAdminRoute>} />
             <Route path="/superadmin/tickets" element={<SuperAdminRoute><SuspenseRoute><SuperAdminTickets /></SuspenseRoute></SuperAdminRoute>} />
             <Route path="/superadmin/logs" element={<SuperAdminRoute><SuspenseRoute><SuperAdminLogs /></SuspenseRoute></SuperAdminRoute>} />
             <Route path="/superadmin/payments" element={<SuperAdminRoute><SuspenseRoute><SuperAdminPayments /></SuspenseRoute></SuperAdminRoute>} />
+            <Route path="/superadmin/domains" element={<SuperAdminRoute><SuspenseRoute><SuperAdminDomains /></SuspenseRoute></SuperAdminRoute>} />
+            <Route path="/superadmin/integrations" element={<SuperAdminRoute><SuspenseRoute><SuperAdminIntegrations /></SuspenseRoute></SuperAdminRoute>} />
             <Route path="/superadmin/settings" element={<SuperAdminRoute><SuspenseRoute><SuperAdminSettings /></SuspenseRoute></SuperAdminRoute>} />
             <Route path="/account-blocked" element={<SuspenseRoute><AccountBlocked /></SuspenseRoute>} />
             <Route path="*" element={<SuspenseRoute><NotFound /></SuspenseRoute>} />
