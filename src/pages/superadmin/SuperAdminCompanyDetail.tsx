@@ -283,13 +283,24 @@ function UsersTab({ companyId }: { companyId: string }) {
   const { data: users, isLoading } = useQuery({
     queryKey: ["superadmin-company-users", companyId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: profiles, error } = await supabase
         .from("profiles")
-        .select("id, name, email, status, permission_level, created_at")
+        .select("id, name, email, status, created_at")
         .eq("company_id", companyId)
         .order("name");
       if (error) throw error;
-      return data || [];
+      if (!profiles || profiles.length === 0) return [];
+
+      const userIds = profiles.map((p) => p.id);
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("user_id", userIds);
+
+      return profiles.map((p) => ({
+        ...p,
+        role: (roles || []).find((r) => r.user_id === p.id)?.role || "colaborador",
+      }));
     },
   });
 
@@ -306,17 +317,17 @@ function UsersTab({ companyId }: { companyId: string }) {
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Nível</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Criado em</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(users || []).map((u: any) => (
-                  <TableRow key={u.id}>
-                    <TableCell className="font-medium">{u.name}</TableCell>
-                    <TableCell className="text-sm">{u.email}</TableCell>
-                    <TableCell><Badge variant="outline">{u.permission_level}</Badge></TableCell>
+                   <TableHead>Função</TableHead>
+                   <TableHead>Status</TableHead>
+                   <TableHead>Criado em</TableHead>
+                 </TableRow>
+               </TableHeader>
+               <TableBody>
+                 {(users || []).map((u: any) => (
+                   <TableRow key={u.id}>
+                     <TableCell className="font-medium">{u.name}</TableCell>
+                     <TableCell className="text-sm">{u.email}</TableCell>
+                     <TableCell><Badge variant="outline">{u.role}</Badge></TableCell>
                     <TableCell>{u.status}</TableCell>
                     <TableCell>{format(new Date(u.created_at), "dd/MM/yyyy")}</TableCell>
                   </TableRow>
