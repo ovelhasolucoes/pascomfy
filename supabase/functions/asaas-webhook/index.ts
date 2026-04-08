@@ -7,17 +7,25 @@ Deno.serve(async (req) => {
 
   try {
     const webhookToken = Deno.env.get("ASAAS_WEBHOOK_TOKEN");
+    
+    // SECURITY: Token validation is now MANDATORY
+    if (!webhookToken) {
+      console.error("ASAAS_WEBHOOK_TOKEN not configured — rejecting request");
+      return new Response("Server misconfigured", { status: 500 });
+    }
+
     const url = new URL(req.url);
     const token = url.searchParams.get("token") || req.headers.get("asaas-access-token");
 
-    if (webhookToken && token !== webhookToken) {
+    if (token !== webhookToken) {
+      console.warn("Asaas webhook: invalid token attempt");
       return new Response("Unauthorized", { status: 401 });
     }
 
     const body = await req.json();
     const { event, payment } = body;
 
-    if (!event || !payment) {
+    if (!event || !payment || typeof payment.id !== "string") {
       return new Response("Invalid payload", { status: 400 });
     }
 
@@ -64,7 +72,6 @@ Deno.serve(async (req) => {
 
 async function processAffiliateConversion(supabase: any, companyId: string) {
   try {
-    // Check if this company was referred and still pending
     const { data: referral } = await supabase
       .from("affiliate_referrals")
       .select("id, affiliate_id, status")
@@ -74,12 +81,10 @@ async function processAffiliateConversion(supabase: any, companyId: string) {
 
     if (!referral) return;
 
-    // Mark as converted
     await supabase.from("affiliate_referrals")
       .update({ status: "convertido", reward_applied: true })
       .eq("id", referral.id);
 
-    // Get affiliate program details
     const { data: program } = await supabase
       .from("affiliate_program")
       .select("company_id, reward_type, reward_value")
@@ -88,7 +93,6 @@ async function processAffiliateConversion(supabase: any, companyId: string) {
 
     if (!program) return;
 
-    // Create reward
     await supabase.from("affiliate_rewards").insert({
       affiliate_company_id: program.company_id,
       referral_id: referral.id,
@@ -97,9 +101,7 @@ async function processAffiliateConversion(supabase: any, companyId: string) {
       applied: false,
     });
 
-    // Apply reward
     if (program.reward_type === "dias_gratis") {
-      // Add days to affiliate's subscription ends_at
       const { data: sub } = await supabase
         .from("subscriptions")
         .select("id, ends_at")
@@ -116,13 +118,11 @@ async function processAffiliateConversion(supabase: any, companyId: string) {
           .eq("id", sub.id);
       }
 
-      // Mark reward as applied
       await supabase.from("affiliate_rewards")
         .update({ applied: true, applied_at: new Date().toISOString() })
         .eq("referral_id", referral.id)
         .eq("affiliate_company_id", program.company_id);
     }
-    // desconto and upgrade are handled manually by super admin
   } catch (err) {
     console.error("Affiliate conversion error:", err);
   }
