@@ -109,16 +109,16 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="px-3 py-4">
         <div className="flex items-center gap-2.5">
-          {isWhitelabel && logoUrl ? (
-            <img src={logoUrl} alt={companyName} className="h-8 w-8 rounded-xl object-contain shrink-0" />
+          {displayLogo ? (
+            <img src={displayLogo} alt={displayName} className="h-8 w-8 rounded-xl object-contain shrink-0" />
           ) : (
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-sm shrink-0">
-              {companyName.charAt(0)}
+              {displayName.charAt(0)}
             </div>
           )}
           {!collapsed && (
             <span className="text-lg font-semibold text-sidebar-foreground tracking-tight">
-              {isWhitelabel ? companyName : "Pascomfy"}
+              {displayName}
             </span>
           )}
         </div>
