@@ -49,12 +49,16 @@ const SocialPage = lazy(() => import("./pages/social/SocialPage"));
 // Lazy: superadmin routes
 const SuperAdminDashboard = lazy(() => import("./pages/superadmin/SuperAdminDashboard"));
 const SuperAdminCompanies = lazy(() => import("./pages/superadmin/SuperAdminCompanies"));
+const SuperAdminCompanyDetail = lazy(() => import("./pages/superadmin/SuperAdminCompanyDetail"));
+const SuperAdminUsers = lazy(() => import("./pages/superadmin/SuperAdminUsers"));
 const SuperAdminPlans = lazy(() => import("./pages/superadmin/SuperAdminPlans"));
 const SuperAdminSubscriptions = lazy(() => import("./pages/superadmin/SuperAdminSubscriptions"));
 const SuperAdminAffiliates = lazy(() => import("./pages/superadmin/SuperAdminAffiliates"));
 const SuperAdminTickets = lazy(() => import("./pages/superadmin/SuperAdminTickets"));
 const SuperAdminLogs = lazy(() => import("./pages/superadmin/SuperAdminLogs"));
 const SuperAdminPayments = lazy(() => import("./pages/superadmin/SuperAdminPayments"));
+const SuperAdminDomains = lazy(() => import("./pages/superadmin/SuperAdminDomains"));
+const SuperAdminIntegrations = lazy(() => import("./pages/superadmin/SuperAdminIntegrations"));
 const SuperAdminSettings = lazy(() => import("./pages/superadmin/SuperAdminSettings"));
 
 const queryClient = new QueryClient();
