@@ -1,4 +1,4 @@
-import { AppLayout } from "@/components/layout/AppLayout";
+import { SuperAdminLayout } from "@/components/superadmin/SuperAdminLayout";
 import { usePayments } from "@/hooks/usePayments";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
