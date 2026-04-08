@@ -70,7 +70,12 @@ export function AppSidebar() {
   const { signOut } = useAuth();
   const { profile } = useProfile();
   const { companyName, logoUrl, isWhitelabel } = useCompanyTheme();
+  const { branding: platformBranding } = usePlatformBrandingContext();
   const { unreadCount } = useNotifications();
+
+  // Use company branding if whitelabel, otherwise fallback to platform branding
+  const displayName = isWhitelabel ? companyName : (platformBranding.app_name || "Pascomfy");
+  const displayLogo = isWhitelabel ? logoUrl : platformBranding.logo_url;
 
   const mainItems: MenuItem[] = [
     { title: "Início", url: "/", icon: Home },
