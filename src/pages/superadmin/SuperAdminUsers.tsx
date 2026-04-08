@@ -9,12 +9,24 @@ const SuperAdminUsers = () => {
   const { data: users, isLoading } = useQuery({
     queryKey: ["superadmin-sa-users"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: roles, error: rolesError } = await supabase
         .from("user_roles")
-        .select("user_id, role, profiles(id, name, email, created_at, status)")
+        .select("user_id, role")
         .eq("role", "super_admin");
-      if (error) throw error;
-      return data || [];
+      if (rolesError) throw rolesError;
+      if (!roles || roles.length === 0) return [];
+
+      const userIds = roles.map((r) => r.user_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, name, email, created_at, status")
+        .in("id", userIds);
+      if (profilesError) throw profilesError;
+
+      return roles.map((r) => ({
+        ...r,
+        profile: (profiles || []).find((p) => p.id === r.user_id) || null,
+      }));
     },
   });
 
