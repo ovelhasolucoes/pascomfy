@@ -7,7 +7,7 @@ const SuperAdminDashboard = () => {
   const { data: stats, isLoading } = useSuperAdminStats();
 
   if (isLoading) {
-    return <AppLayout><p className="text-muted-foreground text-center py-12">Carregando métricas...</p></AppLayout>;
+    return <SuperAdminLayout><p className="text-muted-foreground text-center py-12">Carregando métricas...</p></SuperAdminLayout>;
   }
 
   const growth = stats && stats.companiesLastMonth > 0
