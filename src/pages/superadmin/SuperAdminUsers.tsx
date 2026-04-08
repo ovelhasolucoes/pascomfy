@@ -54,13 +54,13 @@ const SuperAdminUsers = () => {
               <TableBody>
                 {(users || []).map((u: any) => (
                   <TableRow key={u.user_id}>
-                    <TableCell className="font-medium">{u.profiles?.name}</TableCell>
-                    <TableCell>{u.profiles?.email}</TableCell>
+                    <TableCell className="font-medium">{u.profile?.name}</TableCell>
+                    <TableCell>{u.profile?.email}</TableCell>
                     <TableCell><Badge>super_admin</Badge></TableCell>
-                    <TableCell>{u.profiles?.status}</TableCell>
+                    <TableCell>{u.profile?.status}</TableCell>
                     <TableCell>
-                      {u.profiles?.created_at
-                        ? format(new Date(u.profiles.created_at), "dd/MM/yyyy")
+                      {u.profile?.created_at
+                        ? format(new Date(u.profile.created_at), "dd/MM/yyyy")
                         : "—"}
                     </TableCell>
                   </TableRow>
