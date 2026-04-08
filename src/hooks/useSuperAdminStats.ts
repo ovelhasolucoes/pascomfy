@@ -8,6 +8,8 @@ export interface SaaSStats {
   openTickets: number;
   companiesThisMonth: number;
   companiesLastMonth: number;
+  trialCompanies: number;
+  delinquentCompanies: number;
 }
 
 export const useSuperAdminStats = () => {
