@@ -1,4 +1,4 @@
-import { AppLayout } from "@/components/layout/AppLayout";
+import { SuperAdminLayout } from "@/components/superadmin/SuperAdminLayout";
 import { usePayments } from "@/hooks/usePayments";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,7 @@ const SuperAdminPayments = () => {
   const { data: payments, isLoading } = usePayments();
 
   return (
-    <AppLayout>
+    <SuperAdminLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-foreground">Pagamentos</h1>
@@ -90,7 +90,7 @@ const SuperAdminPayments = () => {
           </div>
         )}
       </div>
-    </AppLayout>
+    </SuperAdminLayout>
   );
 };
 

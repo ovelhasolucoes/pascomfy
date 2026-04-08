@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AppLayout } from "@/components/layout/AppLayout";
+import { SuperAdminLayout } from "@/components/superadmin/SuperAdminLayout";
 import { useSuperAdminPlans } from "@/hooks/useSuperAdminStats";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -43,7 +43,7 @@ const SuperAdminPlans = () => {
   };
 
   return (
-    <AppLayout>
+    <SuperAdminLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-foreground">Planos</h1>
@@ -103,7 +103,7 @@ const SuperAdminPlans = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </AppLayout>
+    </SuperAdminLayout>
   );
 };
 

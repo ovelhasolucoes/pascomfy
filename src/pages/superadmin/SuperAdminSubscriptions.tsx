@@ -1,4 +1,4 @@
-import { AppLayout } from "@/components/layout/AppLayout";
+import { SuperAdminLayout } from "@/components/superadmin/SuperAdminLayout";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { usePayments } from "@/hooks/usePayments";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -57,7 +57,7 @@ const SuperAdminSubscriptions = () => {
   };
 
   return (
-    <AppLayout>
+    <SuperAdminLayout>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-foreground">Assinaturas</h1>
         {isLoading ? <p className="text-muted-foreground text-center py-8">Carregando...</p> : (
@@ -115,7 +115,7 @@ const SuperAdminSubscriptions = () => {
           </div>
         )}
       </div>
-    </AppLayout>
+    </SuperAdminLayout>
   );
 };
 

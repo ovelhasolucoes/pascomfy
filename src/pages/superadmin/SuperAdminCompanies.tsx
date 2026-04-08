@@ -1,13 +1,12 @@
-import { useState } from "react";
-import { AppLayout } from "@/components/layout/AppLayout";
+import { SuperAdminLayout } from "@/components/superadmin/SuperAdminLayout";
 import { useSuperAdminCompanies } from "@/hooks/useSuperAdminStats";
-import { CompanyDetailSheet } from "@/components/superadmin/CompanyDetailSheet";
 import { CreateCompanyDialog } from "@/components/superadmin/CreateCompanyDialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { Eye } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const statusVariant: Record<string, any> = {
   ativa: "default",
@@ -17,13 +16,13 @@ const statusVariant: Record<string, any> = {
 
 const SuperAdminCompanies = () => {
   const { data: companies, isLoading } = useSuperAdminCompanies();
-  const [selected, setSelected] = useState<any>(null);
+  const navigate = useNavigate();
 
   return (
-    <AppLayout>
+    <SuperAdminLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-foreground">Companies</h1>
+          <h1 className="text-2xl font-bold text-foreground">Empresas</h1>
           <CreateCompanyDialog />
         </div>
         {isLoading ? (
@@ -37,6 +36,7 @@ const SuperAdminCompanies = () => {
                   <TableHead>Plano</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Usuários</TableHead>
+                  <TableHead>Domínio</TableHead>
                   <TableHead>Criado em</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
@@ -45,14 +45,15 @@ const SuperAdminCompanies = () => {
                 {(companies || []).map((c: any) => {
                   const sub = Array.isArray(c.subscriptions) ? c.subscriptions?.[0] : c.subscriptions;
                   return (
-                    <TableRow key={c.id}>
+                    <TableRow key={c.id} className="cursor-pointer" onClick={() => navigate(`/superadmin/companies/${c.id}`)}>
                       <TableCell className="font-medium">{c.name}</TableCell>
                       <TableCell>{sub?.plans?.name || "—"}</TableCell>
                       <TableCell><Badge variant={statusVariant[c.status]}>{c.status}</Badge></TableCell>
                       <TableCell>{c.active_users_count}</TableCell>
+                      <TableCell className="text-xs">{c.custom_domain || "—"}</TableCell>
                       <TableCell>{format(new Date(c.created_at), "dd/MM/yyyy")}</TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" onClick={() => setSelected(c)}>
+                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); navigate(`/superadmin/companies/${c.id}`); }}>
                           <Eye className="h-4 w-4" />
                         </Button>
                       </TableCell>
@@ -64,8 +65,7 @@ const SuperAdminCompanies = () => {
           </div>
         )}
       </div>
-      <CompanyDetailSheet company={selected} open={!!selected} onClose={() => setSelected(null)} />
-    </AppLayout>
+    </SuperAdminLayout>
   );
 };
 

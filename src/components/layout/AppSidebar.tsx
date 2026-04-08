@@ -1,7 +1,7 @@
 import {
   Calendar, CalendarDays, Users, Settings, LogOut,
-  Home, User, Bell, CreditCard, LayoutDashboard,
-  Building2, Receipt, MessageSquare, ScrollText, Gift, Share2,
+  Home, User, Bell, CreditCard, Share2,
+  LayoutDashboard,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -92,16 +92,9 @@ export function AppSidebar() {
     { title: "Configurações", url: "/admin/settings", icon: Settings },
   ];
 
+  // Super Admin gets a link to the dedicated panel
   const superAdminItems: MenuItem[] = [
-    { title: "Dashboard", url: "/superadmin", icon: LayoutDashboard },
-    { title: "Empresas", url: "/superadmin/companies", icon: Building2 },
-    { title: "Planos", url: "/superadmin/plans", icon: CreditCard },
-    { title: "Assinaturas", url: "/superadmin/subscriptions", icon: Receipt },
-    { title: "Pagamentos", url: "/superadmin/payments", icon: Receipt },
-    { title: "Afiliados", url: "/superadmin/affiliates", icon: Gift },
-    { title: "Tickets", url: "/superadmin/tickets", icon: MessageSquare },
-    { title: "Logs", url: "/superadmin/logs", icon: ScrollText },
-    { title: "Configurações", url: "/superadmin/settings", icon: Settings },
+    { title: "Painel Super Admin", url: "/superadmin", icon: LayoutDashboard },
   ];
 
   const initials = profile?.name?.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase() ?? "?";

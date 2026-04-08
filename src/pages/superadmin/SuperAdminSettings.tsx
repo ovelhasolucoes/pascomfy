@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { AppLayout } from "@/components/layout/AppLayout";
+import { SuperAdminLayout } from "@/components/superadmin/SuperAdminLayout";
 import { PageHeader } from "@/components/ui/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -608,7 +608,7 @@ export default function SuperAdminSettings() {
   };
 
   return (
-    <AppLayout>
+    <SuperAdminLayout>
       <div className="container max-w-4xl py-6 space-y-6">
         <PageHeader
           title="Configurações Globais"
@@ -660,6 +660,6 @@ export default function SuperAdminSettings() {
           </Tabs>
         )}
       </div>
-    </AppLayout>
+    </SuperAdminLayout>
   );
 }

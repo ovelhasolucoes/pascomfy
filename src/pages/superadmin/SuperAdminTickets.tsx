@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AppLayout } from "@/components/layout/AppLayout";
+import { SuperAdminLayout } from "@/components/superadmin/SuperAdminLayout";
 import { useSupportTickets } from "@/hooks/useSupportTickets";
 import { TicketThread } from "@/components/superadmin/TicketThread";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -30,7 +30,7 @@ const SuperAdminTickets = () => {
   };
 
   return (
-    <AppLayout>
+    <SuperAdminLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-foreground">Tickets de Suporte</h1>
@@ -99,7 +99,7 @@ const SuperAdminTickets = () => {
           {selectedTicket && <TicketThread ticketId={selectedTicket.id} />}
         </DialogContent>
       </Dialog>
-    </AppLayout>
+    </SuperAdminLayout>
   );
 };
 

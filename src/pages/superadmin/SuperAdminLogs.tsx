@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { AppLayout } from "@/components/layout/AppLayout";
+import { SuperAdminLayout } from "@/components/superadmin/SuperAdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
@@ -19,7 +19,7 @@ const SuperAdminLogs = () => {
   });
 
   return (
-    <AppLayout>
+    <SuperAdminLayout>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-foreground">Logs Globais</h1>
         {isLoading ? <p className="text-muted-foreground text-center py-8">Carregando...</p> : (
@@ -50,7 +50,7 @@ const SuperAdminLogs = () => {
           </div>
         )}
       </div>
-    </AppLayout>
+    </SuperAdminLayout>
   );
 };
 
