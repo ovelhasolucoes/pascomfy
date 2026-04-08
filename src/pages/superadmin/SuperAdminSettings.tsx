@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PageHeader } from "@/components/ui/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,11 +13,105 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePlatformSettings } from "@/hooks/usePlatformSettings";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Palette, Smartphone, LogIn, CreditCard, Mail, MessageSquare,
-  Megaphone, Save, Plus, Trash2, ExternalLink
+  Megaphone, Save, Plus, Trash2, ExternalLink, Upload, Loader2
 } from "lucide-react";
 import { toast } from "sonner";
+
+/* ─── Image Upload Field ─── */
+function ImageUploadField({
+  label,
+  value,
+  onChange,
+  folder,
+}: {
+  label: string;
+  value: string;
+  onChange: (url: string) => void;
+  folder: string;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Selecione uma imagem");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Imagem deve ter no máximo 2MB");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${folder}/${Date.now()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("platform-assets")
+        .upload(path, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from("platform-assets").getPublicUrl(path);
+      onChange(data.publicUrl);
+      toast.success("Imagem enviada!");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Erro ao enviar imagem");
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <div className="flex items-center gap-3">
+        {value && (
+          <img
+            src={value}
+            alt={label}
+            className="h-12 w-12 rounded-lg object-contain border border-border bg-muted"
+          />
+        )}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+        >
+          {uploading ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-1" />
+          ) : (
+            <Upload className="h-4 w-4 mr-1" />
+          )}
+          {value ? "Trocar" : "Enviar"}
+        </Button>
+        <Input
+          placeholder="ou cole uma URL"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="flex-1"
+        />
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleUpload}
+      />
+    </div>
+  );
+}
 
 function SettingsSkeleton() {
   return (
@@ -41,12 +135,12 @@ function BrandingTab({ getSetting, onSave }: {
     app_name: branding.app_name ?? "Pascomfy",
     logo_url: branding.logo_url ?? "",
     favicon_url: branding.favicon_url ?? "",
-    primary_color: branding.primary_color ?? "#7c3aed",
-    secondary_color: branding.secondary_color ?? "#6d28d9",
+    primary_color: branding.primary_color ?? "#c4a983",
+    secondary_color: branding.secondary_color ?? "#8b7355",
     pwa_short_name: pwa.short_name ?? "Pascomfy",
     pwa_description: pwa.description ?? "",
-    pwa_theme_color: pwa.theme_color ?? "#7c3aed",
-    pwa_bg_color: pwa.background_color ?? "#0f172a",
+    pwa_theme_color: pwa.theme_color ?? "#c4a983",
+    pwa_bg_color: pwa.background_color ?? "#1A1816",
   });
 
   const handleSave = () => {
@@ -80,13 +174,21 @@ function BrandingTab({ getSetting, onSave }: {
               <Label>Nome do App</Label>
               <Input value={form.app_name} onChange={(e) => setForm({ ...form, app_name: e.target.value })} />
             </div>
-            <div className="space-y-2">
-              <Label>URL do Logo</Label>
-              <Input placeholder="https://..." value={form.logo_url} onChange={(e) => setForm({ ...form, logo_url: e.target.value })} />
+            <div className="sm:col-span-2">
+              <ImageUploadField
+                label="Logo"
+                value={form.logo_url}
+                onChange={(url) => setForm({ ...form, logo_url: url })}
+                folder="branding"
+              />
             </div>
-            <div className="space-y-2">
-              <Label>URL do Favicon</Label>
-              <Input placeholder="https://..." value={form.favicon_url} onChange={(e) => setForm({ ...form, favicon_url: e.target.value })} />
+            <div className="sm:col-span-2">
+              <ImageUploadField
+                label="Favicon"
+                value={form.favicon_url}
+                onChange={(url) => setForm({ ...form, favicon_url: url })}
+                folder="branding"
+              />
             </div>
             <div className="space-y-2">
               <Label>Cor Primária</Label>
@@ -186,10 +288,12 @@ function LoginTab({ getSetting, onSave }: {
             <Label>Subtítulo</Label>
             <Input value={form.welcome_subtitle} onChange={(e) => setForm({ ...form, welcome_subtitle: e.target.value })} />
           </div>
-          <div className="space-y-2">
-            <Label>URL da Imagem de Fundo</Label>
-            <Input placeholder="https://..." value={form.background_url} onChange={(e) => setForm({ ...form, background_url: e.target.value })} />
-          </div>
+          <ImageUploadField
+            label="Imagem de Fundo"
+            value={form.background_url}
+            onChange={(url) => setForm({ ...form, background_url: url })}
+            folder="login"
+          />
           <Separator />
           <h4 className="font-medium text-sm text-muted-foreground">Métodos de Autenticação</h4>
           <div className="space-y-3">
