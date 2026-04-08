@@ -128,6 +128,7 @@ const App = () => (
           </Routes>
           </CompanyThemeProvider>
         </AuthProvider>
+        </PlatformBrandingProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
