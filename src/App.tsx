@@ -109,9 +109,10 @@ const App = () => (
             <Route path="/admin/referrals" element={<Navigate to="/admin/settings?tab=referrals" replace />} />
             <Route path="/admin/substitutions" element={<Navigate to="/admin/settings?tab=substitutions" replace />} />
             <Route path="/admin/notifications" element={<AdminRoute><SuspenseRoute><AdminNotifications /></SuspenseRoute></AdminRoute>} />
-            <Route path="/social/posts" element={<ProtectedRoute><SuspenseRoute><SocialPosts /></SuspenseRoute></ProtectedRoute>} />
-            <Route path="/social/calendar" element={<ProtectedRoute><SuspenseRoute><SocialCalendar /></SuspenseRoute></ProtectedRoute>} />
-            <Route path="/social/accounts" element={<AdminRoute><SuspenseRoute><SocialAccounts /></SuspenseRoute></AdminRoute>} />
+            <Route path="/social" element={<ProtectedRoute><SuspenseRoute><SocialPage /></SuspenseRoute></ProtectedRoute>} />
+            <Route path="/social/posts" element={<ProtectedRoute><SuspenseRoute><SocialPage /></SuspenseRoute></ProtectedRoute>} />
+            <Route path="/social/calendar" element={<Navigate to="/social?tab=calendar" replace />} />
+            <Route path="/social/accounts" element={<Navigate to="/social?tab=accounts" replace />} />
             <Route path="/superadmin" element={<SuperAdminRoute><SuspenseRoute><SuperAdminDashboard /></SuspenseRoute></SuperAdminRoute>} />
             <Route path="/superadmin/companies" element={<SuperAdminRoute><SuspenseRoute><SuperAdminCompanies /></SuspenseRoute></SuperAdminRoute>} />
             <Route path="/superadmin/plans" element={<SuperAdminRoute><SuspenseRoute><SuperAdminPlans /></SuspenseRoute></SuperAdminRoute>} />
