@@ -1,11 +1,9 @@
 import {
-  Calendar, CalendarDays, Users, Settings, LogOut, LayoutDashboard,
-  Building2, CreditCard, Receipt, Link2, MessageSquare, ScrollText,
-  Bell, Share2, FileText, CalendarCheck, UserCog, ChevronRight,
-  Gift, Shield, Home, User, RefreshCw
+  Calendar, CalendarDays, Users, Settings, LogOut,
+  Home, User, Bell, CreditCard, Shield, LayoutDashboard,
+  Building2, Receipt, MessageSquare, ScrollText, Gift,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
@@ -27,99 +25,40 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useCompanyTheme } from "@/contexts/CompanyThemeContext";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 
 type MenuItem = { title: string; url: string; icon: React.ElementType; badge?: number };
 
-function MenuGroup({
-  label,
-  items,
-  collapsed,
-  icon,
-  defaultOpen,
-}: {
-  label: string;
-  items: MenuItem[];
-  collapsed: boolean;
-  icon: React.ElementType;
-  defaultOpen?: boolean;
-}) {
-  const location = useLocation();
-  const isActive = items.some((i) => location.pathname.startsWith(i.url));
-  const Icon = icon;
-
-  if (collapsed) {
-    return (
-      <SidebarGroup>
-        <SidebarGroupContent>
-          <SidebarMenu>
-            {items.map((item) => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild tooltip={item.title}>
-                  <NavLink
-                    to={item.url}
-                    className="hover:bg-sidebar-accent transition-colors"
-                    activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
-                  >
-                    <div className="relative">
-                      <item.icon className="h-4 w-4" />
-                      {item.badge !== undefined && item.badge > 0 && (
-                        <span className="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground">
-                          {item.badge > 9 ? "9+" : item.badge}
-                        </span>
-                      )}
-                    </div>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
-    );
-  }
-
+function FlatMenu({ label, items, collapsed }: { label: string; items: MenuItem[]; collapsed: boolean }) {
+  if (items.length === 0) return null;
   return (
-    <Collapsible defaultOpen={defaultOpen ?? isActive} className="group/collapsible">
-      <SidebarGroup>
-        <CollapsibleTrigger asChild>
-          <SidebarGroupLabel className="cursor-pointer hover:bg-sidebar-accent/50 rounded-md transition-colors">
-            <Icon className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-            {label}
-            <ChevronRight className="ml-auto h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-          </SidebarGroupLabel>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      className="hover:bg-sidebar-accent transition-colors"
-                      activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span className="flex-1">{item.title}</span>
-                      {item.badge !== undefined && item.badge > 0 && (
-                        <Badge variant="destructive" className="h-5 min-w-[20px] px-1.5 text-[10px] font-bold">
-                          {item.badge > 99 ? "99+" : item.badge}
-                        </Badge>
-                      )}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </CollapsibleContent>
-      </SidebarGroup>
-    </Collapsible>
+    <SidebarGroup>
+      {!collapsed && <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground/70">{label}</SidebarGroupLabel>}
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {items.map((item) => (
+            <SidebarMenuItem key={item.url}>
+              <SidebarMenuButton asChild tooltip={collapsed ? item.title : undefined}>
+                <NavLink
+                  to={item.url}
+                  className="hover:bg-sidebar-accent transition-colors"
+                  activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                >
+                  <div className="relative">
+                    <item.icon className="h-4 w-4" />
+                    {item.badge !== undefined && item.badge > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground">
+                        {item.badge > 9 ? "9+" : item.badge}
+                      </span>
+                    )}
+                  </div>
+                  {!collapsed && <span>{item.title}</span>}
+                </NavLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
   );
 }
 
@@ -133,26 +72,17 @@ export function AppSidebar() {
   const { unreadCount } = useNotifications();
 
   const mainItems: MenuItem[] = [
-    { title: "Dashboard", url: "/", icon: Home },
+    { title: "Início", url: "/", icon: Home },
     { title: "Eventos", url: "/events", icon: Calendar },
     { title: "Minha Agenda", url: "/my-schedule", icon: CalendarDays },
-    { title: "Meu Perfil", url: "/profile", icon: User },
+    { title: "Perfil", url: "/profile", icon: User },
   ];
 
   const adminItems: MenuItem[] = [
     { title: "Usuários", url: "/admin/users", icon: Users },
-    { title: "Substituições", url: "/admin/substitutions", icon: RefreshCw },
     { title: "Notificações", url: "/admin/notifications", icon: Bell, badge: unreadCount },
-    { title: "Biolink", url: "/admin/biolink", icon: Link2 },
-    { title: "Indicações", url: "/admin/referrals", icon: Gift },
     { title: "Assinatura", url: "/admin/my-subscription", icon: CreditCard },
     { title: "Configurações", url: "/admin/settings", icon: Settings },
-  ];
-
-  const socialItems: MenuItem[] = [
-    { title: "Posts", url: "/social/posts", icon: FileText },
-    { title: "Calendário", url: "/social/calendar", icon: CalendarCheck },
-    { title: "Contas", url: "/social/accounts", icon: UserCog },
   ];
 
   const superAdminItems: MenuItem[] = [
@@ -167,12 +97,7 @@ export function AppSidebar() {
     { title: "Configurações", url: "/superadmin/settings", icon: Settings },
   ];
 
-  const initials = profile?.name
-    ?.split(" ")
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase() ?? "?";
+  const initials = profile?.name?.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase() ?? "?";
 
   return (
     <Sidebar collapsible="icon">
@@ -181,12 +106,12 @@ export function AppSidebar() {
           {isWhitelabel && logoUrl ? (
             <img src={logoUrl} alt={companyName} className="h-8 w-8 rounded-xl object-contain shrink-0" />
           ) : (
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-sm shrink-0 shadow-sm">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-sm shrink-0">
               {companyName.charAt(0)}
             </div>
           )}
           {!collapsed && (
-            <span className="text-lg font-bold text-sidebar-foreground tracking-tight">
+            <span className="text-lg font-semibold text-sidebar-foreground tracking-tight">
               {isWhitelabel ? companyName : "Pascomfy"}
             </span>
           )}
@@ -196,26 +121,19 @@ export function AppSidebar() {
       <SidebarSeparator />
 
       <SidebarContent>
-        <MenuGroup label="Principal" items={mainItems} collapsed={collapsed} icon={Calendar} defaultOpen />
+        <FlatMenu label="Principal" items={mainItems} collapsed={collapsed} />
 
         {isAdmin && (
           <>
             <SidebarSeparator />
-            <MenuGroup label="Social" items={socialItems} collapsed={collapsed} icon={Share2} />
-          </>
-        )}
-
-        {isAdmin && (
-          <>
-            <SidebarSeparator />
-            <MenuGroup label="Administração" items={adminItems} collapsed={collapsed} icon={Settings} />
+            <FlatMenu label="Admin" items={adminItems} collapsed={collapsed} />
           </>
         )}
 
         {isSuperAdmin && (
           <>
             <SidebarSeparator />
-            <MenuGroup label="Super Admin" items={superAdminItems} collapsed={collapsed} icon={Shield} />
+            <FlatMenu label="Super Admin" items={superAdminItems} collapsed={collapsed} />
           </>
         )}
       </SidebarContent>
@@ -223,21 +141,14 @@ export function AppSidebar() {
       <SidebarSeparator />
 
       <SidebarFooter className="p-3">
-        <div className="flex items-center gap-2.5 p-2 rounded-xl bg-sidebar-accent/50 transition-colors">
-          <Avatar className="h-8 w-8 shrink-0 ring-2 ring-sidebar-border">
+        <div className="flex items-center gap-2.5 p-2 rounded-xl bg-sidebar-accent/50">
+          <Avatar className="h-8 w-8 shrink-0">
             <AvatarImage src={profile?.avatar_url ?? undefined} alt={profile?.name} />
-            <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
-              {initials}
-            </AvatarFallback>
+            <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">{initials}</AvatarFallback>
           </Avatar>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">
-                {profile?.name}
-              </p>
-              <p className="text-[11px] text-muted-foreground truncate">
-                {profile?.email}
-              </p>
+              <p className="text-sm font-medium text-sidebar-foreground truncate">{profile?.name}</p>
             </div>
           )}
           <button

@@ -1,7 +1,6 @@
 import * as React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { TrendingUp, TrendingDown } from "lucide-react";
 
 interface StatCardProps {
   icon: React.ElementType;
@@ -13,12 +12,12 @@ interface StatCardProps {
   iconClassName?: string;
 }
 
-export function StatCard({ icon: Icon, label, value, trend, className, onClick, iconClassName }: StatCardProps) {
+export function StatCard({ icon: Icon, label, value, className, onClick, iconClassName }: StatCardProps) {
   return (
     <Card
       className={cn(
-        "transition-all duration-200 hover:shadow-md animate-scale-in",
-        onClick && "cursor-pointer hover:border-primary/40",
+        "animate-scale-in",
+        onClick && "cursor-pointer active:scale-[0.98] transition-transform",
         className
       )}
       onClick={onClick}
@@ -28,15 +27,9 @@ export function StatCard({ icon: Icon, label, value, trend, className, onClick, 
           <Icon className="h-5 w-5 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-2xl font-bold text-foreground leading-none">{value}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
+          <p className="text-2xl font-semibold text-foreground leading-none">{value}</p>
+          <p className="text-sm text-muted-foreground mt-1">{label}</p>
         </div>
-        {trend && (
-          <div className={cn("flex items-center gap-0.5 text-xs font-medium", trend.positive ? "text-success" : "text-destructive")}>
-            {trend.positive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-            {trend.value}
-          </div>
-        )}
       </CardContent>
     </Card>
   );

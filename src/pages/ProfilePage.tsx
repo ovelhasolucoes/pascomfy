@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,12 +9,23 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/ui/page-header";
 import { SkeletonCard } from "@/components/ui/skeleton-card";
-import { Camera, Plus, X, Save, Loader2 } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { Camera, Plus, X, Save, Loader2, ChevronDown, QrCode } from "lucide-react";
 import { VolunteerQRCode } from "@/components/checkin/VolunteerQRCode";
 import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  ResponsiveDialog as Dialog,
+  ResponsiveDialogContent as DialogContent,
+  ResponsiveDialogHeader as DialogHeader,
+  ResponsiveDialogTitle as DialogTitle,
+} from "@/components/ui/responsive-dialog";
 
 const DAYS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
 const SHIFTS = ["Manhã", "Tarde", "Noite"];
@@ -35,6 +46,7 @@ const ProfilePage = () => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -51,38 +63,25 @@ const ProfilePage = () => {
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user || !profile?.company_id) return;
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("Imagem muito grande (máx. 2MB)");
-      return;
-    }
-
+    if (file.size > 2 * 1024 * 1024) { toast.error("Máx. 2MB"); return; }
     setUploading(true);
     try {
       const ext = file.name.split(".").pop();
       const path = `${profile.company_id}/avatars/${user.id}.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from("company-files")
-        .upload(path, file, { upsert: true });
+      const { error: uploadError } = await supabase.storage.from("company-files").upload(path, file, { upsert: true });
       if (uploadError) throw uploadError;
-
       const { data: urlData } = supabase.storage.from("company-files").getPublicUrl(path);
       setAvatarUrl(urlData.publicUrl + "?t=" + Date.now());
       toast.success("Foto atualizada!");
-    } catch (err: any) {
-      toast.error(err.message);
-    } finally {
-      setUploading(false);
-    }
+    } catch (err: any) { toast.error(err.message); }
+    finally { setUploading(false); }
   };
 
   const toggleAvailability = (day: string, shift: string) => {
     setAvailability((prev) => {
       const daySlots = prev[day] ?? [];
       const has = daySlots.includes(shift);
-      return {
-        ...prev,
-        [day]: has ? daySlots.filter((s) => s !== shift) : [...daySlots, shift],
-      };
+      return { ...prev, [day]: has ? daySlots.filter((s) => s !== shift) : [...daySlots, shift] };
     });
   };
 
@@ -90,42 +89,26 @@ const ProfilePage = () => {
     if (!user) return;
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          name,
-          phone,
-          bio,
-          skills,
-          preferred_roles: preferredRoles,
-          availability,
-          avatar_url: avatarUrl,
-        } as any)
-        .eq("id", user.id);
+      const { error } = await supabase.from("profiles").update({
+        name, phone, bio, skills, preferred_roles: preferredRoles, availability, avatar_url: avatarUrl,
+      } as any).eq("id", user.id);
       if (error) throw error;
-      toast.success("Perfil salvo com sucesso!");
-    } catch (err: any) {
-      toast.error(err.message);
-    } finally {
-      setSaving(false);
-    }
+      toast.success("Perfil salvo!");
+    } catch (err: any) { toast.error(err.message); }
+    finally { setSaving(false); }
   };
 
   const addTag = (value: string, list: string[], setter: (v: string[]) => void, clearFn: (v: string) => void) => {
     const trimmed = value.trim();
-    if (trimmed && !list.includes(trimmed)) {
-      setter([...list, trimmed]);
-    }
+    if (trimmed && !list.includes(trimmed)) setter([...list, trimmed]);
     clearFn("");
   };
 
   if (loading) {
     return (
       <AppLayout>
-        <div className="space-y-4 max-w-2xl">
-          <SkeletonCard lines={2} hasHeader={false} />
-          <SkeletonCard lines={4} />
-          <SkeletonCard lines={3} />
+        <div className="space-y-4 max-w-lg mx-auto">
+          <SkeletonCard lines={4} hasHeader={false} />
         </div>
       </AppLayout>
     );
@@ -135,20 +118,17 @@ const ProfilePage = () => {
 
   return (
     <AppLayout>
-      <div className="space-y-6 max-w-2xl">
-        <PageHeader title="Meu Perfil" description="Edite suas informações pessoais" />
+      <div className="space-y-6 max-w-lg mx-auto">
+        <PageHeader title="Meu Perfil" />
 
+        {/* Main info */}
         <Card className="animate-fade-in">
-          <CardHeader>
-            <CardTitle className="text-lg">Informações Pessoais</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Avatar */}
+          <CardContent className="p-5 space-y-5">
             <div className="flex items-center gap-4">
               <div className="relative group">
-                <Avatar className="h-24 w-24 ring-2 ring-border">
+                <Avatar className="h-20 w-20">
                   <AvatarImage src={avatarUrl ?? undefined} />
-                  <AvatarFallback className="text-xl bg-primary/10 text-primary">{initials}</AvatarFallback>
+                  <AvatarFallback className="text-lg bg-primary/10 text-primary">{initials}</AvatarFallback>
                 </Avatar>
                 <button
                   onClick={() => fileInputRef.current?.click()}
@@ -161,9 +141,14 @@ const ProfilePage = () => {
                 </button>
                 <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
               </div>
-              <div>
-                <p className="font-semibold text-foreground text-lg">{name}</p>
-                <p className="text-sm text-muted-foreground">{profile?.email}</p>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-foreground text-lg truncate">{name}</p>
+                <p className="text-sm text-muted-foreground truncate">{profile?.email}</p>
+                {(profile as any)?.checkin_code && (
+                  <Button variant="ghost" size="sm" className="mt-1 text-xs text-primary p-0 h-auto" onClick={() => setQrOpen(true)}>
+                    <QrCode className="h-3.5 w-3.5 mr-1" /> Meu QR Code
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -173,108 +158,97 @@ const ProfilePage = () => {
                 <Input value={name} onChange={(e) => setName(e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <Label>WhatsApp / Telefone</Label>
+                <Label>WhatsApp</Label>
                 <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(00) 00000-0000" />
               </div>
             </div>
 
             <div className="space-y-1.5">
               <Label>Bio</Label>
-              <Textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Conte um pouco sobre você..." rows={3} />
+              <Textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Sobre você..." rows={2} />
             </div>
           </CardContent>
         </Card>
 
-        {/* Skills */}
-        <Card className="animate-fade-in" style={{ animationDelay: "50ms" }}>
-          <CardHeader>
-            <CardTitle className="text-lg">Habilidades</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        {/* Skills - collapsible */}
+        <Collapsible>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" className="w-full justify-between text-foreground font-semibold">
+              Habilidades {skills.length > 0 && <Badge variant="secondary" className="ml-2">{skills.length}</Badge>}
+              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-3 pt-2">
             <div className="flex flex-wrap gap-2">
               {skills.map((s) => (
-                <Badge key={s} variant="secondary" className="gap-1 transition-all hover:bg-destructive/10">
+                <Badge key={s} variant="secondary" className="gap-1">
                   {s}
-                  <button onClick={() => setSkills(skills.filter((x) => x !== s))}>
-                    <X className="h-3 w-3" />
-                  </button>
+                  <button onClick={() => setSkills(skills.filter((x) => x !== s))}><X className="h-3 w-3" /></button>
                 </Badge>
               ))}
             </div>
             <div className="flex gap-2">
-              <Input
-                value={newSkill}
-                onChange={(e) => setNewSkill(e.target.value)}
-                placeholder="Adicionar habilidade..."
-                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag(newSkill, skills, setSkills, setNewSkill))}
-              />
-              <Button variant="outline" size="icon" onClick={() => addTag(newSkill, skills, setSkills, setNewSkill)}>
-                <Plus className="h-4 w-4" />
-              </Button>
+              <Input value={newSkill} onChange={(e) => setNewSkill(e.target.value)} placeholder="Nova habilidade..."
+                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag(newSkill, skills, setSkills, setNewSkill))} />
+              <Button variant="outline" size="icon" onClick={() => addTag(newSkill, skills, setSkills, setNewSkill)}><Plus className="h-4 w-4" /></Button>
             </div>
-          </CardContent>
-        </Card>
+          </CollapsibleContent>
+        </Collapsible>
 
-        {/* Preferred Roles */}
-        <Card className="animate-fade-in" style={{ animationDelay: "100ms" }}>
-          <CardHeader>
-            <CardTitle className="text-lg">Funções Preferidas</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        {/* Preferred Roles - collapsible */}
+        <Collapsible>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" className="w-full justify-between text-foreground font-semibold">
+              Funções preferidas {preferredRoles.length > 0 && <Badge variant="secondary" className="ml-2">{preferredRoles.length}</Badge>}
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-3 pt-2">
             <div className="flex flex-wrap gap-2">
               {preferredRoles.map((r) => (
-                <Badge key={r} variant="outline" className="gap-1 transition-all hover:bg-destructive/10">
+                <Badge key={r} variant="outline" className="gap-1">
                   {r}
-                  <button onClick={() => setPreferredRoles(preferredRoles.filter((x) => x !== r))}>
-                    <X className="h-3 w-3" />
-                  </button>
+                  <button onClick={() => setPreferredRoles(preferredRoles.filter((x) => x !== r))}><X className="h-3 w-3" /></button>
                 </Badge>
               ))}
             </div>
             <div className="flex gap-2">
-              <Input
-                value={newRole}
-                onChange={(e) => setNewRole(e.target.value)}
-                placeholder="Adicionar função..."
-                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag(newRole, preferredRoles, setPreferredRoles, setNewRole))}
-              />
-              <Button variant="outline" size="icon" onClick={() => addTag(newRole, preferredRoles, setPreferredRoles, setNewRole)}>
-                <Plus className="h-4 w-4" />
-              </Button>
+              <Input value={newRole} onChange={(e) => setNewRole(e.target.value)} placeholder="Nova função..."
+                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag(newRole, preferredRoles, setPreferredRoles, setNewRole))} />
+              <Button variant="outline" size="icon" onClick={() => addTag(newRole, preferredRoles, setPreferredRoles, setNewRole)}><Plus className="h-4 w-4" /></Button>
             </div>
-          </CardContent>
-        </Card>
+          </CollapsibleContent>
+        </Collapsible>
 
-        {/* Availability */}
-        <Card className="animate-fade-in" style={{ animationDelay: "150ms" }}>
-          <CardHeader>
-            <CardTitle className="text-lg">Disponibilidade Semanal</CardTitle>
-          </CardHeader>
-          <CardContent>
+        {/* Availability - collapsible */}
+        <Collapsible>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" className="w-full justify-between text-foreground font-semibold">
+              Disponibilidade semanal
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-2">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr>
-                    <th className="text-left py-2 pr-3 text-muted-foreground font-medium">Dia</th>
-                    {SHIFTS.map((s) => (
-                      <th key={s} className="text-center py-2 px-2 text-muted-foreground font-medium">{s}</th>
-                    ))}
+                    <th className="text-left py-2 pr-3 text-muted-foreground font-medium text-sm">Dia</th>
+                    {SHIFTS.map((s) => <th key={s} className="text-center py-2 px-1 text-muted-foreground font-medium text-sm">{s}</th>)}
                   </tr>
                 </thead>
                 <tbody>
                   {DAYS.map((day) => (
-                    <tr key={day} className="border-t border-border">
-                      <td className="py-2 pr-3 text-foreground">{day}</td>
+                    <tr key={day}>
+                      <td className="py-1.5 pr-3 text-foreground text-sm">{day}</td>
                       {SHIFTS.map((shift) => {
                         const active = (availability[day] ?? []).includes(shift);
                         return (
-                          <td key={shift} className="text-center py-2 px-2">
+                          <td key={shift} className="text-center py-1.5 px-1">
                             <button
                               onClick={() => toggleAvailability(day, shift)}
-                              className={`w-10 h-10 rounded-xl text-xs font-medium transition-all duration-200 ${
-                                active
-                                  ? "bg-success text-success-foreground shadow-sm"
-                                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+                              className={`w-9 h-9 rounded-xl text-xs font-medium transition-colors ${
+                                active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
                               }`}
                             >
                               {active ? "✓" : "–"}
@@ -287,24 +261,28 @@ const ProfilePage = () => {
                 </tbody>
               </table>
             </div>
-          </CardContent>
-        </Card>
+          </CollapsibleContent>
+        </Collapsible>
 
-        {/* QR Code pessoal */}
-        {(profile as any)?.checkin_code && (
-          <VolunteerQRCode
-            checkinCode={(profile as any).checkin_code}
-            userName={profile?.name ?? ""}
-          />
-        )}
-
-        {/* Sticky save button on mobile */}
-        <div className="flex justify-end sticky bottom-4 z-10">
-          <Button onClick={handleSave} disabled={saving} size="lg" className="shadow-lg">
+        {/* Save */}
+        <div className="sticky bottom-4 z-10">
+          <Button onClick={handleSave} disabled={saving} size="lg" className="w-full shadow-md">
             {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-            Salvar Perfil
+            Salvar
           </Button>
         </div>
+
+        {/* QR Code modal */}
+        <Dialog open={qrOpen} onOpenChange={setQrOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Meu QR Code</DialogTitle>
+            </DialogHeader>
+            {(profile as any)?.checkin_code && (
+              <VolunteerQRCode checkinCode={(profile as any).checkin_code} userName={profile?.name ?? ""} />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );

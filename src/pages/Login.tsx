@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
@@ -29,7 +28,7 @@ const Login = () => {
       toast({
         variant: "destructive",
         title: "Erro ao entrar",
-        description: error.message || "Verifique suas credenciais e tente novamente.",
+        description: error.message || "Verifique suas credenciais.",
       });
     } finally {
       setIsLoading(false);
@@ -53,7 +52,7 @@ const Login = () => {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: error.message || "Não foi possível enviar o e-mail de recuperação.",
+        description: error.message || "Não foi possível enviar o e-mail.",
       });
     } finally {
       setIsLoading(false);
@@ -61,96 +60,76 @@ const Login = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center space-y-2">
-          <CardTitle className="text-3xl font-bold text-foreground">Pascomfy</CardTitle>
-          <CardDescription className="text-muted-foreground">
-            {forgotMode ? "Recuperar senha" : "Gestão de equipes da Pascom"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-muted px-4">
+      <div className="w-full max-w-sm space-y-8">
+        {/* Brand */}
+        <div className="text-center space-y-2">
+          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground text-2xl font-bold shadow-sm">
+            P
+          </div>
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Pascomfy</h1>
+          <p className="text-muted-foreground text-sm">
+            {forgotMode ? "Recuperar senha" : "Bem-vindo de volta"}
+          </p>
+        </div>
+
+        {/* Form */}
+        <div className="rounded-2xl border bg-card p-6 shadow-sm space-y-5">
           {forgotMode ? (
             resetSent ? (
               <div className="text-center space-y-4 py-4">
-                <p className="text-foreground font-medium">E-mail enviado!</p>
+                <p className="font-medium text-foreground">E-mail enviado!</p>
                 <p className="text-sm text-muted-foreground">
                   Verifique sua caixa de entrada e clique no link para redefinir sua senha.
                 </p>
                 <Button variant="outline" onClick={() => { setForgotMode(false); setResetSent(false); }} className="gap-2">
-                  <ArrowLeft className="h-4 w-4" />
-                  Voltar ao login
+                  <ArrowLeft className="h-4 w-4" /> Voltar
                 </Button>
               </div>
             ) : (
-              <form onSubmit={handleForgotPassword} className="space-y-4">
+              <form onSubmit={handleForgotPassword} className="space-y-5">
                 <div className="space-y-2">
                   <Label htmlFor="email">E-mail</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
+                  <Input id="email" type="email" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                  Enviar link de recuperação
+                  {isLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  Enviar link
                 </Button>
                 <Button type="button" variant="ghost" className="w-full gap-2" onClick={() => setForgotMode(false)}>
-                  <ArrowLeft className="h-4 w-4" />
-                  Voltar ao login
+                  <ArrowLeft className="h-4 w-4" /> Voltar
                 </Button>
               </form>
             )
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
+                <Input id="email" type="email" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Senha</Label>
-                  <button
-                    type="button"
-                    onClick={() => setForgotMode(true)}
-                    className="text-xs text-primary hover:underline"
-                  >
-                    Esqueci minha senha
+                  <button type="button" onClick={() => setForgotMode(true)} className="text-xs text-primary hover:underline">
+                    Esqueci a senha
                   </button>
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+                <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
               </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full h-11" disabled={isLoading}>
                 {isLoading ? "Entrando..." : "Entrar"}
               </Button>
-              <p className="text-center text-sm text-muted-foreground">
-                Ainda não tem conta?{" "}
-                <Link to="/signup" className="text-primary underline font-medium">
-                  Cadastre sua paróquia
-                </Link>
-              </p>
             </form>
           )}
-        </CardContent>
-      </Card>
+        </div>
+
+        {!forgotMode && (
+          <p className="text-center text-sm text-muted-foreground">
+            Não tem conta?{" "}
+            <Link to="/signup" className="text-primary underline font-medium">Cadastre-se</Link>
+          </p>
+        )}
+      </div>
     </div>
   );
 };
