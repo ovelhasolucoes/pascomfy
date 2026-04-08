@@ -27,6 +27,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
         {/* Content */}
         <main className="flex-1 overflow-x-hidden overflow-y-auto px-4 pb-20 page-transition min-w-0">
+          <AnnouncementBanner />
           {children}
         </main>
 
