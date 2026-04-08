@@ -81,6 +81,7 @@ export function AppSidebar() {
     { title: "Início", url: "/", icon: Home },
     { title: "Eventos", url: "/events", icon: Calendar },
     { title: "Minha Agenda", url: "/my-schedule", icon: CalendarDays },
+    { title: "Social", url: "/social/posts", icon: Share2 },
     { title: "Perfil", url: "/profile", icon: User },
   ];
 
