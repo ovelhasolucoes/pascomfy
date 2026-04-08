@@ -103,7 +103,7 @@ const SuperAdminPlans = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </AppLayout>
+    </SuperAdminLayout>
   );
 };
 

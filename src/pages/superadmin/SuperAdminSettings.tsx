@@ -660,6 +660,6 @@ export default function SuperAdminSettings() {
           </Tabs>
         )}
       </div>
-    </AppLayout>
+    </SuperAdminLayout>
   );
 }

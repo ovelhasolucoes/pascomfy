@@ -90,7 +90,7 @@ const SuperAdminPayments = () => {
           </div>
         )}
       </div>
-    </AppLayout>
+    </SuperAdminLayout>
   );
 };
 

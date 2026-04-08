@@ -33,7 +33,7 @@ const SuperAdminDashboard = () => {
           />
         </div>
       </div>
-    </AppLayout>
+    </SuperAdminLayout>
   );
 };
 

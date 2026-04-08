@@ -115,7 +115,7 @@ const SuperAdminSubscriptions = () => {
           </div>
         )}
       </div>
-    </AppLayout>
+    </SuperAdminLayout>
   );
 };
 

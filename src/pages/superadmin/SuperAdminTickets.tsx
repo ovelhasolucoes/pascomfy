@@ -99,7 +99,7 @@ const SuperAdminTickets = () => {
           {selectedTicket && <TicketThread ticketId={selectedTicket.id} />}
         </DialogContent>
       </Dialog>
-    </AppLayout>
+    </SuperAdminLayout>
   );
 };
 

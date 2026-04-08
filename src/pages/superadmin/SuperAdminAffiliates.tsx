@@ -113,7 +113,7 @@ const SuperAdminAffiliates = () => {
           </div>
         )}
       </div>
-    </AppLayout>
+    </SuperAdminLayout>
   );
 };
 

@@ -50,7 +50,7 @@ const SuperAdminLogs = () => {
           </div>
         )}
       </div>
-    </AppLayout>
+    </SuperAdminLayout>
   );
 };
 
