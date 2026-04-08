@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import {
-  Users, Settings, Bell, CreditCard, LayoutDashboard, Building2,
-  Receipt, MessageSquare, ScrollText, Gift, Shield, LogOut
+  Users, Settings, Bell, CreditCard, LayoutDashboard, LogOut
 } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useAuth } from "@/contexts/AuthContext";
