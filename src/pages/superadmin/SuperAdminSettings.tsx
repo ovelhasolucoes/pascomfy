@@ -135,12 +135,12 @@ function BrandingTab({ getSetting, onSave }: {
     app_name: branding.app_name ?? "Pascomfy",
     logo_url: branding.logo_url ?? "",
     favicon_url: branding.favicon_url ?? "",
-    primary_color: branding.primary_color ?? "#7c3aed",
-    secondary_color: branding.secondary_color ?? "#6d28d9",
+    primary_color: branding.primary_color ?? "#c4a983",
+    secondary_color: branding.secondary_color ?? "#8b7355",
     pwa_short_name: pwa.short_name ?? "Pascomfy",
     pwa_description: pwa.description ?? "",
-    pwa_theme_color: pwa.theme_color ?? "#7c3aed",
-    pwa_bg_color: pwa.background_color ?? "#0f172a",
+    pwa_theme_color: pwa.theme_color ?? "#c4a983",
+    pwa_bg_color: pwa.background_color ?? "#1A1816",
   });
 
   const handleSave = () => {
