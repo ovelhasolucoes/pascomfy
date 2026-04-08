@@ -1,7 +1,7 @@
 import { SuperAdminLayout } from "@/components/superadmin/SuperAdminLayout";
 import { MetricCard } from "@/components/superadmin/MetricCard";
 import { useSuperAdminStats } from "@/hooks/useSuperAdminStats";
-import { Building2, Users, DollarSign, MessageSquare, TrendingUp } from "lucide-react";
+import { Building2, Users, DollarSign, MessageSquare, TrendingUp, Clock, AlertTriangle } from "lucide-react";
 
 const SuperAdminDashboard = () => {
   const { data: stats, isLoading } = useSuperAdminStats();
