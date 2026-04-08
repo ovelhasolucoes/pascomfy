@@ -19,12 +19,14 @@ const SuperAdminDashboard = () => {
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-foreground">Dashboard Super Admin</h1>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <MetricCard title="Companies Ativas" value={stats?.activeCompanies ?? 0} icon={Building2} />
+          <MetricCard title="Empresas Ativas" value={stats?.activeCompanies ?? 0} icon={Building2} />
           <MetricCard title="MRR" value={`R$ ${(stats?.mrr ?? 0).toFixed(2)}`} icon={DollarSign} />
           <MetricCard title="Usuários Totais" value={stats?.totalUsers ?? 0} icon={Users} />
           <MetricCard title="Tickets Abertos" value={stats?.openTickets ?? 0} icon={MessageSquare} />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <MetricCard title="Em Trial" value={stats?.trialCompanies ?? 0} icon={Clock} />
+          <MetricCard title="Inadimplentes" value={stats?.delinquentCompanies ?? 0} icon={AlertTriangle} />
           <MetricCard
             title="Crescimento Mensal"
             value={`${growth >= 0 ? "+" : ""}${growth}%`}
