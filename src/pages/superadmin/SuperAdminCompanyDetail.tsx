@@ -317,17 +317,17 @@ function UsersTab({ companyId }: { companyId: string }) {
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Nível</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Criado em</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(users || []).map((u: any) => (
-                  <TableRow key={u.id}>
-                    <TableCell className="font-medium">{u.name}</TableCell>
-                    <TableCell className="text-sm">{u.email}</TableCell>
-                    <TableCell><Badge variant="outline">{u.permission_level}</Badge></TableCell>
+                   <TableHead>Função</TableHead>
+                   <TableHead>Status</TableHead>
+                   <TableHead>Criado em</TableHead>
+                 </TableRow>
+               </TableHeader>
+               <TableBody>
+                 {(users || []).map((u: any) => (
+                   <TableRow key={u.id}>
+                     <TableCell className="font-medium">{u.name}</TableCell>
+                     <TableCell className="text-sm">{u.email}</TableCell>
+                     <TableCell><Badge variant="outline">{u.role}</Badge></TableCell>
                     <TableCell>{u.status}</TableCell>
                     <TableCell>{format(new Date(u.created_at), "dd/MM/yyyy")}</TableCell>
                   </TableRow>
