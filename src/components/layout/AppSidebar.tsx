@@ -25,6 +25,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useCompanyTheme } from "@/contexts/CompanyThemeContext";
+import { usePlatformBrandingContext } from "@/contexts/PlatformBrandingContext";
 
 type MenuItem = { title: string; url: string; icon: React.ElementType; badge?: number };
 
@@ -69,7 +70,12 @@ export function AppSidebar() {
   const { signOut } = useAuth();
   const { profile } = useProfile();
   const { companyName, logoUrl, isWhitelabel } = useCompanyTheme();
+  const { branding: platformBranding } = usePlatformBrandingContext();
   const { unreadCount } = useNotifications();
+
+  // Use company branding if whitelabel, otherwise fallback to platform branding
+  const displayName = isWhitelabel ? companyName : (platformBranding.app_name || "Pascomfy");
+  const displayLogo = isWhitelabel ? logoUrl : platformBranding.logo_url;
 
   const mainItems: MenuItem[] = [
     { title: "Início", url: "/", icon: Home },
@@ -103,16 +109,16 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="px-3 py-4">
         <div className="flex items-center gap-2.5">
-          {isWhitelabel && logoUrl ? (
-            <img src={logoUrl} alt={companyName} className="h-8 w-8 rounded-xl object-contain shrink-0" />
+          {displayLogo ? (
+            <img src={displayLogo} alt={displayName} className="h-8 w-8 rounded-xl object-contain shrink-0" />
           ) : (
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-sm shrink-0">
-              {companyName.charAt(0)}
+              {displayName.charAt(0)}
             </div>
           )}
           {!collapsed && (
             <span className="text-lg font-semibold text-sidebar-foreground tracking-tight">
-              {isWhitelabel ? companyName : "Pascomfy"}
+              {displayName}
             </span>
           )}
         </div>

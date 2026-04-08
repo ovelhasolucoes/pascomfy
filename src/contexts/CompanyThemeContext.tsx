@@ -21,8 +21,8 @@ const defaultTheme: CompanyTheme = {
   companyName: "Pascomfy",
   logoUrl: null,
   faviconUrl: null,
-  primaryColor: "#6366f1",
-  secondaryColor: "#8b5cf6",
+  primaryColor: "#c4a983",
+  secondaryColor: "#8b7355",
   theme: "light",
   isWhitelabel: false,
   allowsCustomDomain: false,
@@ -91,8 +91,8 @@ export function CompanyThemeProvider({ children }: { children: ReactNode }) {
     const root = document.documentElement;
 
     if (allowsWhitelabel) {
-      root.style.setProperty("--company-primary", company.primary_color || "#6366f1");
-      root.style.setProperty("--company-secondary", company.secondary_color || "#8b5cf6");
+      root.style.setProperty("--company-primary", company.primary_color || "#c4a983");
+      root.style.setProperty("--company-secondary", company.secondary_color || "#8b7355");
 
       if (company.theme === "dark") {
         root.classList.add("dark");
@@ -118,8 +118,8 @@ export function CompanyThemeProvider({ children }: { children: ReactNode }) {
       companyName: company?.name || "Pascomfy",
       logoUrl: company?.logo_url || null,
       faviconUrl: company?.favicon_url || null,
-      primaryColor: company?.primary_color || "#6366f1",
-      secondaryColor: company?.secondary_color || "#8b5cf6",
+      primaryColor: company?.primary_color || "#c4a983",
+      secondaryColor: company?.secondary_color || "#8b7355",
       theme: company?.theme || "light",
       isWhitelabel: allowsWhitelabel,
       allowsCustomDomain,

@@ -3,6 +3,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { BottomNav } from "./BottomNav";
 import { MoreSheet } from "./MoreSheet";
+import { AnnouncementBanner } from "./AnnouncementBanner";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -26,6 +27,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
         {/* Content */}
         <main className="flex-1 overflow-x-hidden overflow-y-auto px-4 pb-20 page-transition min-w-0">
+          <AnnouncementBanner />
           {children}
         </main>
 
@@ -52,6 +54,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </header>
           <main className="flex-1 overflow-auto p-4 md:p-6 page-transition">
+            <AnnouncementBanner />
             {children}
           </main>
         </div>
