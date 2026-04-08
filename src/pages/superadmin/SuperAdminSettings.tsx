@@ -288,10 +288,12 @@ function LoginTab({ getSetting, onSave }: {
             <Label>Subtítulo</Label>
             <Input value={form.welcome_subtitle} onChange={(e) => setForm({ ...form, welcome_subtitle: e.target.value })} />
           </div>
-          <div className="space-y-2">
-            <Label>URL da Imagem de Fundo</Label>
-            <Input placeholder="https://..." value={form.background_url} onChange={(e) => setForm({ ...form, background_url: e.target.value })} />
-          </div>
+          <ImageUploadField
+            label="Imagem de Fundo"
+            value={form.background_url}
+            onChange={(url) => setForm({ ...form, background_url: url })}
+            folder="login"
+          />
           <Separator />
           <h4 className="font-medium text-sm text-muted-foreground">Métodos de Autenticação</h4>
           <div className="space-y-3">
