@@ -2431,6 +2431,18 @@ export type Database = {
         Returns: boolean
       }
       get_company_limits: { Args: { _company_id: string }; Returns: Json }
+      get_invite_by_token: {
+        Args: { _token: string }
+        Returns: {
+          company_id: string
+          company_name: string
+          email: string
+          expires_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          status: Database["public"]["Enums"]["invite_status"]
+        }[]
+      }
       get_user_company_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
