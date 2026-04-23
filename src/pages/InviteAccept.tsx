@@ -32,19 +32,21 @@ const InviteAccept = () => {
     const fetchInvite = async () => {
       if (!token) return;
       const { data, error } = await supabase
-        .from("invites")
-        .select("id, email, role, company_id, status, expires_at, companies(name)")
-        .eq("token", token)
-        .single();
+        .rpc("get_invite_by_token", { _token: token })
+        .maybeSingle();
 
       if (error || !data) {
-        setError("Convite não encontrado.");
-      } else if (data.status !== "pendente") {
-        setError("Este convite já foi utilizado.");
-      } else if (new Date(data.expires_at) < new Date()) {
-        setError("Este convite expirou.");
+        setError("Convite não encontrado, expirado ou já utilizado.");
       } else {
-        setInvite(data as InviteData);
+        setInvite({
+          id: data.id,
+          email: data.email,
+          role: data.role,
+          company_id: data.company_id,
+          status: data.status,
+          expires_at: data.expires_at,
+          companies: { name: data.company_name },
+        } as InviteData);
       }
       setLoading(false);
     };
